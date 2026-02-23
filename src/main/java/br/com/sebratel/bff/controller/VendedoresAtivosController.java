@@ -1,7 +1,7 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.dto.VendedoresAtivosDTO;
-import br.com.sebratel.bff.service.VendedorAtivosService;
+import br.com.sebratel.bff.service.VendedoresAtivosService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,10 +15,10 @@ import java.util.List;
 public class VendedoresAtivosController {
 
 
-    private final VendedorAtivosService vendedoresAtivosService;
+    private final VendedoresAtivosService vendedoresAtivosService;
 
     @Autowired
-    public VendedoresAtivosController(VendedorAtivosService vendedoresAtivosService) {
+    public VendedoresAtivosController(VendedoresAtivosService vendedoresAtivosService) {
         this.vendedoresAtivosService = vendedoresAtivosService;
     }
 

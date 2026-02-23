@@ -8,12 +8,12 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class VendedorAtivosService {
+public class VendedoresAtivosService {
 
     private final VendedoresAtivosRepository vendedorRepository;
 
     @Autowired
-    public VendedorAtivosService(VendedoresAtivosRepository vendedorRepository) {
+    public VendedoresAtivosService(VendedoresAtivosRepository vendedorRepository) {
         this.vendedorRepository = vendedorRepository;
     }
 
