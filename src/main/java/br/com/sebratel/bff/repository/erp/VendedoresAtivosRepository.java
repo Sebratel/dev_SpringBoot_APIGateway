@@ -20,8 +20,7 @@ public interface VendedoresAtivosRepository extends JpaRepository<ErpContract, L
         LEFT JOIN v_users vu ON p.name = vu.name
         WHERE x.industry_sector_id IS NOT NULL 
           AND p.email <> ''
-          AND vu.active IS TRUE  
-          AND vu.email = p.email 
+          AND vu.active IS TRUE
         ORDER BY p.name ASC
         """, nativeQuery = true)
     List<VendedoresProjection> findVendedoresAtivos();
