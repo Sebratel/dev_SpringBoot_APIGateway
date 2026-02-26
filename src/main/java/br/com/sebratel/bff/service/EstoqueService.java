@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -16,7 +15,7 @@ public class EstoqueService {
 
     public List<EstoqueTecnicoDTO> buscarEstoquePorTecnico(String nome) {
         // Agora o repositório já retorna uma lista de EstoqueView (Interface)
-        return repository.findEstoqueByTecnicoNative(nome).stream()
+        return repository.executeNativeQuery(nome).stream()
                 .map(view -> new EstoqueTecnicoDTO(
 
                         view.getCodigo(),
@@ -25,6 +24,6 @@ public class EstoqueService {
                         view.getPossui() != null ? view.getPossui().longValue() : 0L,
                         view.getId()
                 ))
-                .collect(Collectors.toList());
+                .toList();
     }
 }

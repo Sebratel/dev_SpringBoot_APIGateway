@@ -14,8 +14,13 @@ import java.util.List;
 @RequestMapping("/api/v1/contract-payments")
 public class ApoioSemanalController {
 
+
+    private final ApoioSemanalService apoioSemanalService;
+
     @Autowired
-    private ApoioSemanalService apoioSemanalService;
+    public ApoioSemanalController(ApoioSemanalService apoioSemanalService) {
+        this.apoioSemanalService = apoioSemanalService;
+    }
 
     @GetMapping(value = "/vendedor")
     public ResponseEntity<OrderedApoioSemanalDTO> getPorVendedor(@RequestBody VendedoresAtivosInputDTO vendedoresAtivosInputDTO) {

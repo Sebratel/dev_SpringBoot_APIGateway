@@ -19,10 +19,10 @@ public class ContractPaymentService {
         return repository.findFirstContractPayments().stream().map(p -> {
             ContractFirstPaymentDTO dto = new ContractFirstPaymentDTO();
             dto.setNome(p.getNome());
-            dto.setNumeroContrato(p.getNumero_Contrato());
-            dto.setPrimeiraEmissao(p.getPrimeira_Emissao());
-            dto.setPagamentoCliente(p.getPagamento_Cliente());
-            dto.setDataCriacao(p.getData_Criacao());
+            dto.setNumeroContrato(p.getNumeroContrato());
+            dto.setPrimeiraEmissao(p.getPrimeiraEmissao());
+            dto.setPagamentoCliente(p.getPagamentoCliente());
+            dto.setDataCriacao(p.getDataCriacao());
             dto.setContractNumber(p.getContractnumber());
             dto.setDescription(p.getDescription());
             dto.setStatus(p.getStatus());
