@@ -3,6 +3,8 @@ package br.com.sebratel.bff.service.comercial;
 import br.com.sebratel.bff.dto.comercial.ContratoPersonalizadoDTO;
 import br.com.sebratel.bff.repository.erp.comercial.ContratoPersonalizadoRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,10 +16,13 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class ContratoPersonalizadoService {
 
+    private final Logger logger = LoggerFactory.getLogger(ContratoPersonalizadoService.class);
+
     private final ContratoPersonalizadoRepository repository;
 
     @Transactional(readOnly = true)
     public Stream<ContratoPersonalizadoDTO> listarContratosPersonalizados(LocalDateTime inicio, LocalDateTime fim, List<String> listaDeClientes) {
+        logger.info("------ {} - {} ------", this.getClass().getName(), Thread.currentThread().getStackTrace()[1].getMethodName());
         return repository.findContratosPersonalizados(inicio, fim, listaDeClientes)
                 .stream()
                 .map(ContratoPersonalizadoDTO::new);

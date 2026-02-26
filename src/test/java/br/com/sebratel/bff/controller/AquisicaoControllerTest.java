@@ -32,7 +32,7 @@ class AquisicaoControllerTest {
     @Test
     @DisplayName("Deve retornar 200 e a lista de aquisições com sucesso")
     void getAquisicoes_Sucesso() throws Exception {
-        AquisicaoDTO dto = new AquisicaoDTO(1L, "", "", LocalDate.now(), "String", LocalDate.now(), 2.0, "String", "String");
+        AquisicaoDTO dto = new AquisicaoDTO(1L, "", "", LocalDate.now(), "String", LocalDate.now(), 2.0, "3.0","String", "String");
         List<AquisicaoDTO> lista = List.of(dto);
 
         when(aquisicaoService.listarAquisicoes()).thenReturn(lista);

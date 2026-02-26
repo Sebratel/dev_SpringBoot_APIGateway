@@ -35,11 +35,6 @@ public class ApoioSemanalService {
                 .toList();
     }
 
-    public Stream<RelatorioFinalDTO> streamRelatorio() {
-        // Retorna o stream a partir da lista cacheada
-        return getDadosCompletosCache().stream();
-    }
-
     public Stream<RelatorioFinalDTO> streamRelatorioPorVendedor(String nomeVendedor) {
         String mesAtual = LocalDate.now()
                 .getMonth()
