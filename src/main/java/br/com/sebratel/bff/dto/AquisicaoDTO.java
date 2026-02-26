@@ -11,5 +11,6 @@ public record AquisicaoDTO(
         LocalDate dataPrevisao,
         Double unidades,
         String base,
-        String status
+        String status,
+        String outroStatus
 ) {}

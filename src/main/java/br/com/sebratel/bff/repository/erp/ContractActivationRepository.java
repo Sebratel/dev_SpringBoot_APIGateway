@@ -55,7 +55,7 @@ public interface ContractActivationRepository extends JpaRepository<ErpContract,
             LEFT JOIN patrimony_packing_lists ppl ON ppl.contract_service_tag_id = cst.id 
             LEFT JOIN patrimony_packing_list_items plis ON ppl.id = plis.patrimony_packing_list_id
             WHERE it.id IN ('12', '1014', '1136', '249', '275', '1011', '1015')
-            AND c.created > (CURRENT_DATE - INTERVAL '11 months')
+            AND c.created > (CURRENT_DATE - INTERVAL '11' MONTH)
             GROUP BY a.created, c.created, p.name, p.city, p2.name, c.v_status, c.contract_number, c.cancellation_motive, it.id, a.conclusion_date
         )
         SELECT 
