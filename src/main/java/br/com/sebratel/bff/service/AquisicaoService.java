@@ -25,9 +25,10 @@ public class AquisicaoService {
                         p.getData(),
                         p.getRequisitadoPor(),
                         p.getDataPrevisao(),
-                        p.getOutrosStatus(),
+                        p.getUnidades(),
                         p.getBase(),
-                        p.getStatus()
+                        p.getStatus(),
+                        p.getOutrosStatus()
                 )).collect(Collectors.toList());
     }
 }
