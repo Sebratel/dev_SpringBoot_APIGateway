@@ -30,10 +30,10 @@ class ContractPaymentServiceTest {
         LocalDate agora = LocalDate.now();
 
         when(p.getNome()).thenReturn("Cliente Teste");
-        when(p.getNumero_Contrato()).thenReturn("123");
-        when(p.getPrimeira_Emissao()).thenReturn(agora);
-        when(p.getPagamento_Cliente()).thenReturn(agora.plusDays(1));
-        when(p.getData_Criacao()).thenReturn(agora.atStartOfDay().minusDays(5));
+        when(p.getNumeroContrato()).thenReturn("123");
+        when(p.getPrimeiraEmissao()).thenReturn(agora);
+        when(p.getPagamentoCliente()).thenReturn(agora.plusDays(1));
+        when(p.getDataCriacao()).thenReturn(agora.atStartOfDay().minusDays(5));
         when(p.getContractnumber()).thenReturn("456");
         when(p.getDescription()).thenReturn("Descricao teste");
         when(p.getStatus()).thenReturn("PAGO");
@@ -73,7 +73,7 @@ class ContractPaymentServiceTest {
     void deveMapearCamposNulosSemExplodir() {
         ContractFirstPaymentProjection p = mock(ContractFirstPaymentProjection.class);
         when(p.getNome()).thenReturn(null);
-        when(p.getNumero_Contrato()).thenReturn(null);
+        when(p.getNumeroContrato()).thenReturn(null);
 
         when(repository.findFirstContractPayments()).thenReturn(List.of(p));
 
