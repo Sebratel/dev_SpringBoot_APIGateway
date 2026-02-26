@@ -5,10 +5,10 @@ import java.time.LocalDateTime;
 
 public interface ContractFirstPaymentProjection {
     String getNome();
-    String getNumero_Contrato();
-    LocalDate getPrimeira_Emissao();
-    LocalDate getPagamento_Cliente();
-    LocalDateTime getData_Criacao();
+    String getNumeroContrato();
+    LocalDate getPrimeiraEmissao();
+    LocalDate getPagamentoCliente();
+    LocalDateTime getDataCriacao();
     String getContractnumber();
     String getDescription();
     String getStatus();

@@ -14,8 +14,13 @@ import java.util.List;
 @RequestMapping("/api/v1/relatorios")
 public class PrimeiroPaganteMensalController {
 
+
+    private final PrimeiroPaganteMensalService primeiroPaganteMensalService;
+
     @Autowired
-    private PrimeiroPaganteMensalService primeiroPaganteMensalService;
+    private PrimeiroPaganteMensalController(PrimeiroPaganteMensalService primeiroPaganteMensalService) {
+        this.primeiroPaganteMensalService = primeiroPaganteMensalService;
+    }
 
     @GetMapping("/primeiro-pagante-mensal")
     public ResponseEntity<List<RelatorioPorVendedorDTO>> executar() {
