@@ -4,7 +4,6 @@ import br.com.sebratel.bff.repository.erp.projections.VendedoresProjection;
 
 
 public record VendedoresAtivosDTO(String nome, String email) {
-    // Constructor para converter de Projection para DTO facilmente
     public VendedoresAtivosDTO(VendedoresProjection projection) {
         this(projection.getNomeVendedor(), projection.getEmailVendedor());
     }
