@@ -9,6 +9,7 @@ import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Cipher;
@@ -30,15 +31,19 @@ public class QrCodeService {
 
     public QrCodeOutputDTO gerarQrCodeParaFuncionario(String jsonFuncionario) throws Exception {
         // 1. Localizar Chave Pública em ~/.ssh/id_rsa_public.pem
-        String userHome = System.getProperty("user.home");
-        Path publicKeyPath = Paths.get(userHome, ".ssh", "id_rsa_public.pem");
 
-        if (!Files.exists(publicKeyPath)) {
-            logger.error("Chave não encontrada em: {}", publicKeyPath);
-            throw new RuntimeException("Arquivo de chave pública PEM não encontrado.");
-        }
+        ClassPathResource resource = new ClassPathResource("id_rsa_public.pem");
 
-        String publicKeyPEM = new String(Files.readAllBytes(publicKeyPath))
+        if(!resource.exists()) {
+          throw new RuntimeException("Chave publica nao encontrada");
+    }
+
+
+
+
+
+
+        String publicKeyPEM = new String(resource.getInputStream().readAllBytes())
                 .replace("-----BEGIN PUBLIC KEY-----", "")
                 .replace("-----END PUBLIC KEY-----", "")
                 .replaceAll("\\s", "");
