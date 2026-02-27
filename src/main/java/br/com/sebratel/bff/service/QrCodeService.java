@@ -1,5 +1,6 @@
 package br.com.sebratel.bff.service;
 
+import br.com.sebratel.bff.dto.QrCodeInputDTO;
 import br.com.sebratel.bff.dto.QrCodeOutputDTO;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
@@ -14,11 +15,10 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.Cipher;
 import java.io.ByteArrayOutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.KeyFactory;
+import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.HashMap;
@@ -29,20 +29,12 @@ public class QrCodeService {
 
     private static final Logger logger = LoggerFactory.getLogger(QrCodeService.class);
 
-    public QrCodeOutputDTO gerarQrCodeParaFuncionario(String jsonFuncionario) throws Exception {
-        // 1. Localizar Chave Pública em ~/.ssh/id_rsa_public.pem
-
+    public QrCodeOutputDTO gerarQrCodeParaFuncionario(QrCodeInputDTO jsonFuncionario) throws Exception {
         ClassPathResource resource = new ClassPathResource("id_rsa_public.pem");
 
         if(!resource.exists()) {
           throw new RuntimeException("Chave publica nao encontrada");
     }
-
-
-
-
-
-
         String publicKeyPEM = new String(resource.getInputStream().readAllBytes())
                 .replace("-----BEGIN PUBLIC KEY-----", "")
                 .replace("-----END PUBLIC KEY-----", "")
@@ -58,7 +50,7 @@ public class QrCodeService {
         Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
 
-        byte[] encryptedBytes = cipher.doFinal(jsonFuncionario.getBytes());
+        byte[] encryptedBytes = cipher.doFinal(jsonFuncionario.getJson().getBytes());
         String encryptedBase64 = Base64.getEncoder().encodeToString(encryptedBytes);
 
         logger.info("JSON encriptado com sucesso. Tamanho da string: {}", encryptedBase64.length());
@@ -89,6 +81,43 @@ public class QrCodeService {
             MatrixToImageWriter.writeToStream(bitMatrix, "PNG", baos);
             byte[] imageBytes = baos.toByteArray();
             return "data:image/png;base64," + Base64.getEncoder().encodeToString(imageBytes);
+        }
+    }
+
+    public String decryptarQrCode(String encryptedData) throws Exception {
+        try {
+            ClassPathResource resource = new ClassPathResource("id_rsa_private.pem");
+
+            if (!resource.exists()) {
+                throw new RuntimeException("Chave privada não encontrada nos resources!");
+            }
+
+            String privateKeyPEM = new String(resource.getInputStream().readAllBytes())
+                    .replace("-----BEGIN PRIVATE KEY-----", "")
+                    .replace("-----END PRIVATE KEY-----", "")
+                    .replaceAll("\\s", "");
+
+            // 2. Preparar a Chave Privada (Formato PKCS8)
+            byte[] keyBytes = Base64.getDecoder().decode(privateKeyPEM);
+            PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            PrivateKey privateKey = kf.generatePrivate(spec);
+
+            // 3. Configurar o Cipher para Desencriptar
+            // IMPORTANTE: O algoritmo e o padding devem ser IDÊNTICOS aos usados na encriptação
+            Cipher decryptCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
+            decryptCipher.init(Cipher.DECRYPT_MODE, privateKey);
+
+            // 4. Decodificar o Base64 e Desencriptar
+            byte[] encryptedBytes = Base64.getDecoder().decode(encryptedData);
+            byte[] decryptedBytes = decryptCipher.doFinal(encryptedBytes);
+
+            // 5. Retornar o JSON original como String
+            return new String(decryptedBytes, "UTF-8");
+
+        } catch (Exception e) {
+            logger.error("Erro ao desencriptar dados do QR Code: {}", e.getMessage());
+            throw new RuntimeException("Falha na autenticação dos dados: Código inválido ou chave incorreta.");
         }
     }
 }
