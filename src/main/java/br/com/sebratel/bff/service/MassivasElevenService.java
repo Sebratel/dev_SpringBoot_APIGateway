@@ -117,13 +117,13 @@ public class MassivasElevenService {
         formData.add("assignment_description", input.getAssignmentDescription());
         formData.add("maintenance_date", input.getMaintenanceDate().format(DATE_FORMATTER));
         formData.add("maintenance_time", input.getMaintenanceTime().format(TIME_FORMATTER));
-        formData.add("send_email", input.getSendEmail().toString());
-        formData.add("send_sms", String.valueOf(input.getSendSms()));
-        formData.add("send_push", String.valueOf(input.getSendPush()));
-        formData.add("email_model_id", String.valueOf(input.getEmailModelId()));
-        formData.add("return_email_model_id", String.valueOf(input.getReturnEmailModelId()));
-        formData.add("push_model_id", String.valueOf(input.getPushModelId()));
-        formData.add("return_push_model_id", String.valueOf(input.getReturnPushModelId()));
+        formData.add("send_email", null);
+        formData.add("send_sms", null);
+        formData.add("send_push", null);
+        formData.add("email_model_id", null);
+        formData.add("return_email_model_id", null);
+        formData.add("push_model_id", null);
+        formData.add("return_push_model_id", null);
 
         addListToForm(formData, "access_point_ids[]", input.getAccessPointIds());
 

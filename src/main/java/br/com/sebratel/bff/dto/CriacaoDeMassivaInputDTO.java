@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,16 +24,23 @@ public class CriacaoDeMassivaInputDTO {
     private Integer[] slotOlt;
     private Integer[] portaOlt;
     private Integer[] addressListId;
-    private Integer companyPlaceId;
+    private Integer companyPlaceId = 1;
     private Integer assignmentTypeId;
     private String assignmentDescription;
     private LocalDate maintenanceDate;
     private LocalTime maintenanceTime;
+    @Nullable
     private Integer sendEmail;
+    @Nullable
     private Integer sendSms;
+    @Nullable
     private Integer emailModelId;
+    @Nullable
     private Integer returnEmailModelId;
+    @Nullable
     private Integer sendPush;
+    @Nullable
     private Integer pushModelId;
+    @Nullable
     private Integer returnPushModelId;
 }
