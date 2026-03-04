@@ -4,12 +4,10 @@ import br.com.sebratel.bff.dto.ConfirmacaoEllevenDTO;
 import br.com.sebratel.bff.dto.CriacaoDeMassivaInputDTO;
 import br.com.sebratel.bff.dto.CriacaoDeMassivaOutputDTO;
 import br.com.sebratel.bff.dto.MassivaCriadaOutputDTO;
-import br.com.sebratel.bff.enums.VoalleHeaderEnums;
 import br.com.sebratel.bff.exceptions.IntegrationEllevenException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -28,6 +26,13 @@ public class MassivasElevenService {
     private final WebClient webClient;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    private static final String send_email = "1";
+    private static final String send_sms = "0";
+    private static final String email_model_id = "12";
+    private static final String return_email_model_id = "null";
+    private static final String send_push = "1";
+    private static final String push_model_id = "5";
+    private static final String return_push_model_id = "null";
 
     @Autowired
     public MassivasElevenService(WebClient webClient) {
@@ -39,13 +44,19 @@ public class MassivasElevenService {
 
         // 1. Criação inicial
         MassivaCriadaOutputDTO massivaCriada = this.criarNovaMassivaNoBanco(input.getStartDate(), input.getStartTime());
+        log.info("Massiva criada com id {}", massivaCriada.getId());
         String massivaId = massivaCriada.getId();
         log.info("Massiva criada com sucesso. ID Gerado: {}", massivaId);
 
         // 2. Pontos de impacto
         log.debug("Configurando pontos de impacto para a massiva ID: {}", massivaId);
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            log.info("A pausa foi interrompida!");
+        }
         ConfirmacaoEllevenDTO confImpacto = this.setarPontosDeImpacto(
-                Integer.valueOf(massivaId),
+                massivaId,
                 input.getAccessPointIds(),
                 input.getSlotOlt(),
                 input.getPortaOlt(),
@@ -56,20 +67,36 @@ public class MassivasElevenService {
         // 3. Conclusão e dados adicionais
         log.debug("Finalizando configuração de dados adicionais e notificações para ID: {}", massivaId);
         ConfirmacaoEllevenDTO confFinal = this.setarLugarDataEDadosAdicionais(massivaId, input);
+
         validarResposta(confFinal, "Finalização da massiva");
 
+        assert confFinal.getMessage() != null;
+        String protocolo = confFinal.getMessage().split("Protocolo: ")[1];
+        log.info("Protocolo criado {}", protocolo);
         log.info("Processo de criação de massiva ID: {} concluído com sucesso.", massivaId);
 
-        // Mantendo a lógica original de retorno null conforme solicitado
-        return null;
+        return CriacaoDeMassivaOutputDTO.builder()
+                .id(massivaId).input(input)
+                .send_email(send_email)
+                .send_sms(send_sms)
+                .email_model_id(email_model_id)
+                .return_email_model_id(return_email_model_id)
+                .send_push(send_push)
+                .push_model_id(push_model_id)
+                .return_push_model_id(return_push_model_id)
+                .protocolo(protocolo)
+                .build();
+
     }
 
     private void validarResposta(ConfirmacaoEllevenDTO resposta, String etapa) {
-        if (resposta == null || !"success".equalsIgnoreCase(resposta.getSuccess())) {
-            String detalhe = (resposta != null) ? resposta.getSuccess() : "Corpo da resposta nulo";
+        log.info(resposta.toString());
+        if (!resposta.isSuccess()) {
+            String detalhe = "Success is false";
             log.error("Falha na etapa de integração: {}. Detalhe: {}", etapa, detalhe);
             throw new IntegrationEllevenException(String.format("Erro no Elleven em '%s': %s", etapa, detalhe));
         }
+        log.debug("Sucesso em validar a resposta");
     }
 
     private MassivaCriadaOutputDTO criarNovaMassivaNoBanco(LocalDate data, LocalTime hora) {
@@ -80,8 +107,6 @@ public class MassivasElevenService {
 
         return webClient.post()
                 .uri("/massive_incidents/createOrUpdateMassive")
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .header(VoalleHeaderEnums.X_REQUESTED_WITH, VoalleHeaderEnums.XML_HTTP_REQUEST)
                 .bodyValue(formData)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, response -> handleHttpError("criação inicial", response))
@@ -89,24 +114,34 @@ public class MassivasElevenService {
                 .block();
     }
 
-    private ConfirmacaoEllevenDTO setarPontosDeImpacto(Integer id, Integer[] apIds, Integer[] slots, Integer[] ports, Integer[] addrs) {
+    private ConfirmacaoEllevenDTO setarPontosDeImpacto(String id, Integer[] apIds, Integer[] slots, Integer[] ports, Integer[] addrs) {
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-        formData.add("massive_incident_id", id.toString());
+        formData.add("massive_incident_id", id);
+
+        // Logs de debug para rastrear a volumetria dos dados enviados
+        log.debug("Mapeando dados: APs={}, Slots={}, Portas={}, Endereços={}",
+                apIds.length, slots.length, ports.length, addrs.length);
 
         addListToForm(formData, "access_point_ids[]", apIds);
         addListToForm(formData, "slot_olt[]", slots);
         addListToForm(formData, "port_olt[]", ports);
         addListToForm(formData, "address_list_id[]", addrs);
 
-        return webClient.post()
+        ConfirmacaoEllevenDTO response = webClient.post()
                 .uri("/massive_incidents/saveMassiveConnections")
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .header(VoalleHeaderEnums.X_REQUESTED_WITH, VoalleHeaderEnums.XML_HTTP_REQUEST)
                 .bodyValue(formData)
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, response -> handleHttpError("configuração de conexões", response))
+                .onStatus(HttpStatusCode::isError, clientResponse -> {
+                    log.error("Erro na requisição externa ao salvar conexões para o incidente {}. Status: {}",
+                            id, clientResponse.statusCode());
+                    return handleHttpError("configuração de conexões", clientResponse);
+                })
                 .bodyToMono(ConfirmacaoEllevenDTO.class)
                 .block();
+
+        log.info("Configuração de pontos de impacto concluída com sucesso para o incidente ID: {}", id);
+
+        return response;
     }
 
     private ConfirmacaoEllevenDTO setarLugarDataEDadosAdicionais(String id, CriacaoDeMassivaInputDTO input) {
@@ -117,20 +152,18 @@ public class MassivasElevenService {
         formData.add("assignment_description", input.getAssignmentDescription());
         formData.add("maintenance_date", input.getMaintenanceDate().format(DATE_FORMATTER));
         formData.add("maintenance_time", input.getMaintenanceTime().format(TIME_FORMATTER));
-        formData.add("send_email", null);
-        formData.add("send_sms", null);
-        formData.add("send_push", null);
-        formData.add("email_model_id", null);
-        formData.add("return_email_model_id", null);
-        formData.add("push_model_id", null);
-        formData.add("return_push_model_id", null);
+        formData.add("send_email", send_email);
+        formData.add("send_sms", send_sms);
+        formData.add("email_model_id", email_model_id);
+        formData.add("return_email_model_id", return_email_model_id);
+        formData.add("send_push", send_push);
+        formData.add("push_model_id", push_model_id);
+        formData.add("return_push_model_id", return_push_model_id);
 
         addListToForm(formData, "access_point_ids[]", input.getAccessPointIds());
 
         return webClient.post()
                 .uri(uri -> uri.path("/massive_incidents/concludeMassiveIncident/{id}").build(id))
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .header(VoalleHeaderEnums.X_REQUESTED_WITH, VoalleHeaderEnums.XML_HTTP_REQUEST)
                 .bodyValue(formData)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, response -> handleHttpError("conclusão", response))

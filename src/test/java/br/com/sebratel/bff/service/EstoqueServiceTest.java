@@ -32,7 +32,7 @@ class EstoqueServiceTest {
         when(view.getPossui()).thenReturn(10);
         when(view.getId()).thenReturn(100L);
 
-        when(repository.findEstoqueByTecnicoNative("João Silva")).thenReturn(List.of(view));
+        when(repository.executeNativeQuery("João Silva")).thenReturn(List.of(view));
 
         List<EstoqueTecnicoDTO> resultado = service.buscarEstoquePorTecnico("João Silva");
 
@@ -46,7 +46,7 @@ class EstoqueServiceTest {
         assertEquals(10L, dto.possui()); // LongValue de 10.5 é 10
         assertEquals(100L, dto.id());
 
-        verify(repository, times(1)).findEstoqueByTecnicoNative("João Silva");
+        verify(repository, times(1)).executeNativeQuery("João Silva");
     }
 
     @Test
@@ -54,7 +54,7 @@ class EstoqueServiceTest {
         EstoqueProjection view = mock(EstoqueProjection.class);
         when(view.getPossui()).thenReturn(null);
 
-        when(repository.findEstoqueByTecnicoNative(anyString())).thenReturn(List.of(view));
+        when(repository.executeNativeQuery(anyString())).thenReturn(List.of(view));
 
         List<EstoqueTecnicoDTO> resultado = service.buscarEstoquePorTecnico("Técnico");
 
@@ -63,13 +63,13 @@ class EstoqueServiceTest {
 
     @Test
     void deveRetornarListaVaziaQuandoNaoHouverDados() {
-        when(repository.findEstoqueByTecnicoNative(anyString())).thenReturn(List.of());
+        when(repository.executeNativeQuery(anyString())).thenReturn(List.of());
 
         List<EstoqueTecnicoDTO> resultado = service.buscarEstoquePorTecnico("Qualquer");
 
         assertNotNull(resultado);
         assertTrue(resultado.isEmpty());
-        verify(repository, times(1)).findEstoqueByTecnicoNative("Qualquer");
+        verify(repository, times(1)).executeNativeQuery("Qualquer");
     }
 
     @Test
@@ -79,7 +79,7 @@ class EstoqueServiceTest {
         when(view.getDescricao()).thenReturn(null);
         when(view.getId()).thenReturn(null);
 
-        when(repository.findEstoqueByTecnicoNative(anyString())).thenReturn(List.of(view));
+        when(repository.executeNativeQuery(anyString())).thenReturn(List.of(view));
 
         List<EstoqueTecnicoDTO> resultado = service.buscarEstoquePorTecnico("Técnico");
 

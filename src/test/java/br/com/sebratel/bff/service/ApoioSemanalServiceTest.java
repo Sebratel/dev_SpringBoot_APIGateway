@@ -47,7 +47,7 @@ class ApoioSemanalServiceTest {
 
         when(repository.findMergedContractData()).thenReturn(List.of(p1, p2, p3));
 
-        List<RelatorioFinalDTO> resultado = service.getDadosCompletosCache();
+        List<RelatorioFinalDTO> resultado = service.streamRelatorioPorVendedor("C1").toList();
 
         assertEquals(2, resultado.size());
         assertEquals("Janeiro", resultado.get(0).mesDaCriacao());
@@ -73,7 +73,7 @@ class ApoioSemanalServiceTest {
 
             // Injetando dados via Mockito para simular a chamada ao método cacheado internamente
             ApoioSemanalService serviceSpy = spy(service);
-            doReturn(List.of(dtoMatch, dtoVendedorErrado, dtoMesErrado)).when(serviceSpy).getDadosCompletosCache();
+            doReturn(List.of(dtoMatch, dtoVendedorErrado, dtoMesErrado)).when(serviceSpy).streamRelatorioPorVendedor("C1");
 
             Stream<RelatorioFinalDTO> resultado = serviceSpy.streamRelatorioPorVendedor("  vendedor teste  ");
 
@@ -90,7 +90,7 @@ class ApoioSemanalServiceTest {
                 null, null, "1", null, "C1", "FTTH", "Ativo", null, "Janeiro");
 
         ApoioSemanalService serviceSpy = spy(service);
-        doReturn(List.of(dtoVendedorNulo)).when(serviceSpy).getDadosCompletosCache();
+        doReturn(List.of(dtoVendedorNulo)).when(serviceSpy).streamRelatorioPorVendedor("C1");
 
         Stream<RelatorioFinalDTO> resultado = serviceSpy.streamRelatorioPorVendedor("QUALQUER");
 
@@ -106,7 +106,7 @@ class ApoioSemanalServiceTest {
 
         when(repository.findMergedContractData()).thenReturn(List.of(p));
 
-        List<RelatorioFinalDTO> resultado = service.getDadosCompletosCache();
+        List<RelatorioFinalDTO> resultado = service.streamRelatorioPorVendedor("C1").toList();
 
         // Verifica se "maio" virou "Maio" (Primeira letra maiúscula)
         assertEquals("Maio", resultado.get(0).mesDaCriacao());
