@@ -48,6 +48,26 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, "Erro de validação nos dados enviados.", request, errors);
     }
 
+    // 1. Trata quando o corpo da requisição está faltando ou é inválido (Erro 400)
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleMessageNotReadable(
+            org.springframework.http.converter.HttpMessageNotReadableException ex,
+            HttpServletRequest request) {
+
+        String errorMessage = "Corpo da requisição ausente ou inválido.";
+        return buildResponse(HttpStatus.BAD_REQUEST, errorMessage, request, null);
+    }
+
+    // 2. Trata quando o método HTTP está errado (ex: GET em vez de POST) (Erro 405)
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiError> handleMethodNotSupported(
+            org.springframework.web.HttpRequestMethodNotSupportedException ex,
+            HttpServletRequest request) {
+
+        String message = String.format("O método %s não é suportado para este endpoint.", ex.getMethod());
+        return buildResponse(HttpStatus.METHOD_NOT_ALLOWED, message, request, null);
+    }
+
 
     private ResponseEntity<ApiError> buildResponse(
             HttpStatus status,

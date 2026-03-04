@@ -14,62 +14,25 @@ import reactor.core.publisher.Mono;
 @Configuration
 public class WebClientConfig {
 
-    private final OAuth2Filter oAuth2Filter;
-
-    public WebClientConfig(OAuth2Filter oAuth2Filter) {
-        this.oAuth2Filter = oAuth2Filter;
-    }
-
     @Bean
     public WebClient webClient() {
         return WebClient.builder()
                 .baseUrl("https://erp-staging.sebratel.net.br")
-                // Headers fixos de compatibilidade extraídos do seu CURL
                 .defaultHeader(HttpHeaders.ACCEPT, "*/*")
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-                .defaultHeader(VoalleHeaderEnums.X_REQUESTED_WITH, VoalleHeaderEnums.XML_HTTP_REQUEST)
-                .defaultHeader(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36")
-                .defaultHeader(HttpHeaders.COOKIE, "SYNSUITE=pbepp6bellbe7at5rhh44m5rq1")
-                .defaultHeader(HttpHeaders.ORIGIN, "https://erp-staging.sebratel.net.br")
-                .defaultHeader(HttpHeaders.REFERER, "https://erp-staging.sebratel.net.br/network_maintenances")
-
-                .filter(addBearerToken())
-                .filter(retryOnUnauthorized())
-
+                .defaultHeader("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7")
+                .defaultHeader("Connection", "keep-alive")
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8")
+                .defaultHeader("Origin", "https://erp-staging.sebratel.net.br")
+                .defaultHeader("Referer", "https://erp-staging.sebratel.net.br/network_maintenances")
+                .defaultHeader("Sec-Fetch-Dest", "empty")
+                .defaultHeader("Sec-Fetch-Mode", "cors")
+                .defaultHeader("Sec-Fetch-Site", "same-origin")
+                .defaultHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36")
+                .defaultHeader("X-Requested-With", "XMLHttpRequest")
+                .defaultHeader("sec-ch-ua", "\"Not:A-Brand\";v=\"99\", \"Google Chrome\";v=\"145\", \"Chromium\";v=\"145\"")
+                .defaultHeader("sec-ch-ua-mobile", "?0")
+                .defaultHeader("sec-ch-ua-platform", "\"Windows\"")
+                .defaultHeader(HttpHeaders.COOKIE, "_hjSessionUser_5073910=eyJpZCI6IjIzNTcyMGQ2LTVjOTMtNTUzMi05NGU1LWU1NWQ0YzJkZTE1OCIsImNyZWF0ZWQiOjE3NzI2MjkxMjMzNTQsImV4aXN0aW5nIjp0cnVlfQ==; _hjSession_5073910=eyJpZCI6IjYyOGEyMjM4LTVjZDgtNGRjYi1hMDVkLTEwYzlkZGZlZWU1ZiIsImMiOjE3NzI2MzU1ODcwNTUsInMiOjAsInIiOjAsInNiIjowLCJzciI6MCwic2UiOjAsImZzIjowLCJzcCI6MX0=; SYNSUITE=p0e98ioh96a1f3u30d68q9ugi0")
                 .build();
-    }
-
-    /**
-     * Interceptor que adiciona o Header Authorization em cada chamada
-     */
-    private ExchangeFilterFunction addBearerToken() {
-        return (request, next) -> {
-            String token = oAuth2Filter.getCachedToken();
-            if (token != null) {
-                request = ClientRequest.from(request)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                        .build();
-            }
-            return next.exchange(request);
-        };
-    }
-
-    /**
-     * Interceptor de resiliência: Se receber 401, renova o token e tenta de novo uma vez.
-     */
-    private ExchangeFilterFunction retryOnUnauthorized() {
-        return (request, next) -> next.exchange(request)
-                .flatMap(response -> {
-                    if (response.statusCode() == HttpStatus.UNAUTHORIZED) {
-                        return oAuth2Filter.renewToken()
-                                .flatMap(newToken -> {
-                                    ClientRequest retryRequest = ClientRequest.from(request)
-                                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + newToken)
-                                            .build();
-                                    return next.exchange(retryRequest);
-                                });
-                    }
-                    return Mono.just(response);
-                });
     }
 }
