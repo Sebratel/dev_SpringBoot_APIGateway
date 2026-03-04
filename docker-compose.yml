@@ -1,17 +1,15 @@
 services:
   bff-app:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     container_name: bff-java-service
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://186.219.128.251:5432/dbemp00100
-      - SPRING_DATASOURCE_USERNAME=cliente_s
-      - SPRING_DATASOURCE_PASSWORD=mHWIg8o1V:4v
-      - SPRING_DATA_REDIS_HOST=redis-cache-java
-      - SPRING_DATA_REDIS_PORT=6379
+      - REDIS_HOST=redis-cache-java
       - SPRING_PROFILES_ACTIVE=default
     depends_on:
       - redis-cache-java

@@ -2,8 +2,6 @@ package br.com.sebratel.bff.repository.erp.comercial;
 
 import br.com.sebratel.bff.model.ErpContract;
 import br.com.sebratel.bff.repository.erp.projections.comercial.PlanilhaInstalacaoProjection;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -13,10 +11,6 @@ import java.util.stream.Stream;
 
 @Repository
 public interface RelatorioPlanilhaRepository extends JpaRepository<ErpContract, Long> {
-
-
-     Logger logger = LoggerFactory.getLogger(RelatorioPlanilhaRepository.class);
-
     @Query(value = """
         WITH PERSONALIZADO AS (
             SELECT 

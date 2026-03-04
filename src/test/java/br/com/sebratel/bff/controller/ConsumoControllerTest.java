@@ -1,0 +1,65 @@
+package br.com.sebratel.bff.controller;
+
+import br.com.sebratel.bff.dto.ConsumoDTO;
+import br.com.sebratel.bff.service.ConsumoService;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(ConsumoController.class)
+@AutoConfigureMockMvc(addFilters = false)
+class ConsumoControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private ConsumoService consumoService;
+
+    @Test
+    @DisplayName("Deve retornar 200 ao listar consumo alto")
+    void getConsumoAlto_Sucesso() throws Exception {
+        ConsumoDTO dto = new ConsumoDTO("String", "String", "String", "String", 2.0, 3.0, 4.0);
+        List<ConsumoDTO> lista = List.of(dto);
+
+        when(consumoService.listarConsumoAlto()).thenReturn(lista);
+
+        mockMvc.perform(get("/api/v1/consumo-alto")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    @DisplayName("Deve retornar 200 ao listar consumo alto paginado")
+    void getConsumoAltoPaginado_Sucesso() throws Exception {
+        ConsumoDTO dto = new ConsumoDTO("String", "String", "String", "String", 2.0, 3.0, 4.0);
+        Page<ConsumoDTO> page = new PageImpl<>(List.of(dto), PageRequest.of(0, 20), 1);
+
+        when(consumoService.listarConsumoAltoPaginado(anyInt(), anyInt())).thenReturn(page);
+
+        mockMvc.perform(get("/api/v1/consumo-alto-paginado")
+                        .param("page", "0")
+                        .param("size", "20")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.totalElements").value(1));
+    }
+}

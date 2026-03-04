@@ -29,8 +29,4 @@ public interface EstoqueRepository extends JpaRepository<ErpContract, Long> {
         """, nativeQuery = true)
     List<EstoqueProjection> executeNativeQuery(@Param("nomeTecnico") String nomeTecnico);
 
-    default List<EstoqueProjection> findEstoqueByTecnicoNative(String nomeTecnico) {
-        System.out.println(">>> Executando query para técnico: " + nomeTecnico);
-        return executeNativeQuery(nomeTecnico);
-    }
 }
