@@ -6,8 +6,6 @@ services:
     container_name: bff-java-service
     ports:
       - "8080:8080"
-    env_file:
-      - .env
     environment:
       - REDIS_HOST=redis-cache-java
       - SPRING_PROFILES_ACTIVE=default
