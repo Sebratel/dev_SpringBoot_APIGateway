@@ -7,6 +7,7 @@ import br.com.sebratel.bff.dto.MassivaCriadaOutputDTO;
 import br.com.sebratel.bff.exceptions.IntegrationEllevenException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -34,6 +35,7 @@ public class MassivasElevenService {
     private static final String push_model_id = "5";
     private static final String return_push_model_id = "null";
 
+
     @Autowired
     public MassivasElevenService(WebClient webClient) {
         this.webClient = webClient;
@@ -43,7 +45,7 @@ public class MassivasElevenService {
         log.info("Iniciando processo de criação de massiva no ERP. Data: {}, Hora: {}", input.getStartDate(), input.getStartTime());
 
         // 1. Criação inicial
-        MassivaCriadaOutputDTO massivaCriada = this.criarNovaMassivaNoBanco(input.getStartDate(), input.getStartTime());
+        MassivaCriadaOutputDTO massivaCriada = this.criarNovaMassivaNoBanco(input.getStartDate(), input.getStartTime(), input.getCookieString());
         log.info("Massiva criada com id {}", massivaCriada.getId());
         String massivaId = massivaCriada.getId();
         log.info("Massiva criada com sucesso. ID Gerado: {}", massivaId);
@@ -60,7 +62,8 @@ public class MassivasElevenService {
                 input.getAccessPointIds(),
                 input.getSlotOlt(),
                 input.getPortaOlt(),
-                input.getAddressListId()
+                input.getAddressListId(),
+                input.getCookieString()
         );
         validarResposta(confImpacto, "Adição de pontos de impacto");
 
@@ -99,7 +102,7 @@ public class MassivasElevenService {
         log.debug("Sucesso em validar a resposta");
     }
 
-    private MassivaCriadaOutputDTO criarNovaMassivaNoBanco(LocalDate data, LocalTime hora) {
+    private MassivaCriadaOutputDTO criarNovaMassivaNoBanco(LocalDate data, LocalTime hora, String cookieString) {
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("id", "");
         formData.add("start_date", data.format(DATE_FORMATTER));
@@ -107,6 +110,7 @@ public class MassivasElevenService {
 
         return webClient.post()
                 .uri("/massive_incidents/createOrUpdateMassive")
+                .header(HttpHeaders.COOKIE, cookieString)
                 .bodyValue(formData)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, response -> handleHttpError("criação inicial", response))
@@ -114,7 +118,7 @@ public class MassivasElevenService {
                 .block();
     }
 
-    private ConfirmacaoEllevenDTO setarPontosDeImpacto(String id, Integer[] apIds, Integer[] slots, Integer[] ports, Integer[] addrs) {
+    private ConfirmacaoEllevenDTO setarPontosDeImpacto(String id, Integer[] apIds, Integer[] slots, Integer[] ports, Integer[] addrs, String cookieString) {
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("massive_incident_id", id);
 
@@ -129,6 +133,7 @@ public class MassivasElevenService {
 
         ConfirmacaoEllevenDTO response = webClient.post()
                 .uri("/massive_incidents/saveMassiveConnections")
+                .header(HttpHeaders.COOKIE, cookieString)
                 .bodyValue(formData)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, clientResponse -> {
@@ -164,6 +169,7 @@ public class MassivasElevenService {
 
         return webClient.post()
                 .uri(uri -> uri.path("/massive_incidents/concludeMassiveIncident/{id}").build(id))
+                .header(HttpHeaders.COOKIE, input.getCookieString())
                 .bodyValue(formData)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, response -> handleHttpError("conclusão", response))

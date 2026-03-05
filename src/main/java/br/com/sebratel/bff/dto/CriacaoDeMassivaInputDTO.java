@@ -49,4 +49,8 @@ public class CriacaoDeMassivaInputDTO {
     @NotNull(message = "O horário de manutenção é obrigatório")
     @JsonFormat(pattern = "HH:mm")
     private LocalTime maintenanceTime;
+
+    @NotNull
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String cookieString;
 }

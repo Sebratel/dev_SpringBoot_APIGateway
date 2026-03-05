@@ -32,7 +32,6 @@ public class WebClientConfig {
                 .defaultHeader("sec-ch-ua", "\"Not:A-Brand\";v=\"99\", \"Google Chrome\";v=\"145\", \"Chromium\";v=\"145\"")
                 .defaultHeader("sec-ch-ua-mobile", "?0")
                 .defaultHeader("sec-ch-ua-platform", "\"Windows\"")
-                .defaultHeader(HttpHeaders.COOKIE, "_hjSessionUser_5073910=eyJpZCI6IjIzNTcyMGQ2LTVjOTMtNTUzMi05NGU1LWU1NWQ0YzJkZTE1OCIsImNyZWF0ZWQiOjE3NzI2MjkxMjMzNTQsImV4aXN0aW5nIjp0cnVlfQ==; _hjSession_5073910=eyJpZCI6IjYyOGEyMjM4LTVjZDgtNGRjYi1hMDVkLTEwYzlkZGZlZWU1ZiIsImMiOjE3NzI2MzU1ODcwNTUsInMiOjAsInIiOjAsInNiIjowLCJzciI6MCwic2UiOjAsImZzIjowLCJzcCI6MX0=; SYNSUITE=p0e98ioh96a1f3u30d68q9ugi0")
                 .build();
     }
 }
