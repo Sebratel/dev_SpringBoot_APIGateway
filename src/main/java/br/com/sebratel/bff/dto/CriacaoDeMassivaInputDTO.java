@@ -1,46 +1,56 @@
 package br.com.sebratel.bff.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Data
+@Builder // Facilita a criação em testes
 @NoArgsConstructor
 @AllArgsConstructor
 public class CriacaoDeMassivaInputDTO {
-    @JsonProperty("start_date")
-    @DateTimeFormat(pattern = "dd/MM/yyyy")
+
+    @NotNull(message = "A data de início (startDate) é obrigatória")
+    @JsonFormat(pattern = "dd/MM/yyyy") // Garante que o Jackson entenda o formato no JSON
     private LocalDate startDate;
-    @JsonProperty("start_time")
-    @DateTimeFormat(pattern = "HH:mm")
+
+    @NotNull(message = "O horário de início (startTime) é obrigatório")
+    @JsonFormat(pattern = "HH:mm")
     private LocalTime startTime;
+
+    @NotEmpty(message = "É necessário informar ao menos um ID de ponto de acesso")
     private Integer[] accessPointIds;
+
     private Integer[] slotOlt;
     private Integer[] portaOlt;
     private Integer[] addressListId;
+
+    @Builder.Default
     private Integer companyPlaceId = 1;
+
     private Integer assignmentTypeId;
+
+    @NotBlank(message = "A descrição da designação não pode estar em branco")
     private String assignmentDescription;
+
+    @NotNull(message = "A data de manutenção é obrigatória")
+    @JsonFormat(pattern = "dd/MM/yyyy")
     private LocalDate maintenanceDate;
+
+    @NotNull(message = "O horário de manutenção é obrigatório")
+    @JsonFormat(pattern = "HH:mm")
     private LocalTime maintenanceTime;
-    @Nullable
-    private Integer sendEmail;
-    @Nullable
-    private Integer sendSms;
-    @Nullable
-    private Integer emailModelId;
-    @Nullable
-    private Integer returnEmailModelId;
-    @Nullable
-    private Integer sendPush;
-    @Nullable
-    private Integer pushModelId;
-    @Nullable
-    private Integer returnPushModelId;
+
+    @NotNull
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String cookieString;
 }

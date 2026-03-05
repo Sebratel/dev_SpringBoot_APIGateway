@@ -33,3 +33,8 @@ build/
 .vscode/
 
 .env
+
+
+aj*.txt
+*.log.*
+logs/**
