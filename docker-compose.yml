@@ -12,8 +12,8 @@ services:
     depends_on:
       - redis-cache-java
 
-  redis-cache-java:
+  redis_pg_new:
     image: redis:alpine
-    container_name: redis-cache-java
+    container_name: redis_pg_new
     ports:
       - "6379:6379"
