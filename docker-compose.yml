@@ -10,7 +10,7 @@ services:
       - REDIS_HOST=redis_pg_new
       - SPRING_PROFILES_ACTIVE=default
     depends_on:
-      - redis-cache-java
+      - redis_pg_new
 
   redis_pg_new:
     image: redis:alpine
