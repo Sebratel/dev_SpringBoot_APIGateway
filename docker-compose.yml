@@ -7,7 +7,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - REDIS_HOST=redis-cache-java
+      - REDIS_HOST=redis_pg_new
       - SPRING_PROFILES_ACTIVE=default
     depends_on:
       - redis-cache-java
