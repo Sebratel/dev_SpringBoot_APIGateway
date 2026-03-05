@@ -1,4 +1,3 @@
-
 services:
   bff-app:
     build:
@@ -8,13 +7,24 @@ services:
     ports:
       - "8280:8080"
     environment:
-      - REDIS_HOST=redisjava
-      - SPRING_PROFILES_ACTIVE=default
+      - APP_NAME=${APP_NAME}
+      - SECURITY_USER=${SECURITY_USER}
+      - SECURITY_PASS=${SECURITY_PASS}
+      - ERP_DB_URL=${ERP_DB_URL}
+      - ERP_DB_USER=${ERP_DB_USER}
+      - ERP_DB_PASS=${ERP_DB_PASS}
+      - RADIUS_DB_URL=${RADIUS_DB_URL}
+      - RADIUS_DB_USER=${RADIUS_DB_USER}
+      - RADIUS_DB_PASS=${RADIUS_DB_PASS}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FILE_PATH=${LOG_FILE_PATH}
+      - QRCODE_PASSWORD=${QRCODE_PASSWORD}
     depends_on:
       - redisjava
-
+  
   redisjava:
     image: redis:alpine
     container_name: redisjava
-    ports:
-      - "8301:8301"
+    # Remova os ports se o Redis for acessado apenas internamente
