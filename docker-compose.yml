@@ -4,8 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: bff-java-service
-    network_mode: "host"
-
+    ports:
+      - "8085:8085"
     environment:
       - APP_NAME=${APP_NAME}
       - SECURITY_USER=${SECURITY_USER}
@@ -24,8 +24,7 @@ services:
       - SERVER_PORT=8085
     depends_on:
       - redisjava
-  
+
   redisjava:
     image: redis:alpine
     container_name: redisjava
-    # Remova os ports se o Redis for acessado apenas internamente
