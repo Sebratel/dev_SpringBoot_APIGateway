@@ -3,6 +3,7 @@ package br.com.sebratel.bff.controller;
 import br.com.sebratel.bff.dto.ApiResponse;
 import br.com.sebratel.bff.dto.CriacaoDeMassivaInputDTO;
 import br.com.sebratel.bff.dto.CriacaoDeMassivaOutputDTO;
+import br.com.sebratel.bff.dto.ListaDeAfetadosDTO;
 import br.com.sebratel.bff.service.MassivasElevenService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,21 @@ public class MassivasElevenController {
         ApiResponse<CriacaoDeMassivaOutputDTO> response = ApiResponse.<CriacaoDeMassivaOutputDTO>builder()
                 .success(true)
                 .message("Massiva criada com sucesso no ERP.")
+                .data(output)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/enviar-dados-para-native")
+    public ResponseEntity<ApiResponse<ListaDeAfetadosDTO>> enviarListaDosAfetadosParaNative(
+            @Valid @RequestBody ListaDeAfetadosDTO input) {
+
+        ListaDeAfetadosDTO output = massivasElevenService.enviarListaDosAfetadosParaNative(input);
+
+        ApiResponse<ListaDeAfetadosDTO> response = ApiResponse.<ListaDeAfetadosDTO>builder()
+                .success(true)
+                .message("Usuarios listados enviados para native.")
                 .data(output)
                 .build();
 

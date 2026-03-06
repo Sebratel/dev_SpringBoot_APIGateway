@@ -1,10 +1,8 @@
 package br.com.sebratel.bff.service;
 
-import br.com.sebratel.bff.dto.ConfirmacaoEllevenDTO;
-import br.com.sebratel.bff.dto.CriacaoDeMassivaInputDTO;
-import br.com.sebratel.bff.dto.CriacaoDeMassivaOutputDTO;
-import br.com.sebratel.bff.dto.MassivaCriadaOutputDTO;
+import br.com.sebratel.bff.dto.*;
 import br.com.sebratel.bff.exceptions.IntegrationEllevenException;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -191,5 +189,9 @@ public class MassivasElevenService {
                     log.error("Erro HTTP na etapa {}: Status {} - Body: {}", context, response.statusCode(), body);
                     return Mono.error(new RuntimeException("Falha na integração Elleven: " + body));
                 });
+    }
+
+    public ListaDeAfetadosDTO enviarListaDosAfetadosParaNative(@Valid ListaDeAfetadosDTO input) {
+        return null;
     }
 }
