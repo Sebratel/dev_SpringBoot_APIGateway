@@ -11,13 +11,13 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Estágio 2: Runtime (Container leve para rodar)
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
 # Copia apenas o JAR gerado no estágio anterior
 COPY --from=build /app/target/*.jar app.jar
 
-EXPOSE 8080
+EXPOSE 8085
 
 # Melhores práticas: define limites de memória para o Java no container
 ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-Xmx512m", "-jar", "app.jar"]
