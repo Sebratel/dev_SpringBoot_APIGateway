@@ -4,7 +4,8 @@ import br.com.sebratel.bff.dto.ApiResponse;
 import br.com.sebratel.bff.dto.CriacaoDeMassivaInputDTO;
 import br.com.sebratel.bff.dto.CriacaoDeMassivaOutputDTO;
 import br.com.sebratel.bff.dto.ListaDeAfetadosDTO;
-import br.com.sebratel.bff.service.MassivasElevenService;
+import br.com.sebratel.bff.service.massivas.EnviarListaDeAfetadosParaNativeService;
+import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoElevenService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,18 +19,20 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/massivas")
 public class MassivasElevenController {
 
-    private final MassivasElevenService massivasElevenService;
+    private final AdicionarMassivaNoElevenService adicionarMassivaNoElevenService;
+    private final EnviarListaDeAfetadosParaNativeService enviarListaDeAfetadosParaNativeService;
 
     @Autowired
-    public MassivasElevenController(MassivasElevenService massivasElevenService) {
-        this.massivasElevenService = massivasElevenService;
+    public MassivasElevenController(AdicionarMassivaNoElevenService adicionarMassivaNoElevenService, EnviarListaDeAfetadosParaNativeService enviarListaDeAfetadosParaNativeService) {
+        this.adicionarMassivaNoElevenService = adicionarMassivaNoElevenService;
+        this.enviarListaDeAfetadosParaNativeService = enviarListaDeAfetadosParaNativeService;
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<CriacaoDeMassivaOutputDTO>> criarMassivaComDadosDoFlutter(
             @Valid @RequestBody CriacaoDeMassivaInputDTO input) {
 
-        CriacaoDeMassivaOutputDTO output = massivasElevenService.salvarNoBancoERP(input);
+        CriacaoDeMassivaOutputDTO output = adicionarMassivaNoElevenService.salvarNoBancoERP(input);
 
         ApiResponse<CriacaoDeMassivaOutputDTO> response = ApiResponse.<CriacaoDeMassivaOutputDTO>builder()
                 .success(true)
@@ -44,7 +47,7 @@ public class MassivasElevenController {
     public ResponseEntity<ApiResponse<ListaDeAfetadosDTO>> enviarListaDosAfetadosParaNative(
             @Valid @RequestBody ListaDeAfetadosDTO input) {
 
-        ListaDeAfetadosDTO output = massivasElevenService.enviarListaDosAfetadosParaNative(input);
+        ListaDeAfetadosDTO output = enviarListaDeAfetadosParaNativeService.executar(input);
 
         ApiResponse<ListaDeAfetadosDTO> response = ApiResponse.<ListaDeAfetadosDTO>builder()
                 .success(true)

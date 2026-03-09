@@ -24,6 +24,8 @@ services:
       - SERVER_PORT=8085
     depends_on:
       - redisjava
+    volumes:
+      - ./meus-logs:/app/logs
 
   redisjava:
     image: redis:alpine
