@@ -5,17 +5,29 @@ services:
       dockerfile: Dockerfile
     container_name: bff-java-service
     ports:
-      - "8080:8080"
-    env_file:
-      - .env
+      - "8085:8085"
     environment:
-      - REDIS_HOST=redis-cache-java
-      - SPRING_PROFILES_ACTIVE=default
+      - APP_NAME=${APP_NAME}
+      - SECURITY_USER=${SECURITY_USER}
+      - SECURITY_PASS=${SECURITY_PASS}
+      - ERP_DB_URL=${ERP_DB_URL}
+      - ERP_DB_USER=${ERP_DB_USER}
+      - ERP_DB_PASS=${ERP_DB_PASS}
+      - RADIUS_DB_URL=${RADIUS_DB_URL}
+      - RADIUS_DB_USER=${RADIUS_DB_USER}
+      - RADIUS_DB_PASS=${RADIUS_DB_PASS}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FILE_PATH=${LOG_FILE_PATH}
+      - QRCODE_PASSWORD=${QRCODE_PASSWORD}
+      - SERVER_PORT=8085
     depends_on:
-      - redis-cache-java
+      - redisjava
+    volumes:
+      - ./meus-logs:/app/logs
 
-  redis-cache-java:
+  redisjava:
     image: redis:alpine
-    container_name: redis-cache-java
-    ports:
-      - "6379:6379"
+    container_name: redisjava

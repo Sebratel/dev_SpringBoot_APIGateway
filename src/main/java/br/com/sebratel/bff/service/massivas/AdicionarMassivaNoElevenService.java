@@ -1,9 +1,9 @@
-package br.com.sebratel.bff.service;
+package br.com.sebratel.bff.service.massivas;
 
 import br.com.sebratel.bff.dto.ConfirmacaoEllevenDTO;
-import br.com.sebratel.bff.dto.CriacaoDeMassivaInputDTO;
-import br.com.sebratel.bff.dto.CriacaoDeMassivaOutputDTO;
-import br.com.sebratel.bff.dto.MassivaCriadaOutputDTO;
+import br.com.sebratel.bff.dto.massivas.CriacaoDeMassivaInputDTO;
+import br.com.sebratel.bff.dto.massivas.CriacaoDeMassivaOutputDTO;
+import br.com.sebratel.bff.dto.massivas.MassivaCriadaOutputDTO;
 import br.com.sebratel.bff.exceptions.IntegrationEllevenException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -22,22 +23,22 @@ import java.util.Arrays;
 
 @Slf4j
 @Service
-public class MassivasElevenService {
+public class AdicionarMassivaNoElevenService {
 
     private final WebClient webClient;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
-    private static final String send_email = "1";
+    private static final String send_email = "0";
     private static final String send_sms = "0";
-    private static final String email_model_id = "12";
-    private static final String return_email_model_id = "null";
-    private static final String send_push = "1";
-    private static final String push_model_id = "5";
-    private static final String return_push_model_id = "null";
+    private static final String email_model_id = "";
+    private static final String return_email_model_id = "";
+    private static final String send_push = "0";
+    private static final String push_model_id = "";
+    private static final String return_push_model_id = "";
 
 
     @Autowired
-    public MassivasElevenService(WebClient webClient) {
+    public AdicionarMassivaNoElevenService(WebClient webClient) {
         this.webClient = webClient;
     }
 
@@ -164,11 +165,13 @@ public class MassivasElevenService {
         formData.add("send_push", send_push);
         formData.add("push_model_id", push_model_id);
         formData.add("return_push_model_id", return_push_model_id);
-
         addListToForm(formData, "access_point_ids[]", input.getAccessPointIds());
 
+        log.info(formData.toString());
+        String uri = "/massive_incidents/concludeMassiveIncident/" + id;
+        log.info("Realizado post para {}", uri);
         return webClient.post()
-                .uri(uri -> uri.path("/massive_incidents/concludeMassiveIncident/{id}").build(id))
+                .uri(uri)
                 .header(HttpHeaders.COOKIE, input.getCookieString())
                 .bodyValue(formData)
                 .retrieve()
@@ -177,19 +180,19 @@ public class MassivasElevenService {
                 .block();
     }
 
-    // --- MÉTODOS AUXILIARES PARA LIMPEZA E REUSO ---
-
     private void addListToForm(MultiValueMap<String, String> form, String key, Integer[] values) {
         if (values != null) {
             Arrays.stream(values).forEach(v -> form.add(key, String.valueOf(v)));
         }
     }
 
-    private Mono<? extends Throwable> handleHttpError(String context, org.springframework.web.reactive.function.client.ClientResponse response) {
+    private Mono<? extends Throwable> handleHttpError(String context, ClientResponse response) {
         return response.bodyToMono(String.class)
                 .flatMap(body -> {
                     log.error("Erro HTTP na etapa {}: Status {} - Body: {}", context, response.statusCode(), body);
                     return Mono.error(new RuntimeException("Falha na integração Elleven: " + body));
                 });
     }
+
+
 }

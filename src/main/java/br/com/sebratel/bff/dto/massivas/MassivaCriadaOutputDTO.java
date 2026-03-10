@@ -1,4 +1,4 @@
-package br.com.sebratel.bff.dto;
+package br.com.sebratel.bff.dto.massivas;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
