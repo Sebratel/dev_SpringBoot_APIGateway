@@ -41,8 +41,6 @@ public class RefreshTokenMassivasService {
 
     public void fetchIncidentsTask() {
 
-
-
         log.info("Iniciando busca agendada de incidentes...");
 
         WebDriverManager.chromedriver().setup();
@@ -118,8 +116,10 @@ public class RefreshTokenMassivasService {
             System.out.println("Sucesso! Header salvo em network_logs.json");
 
         } catch (Exception e) {
+            log.warn("erro na construção do selenium");
             e.printStackTrace();
         } finally {
+            log.info("Processo de obtensao de token finalizado");
             driver.quit();
         }
     }
