@@ -14,7 +14,6 @@ import org.openqa.selenium.logging.LoggingPreferences;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -40,8 +39,6 @@ public class RefreshTokenMassivasService {
         this.restTemplate = new RestTemplate();
     }
 
-    // Roda a cada 2 horas e 30 minutos
-    @Scheduled(fixedRateString = "${app.schedule.intervalo:9000000}")
     public void fetchIncidentsTask() {
 
 
