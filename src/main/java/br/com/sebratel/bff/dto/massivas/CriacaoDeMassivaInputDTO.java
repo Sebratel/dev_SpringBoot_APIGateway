@@ -1,4 +1,4 @@
-package br.com.sebratel.bff.dto;
+package br.com.sebratel.bff.dto.massivas;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -14,13 +14,13 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Data
-@Builder // Facilita a criação em testes
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class CriacaoDeMassivaInputDTO {
 
     @NotNull(message = "A data de início (startDate) é obrigatória")
-    @JsonFormat(pattern = "dd/MM/yyyy") // Garante que o Jackson entenda o formato no JSON
+    @JsonFormat(pattern = "dd/MM/yyyy")
     private LocalDate startDate;
 
     @NotNull(message = "O horário de início (startTime) é obrigatório")
