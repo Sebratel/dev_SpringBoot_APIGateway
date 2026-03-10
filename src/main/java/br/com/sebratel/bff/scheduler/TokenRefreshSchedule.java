@@ -16,7 +16,7 @@ public class TokenRefreshSchedule {
     }
 
 
-    @Scheduled(fixedRateString = "${app.schedule.intervalo}")
+    @Scheduled(fixedRateString = "${app.schedule.intervalo:90000000}")
     public void executar() {
         refreshTokenMassivasService.fetchIncidentsTask();
     }

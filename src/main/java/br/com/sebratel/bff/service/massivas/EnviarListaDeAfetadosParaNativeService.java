@@ -1,6 +1,6 @@
 package br.com.sebratel.bff.service.massivas;
 
-import br.com.sebratel.bff.dto.ListaDeAfetadosDTO;
+import br.com.sebratel.bff.dto.massivas.ImpactedUsersDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Service
 public class EnviarListaDeAfetadosParaNativeService {
-    public ListaDeAfetadosDTO executar(ListaDeAfetadosDTO input) {
+    public ImpactedUsersDTO executar(ImpactedUsersDTO input) {
         WebClient webClient1 = WebClient.builder()
                 .baseUrl("https://endpoint.native.com.br")
                 .defaultHeader(HttpHeaders.ACCEPT, "*/*")
@@ -24,7 +24,7 @@ public class EnviarListaDeAfetadosParaNativeService {
                 .bodyValue(input)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::handleHttpError)
-                .bodyToMono(ListaDeAfetadosDTO.class)
+                .bodyToMono(ImpactedUsersDTO.class)
                 .block();
     }
 

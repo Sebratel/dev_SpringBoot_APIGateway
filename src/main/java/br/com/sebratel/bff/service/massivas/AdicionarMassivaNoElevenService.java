@@ -1,9 +1,9 @@
 package br.com.sebratel.bff.service.massivas;
 
 import br.com.sebratel.bff.dto.ConfirmacaoEllevenDTO;
-import br.com.sebratel.bff.dto.CriacaoDeMassivaInputDTO;
-import br.com.sebratel.bff.dto.CriacaoDeMassivaOutputDTO;
-import br.com.sebratel.bff.dto.MassivaCriadaOutputDTO;
+import br.com.sebratel.bff.dto.massivas.CriacaoDeMassivaInputDTO;
+import br.com.sebratel.bff.dto.massivas.CriacaoDeMassivaOutputDTO;
+import br.com.sebratel.bff.dto.massivas.MassivaCriadaOutputDTO;
 import br.com.sebratel.bff.exceptions.IntegrationEllevenException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
