@@ -1,10 +1,8 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.dto.ApiResponse;
-import br.com.sebratel.bff.dto.massivas.CriacaoDeMassivaInputDTO;
-import br.com.sebratel.bff.dto.massivas.CriacaoDeMassivaOutputDTO;
-import br.com.sebratel.bff.dto.massivas.EllevenApiResponseDTO;
-import br.com.sebratel.bff.dto.massivas.ImpactedUsersDTO;
+import br.com.sebratel.bff.dto.massivas.*;
+import br.com.sebratel.bff.service.RecuperarTodasAsMassivasPeloBancoService;
 import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoElevenService;
 import br.com.sebratel.bff.service.massivas.EnviarListaDeAfetadosParaNativeService;
 import br.com.sebratel.bff.service.massivas.GetAllMassivesService;
@@ -15,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/massivas")
 @Slf4j
@@ -23,14 +23,16 @@ public class MassivasElevenController {
     private final AdicionarMassivaNoElevenService adicionarMassivaNoElevenService;
     private final EnviarListaDeAfetadosParaNativeService enviarListaDeAfetadosParaNativeService;
     private final GetAllMassivesService getAllMassivesService;
+    private final RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService;
 
     @Autowired
     public MassivasElevenController(AdicionarMassivaNoElevenService adicionarMassivaNoElevenService,
                                     EnviarListaDeAfetadosParaNativeService enviarListaDeAfetadosParaNativeService,
-                                    GetAllMassivesService getAllMassivesService) {
+                                    GetAllMassivesService getAllMassivesService, RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService) {
         this.adicionarMassivaNoElevenService = adicionarMassivaNoElevenService;
         this.enviarListaDeAfetadosParaNativeService = enviarListaDeAfetadosParaNativeService;
         this.getAllMassivesService = getAllMassivesService;
+        this.recuperarTodasAsMassivasPeloBancoService = recuperarTodasAsMassivasPeloBancoService;
     }
 
     @PostMapping
@@ -100,4 +102,25 @@ public class MassivasElevenController {
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
+    @GetMapping("/recuperar-pelo-banco")
+    public ResponseEntity<ApiResponse<List<MassivasBFFOutputDTO>>> recuperarTodasAsMassivasPeloBanco() {
+        try {
+            List<MassivasBFFOutputDTO> output = recuperarTodasAsMassivasPeloBancoService.executar();
+
+            log.info("Massivas recuperadas com sucesso no banco ERP");
+
+            ApiResponse<List<MassivasBFFOutputDTO>> response = ApiResponse.<List<MassivasBFFOutputDTO>>builder()
+                    .success(true)
+                    .message("Massiva criada com sucesso no ERP.")
+                    .data(output)
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            log.error("Erro ao recuperar massivas no banco ERP. {}",  e.getMessage());
+            throw e;
+        }
+    }
+
 }
