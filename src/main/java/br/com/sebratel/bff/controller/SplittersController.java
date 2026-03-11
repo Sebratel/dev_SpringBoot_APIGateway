@@ -2,6 +2,7 @@ package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.dto.splitters.EllevenSplitterResponseDTO;
 import br.com.sebratel.bff.dto.splitters.RecuperarTokenEllevenOutputDTO;
+import br.com.sebratel.bff.service.ListarOltsService;
 import br.com.sebratel.bff.service.ListarSplittersService;
 import br.com.sebratel.bff.service.RecuperarTokenDoUsuarioIntegradorEllevenService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,13 +17,13 @@ public class SplittersController {
 
     private final RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService;
     private final ListarSplittersService listarSplittersService;
-    private final CacheManager cacheManager;
+    private final ListarOltsService listarOltsService;
 
     @Autowired
-    public SplittersController(RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService, ListarSplittersService listarSplittersService, CacheManager cacheManager) {
+    public SplittersController(RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService, ListarSplittersService listarSplittersService, CacheManager cacheManager, ListarOltsService listarOltsService) {
         this.recuperarTokenDoUsuarioIntegradorEllevenService = recuperarTokenDoUsuarioIntegradorEllevenService;
         this.listarSplittersService = listarSplittersService;
-        this.cacheManager = cacheManager;
+        this.listarOltsService = listarOltsService;
     }
 
     @GetMapping("/recuperarToken")
@@ -32,10 +33,14 @@ public class SplittersController {
 
     @GetMapping("/listarSplitters")
     public EllevenSplitterResponseDTO listarSplitters() {
-
         RecuperarTokenEllevenOutputDTO auth = recuperarTokenDoUsuarioIntegradorEllevenService.executar();
         return listarSplittersService.executar(auth.accessToken());
+    }
 
+    @GetMapping("/listarOlts")
+    public EllevenSplitterResponseDTO listarOlts() {
+        RecuperarTokenEllevenOutputDTO auth = recuperarTokenDoUsuarioIntegradorEllevenService.executar();
+        return listarOltsService.executar(auth.accessToken());
     }
 
 }
