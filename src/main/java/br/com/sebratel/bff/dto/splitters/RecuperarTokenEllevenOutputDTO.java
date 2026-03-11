@@ -1,8 +1,8 @@
-package br.com.sebratel.bff.dto;
+package br.com.sebratel.bff.dto.splitters;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record RecuperarTokenEllevenOutput(
+public record RecuperarTokenEllevenOutputDTO(
         @JsonProperty("access_token")
         String accessToken,
 

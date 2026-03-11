@@ -1,11 +1,10 @@
 package br.com.sebratel.bff.service;
 
-import br.com.sebratel.bff.dto.ConfirmacaoEllevenDTO;
 import br.com.sebratel.bff.dto.EllevenCredentialsDTO;
-import br.com.sebratel.bff.dto.RecuperarTokenEllevenOutput;
+import br.com.sebratel.bff.dto.splitters.RecuperarTokenEllevenOutputDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -28,7 +27,8 @@ public class RecuperarTokenDoUsuarioIntegradorEllevenService {
     }
 
 
-    public RecuperarTokenEllevenOutput executar() {
+    @Cacheable(value = "token-de-integracao", key = "'token-static-key'")
+    public RecuperarTokenEllevenOutputDTO executar() {
         String ellevenTokenUrl = "https://erp.sebratel.net.br:45700/connect/token";
         return webClient.post()
                 .uri(ellevenTokenUrl)
@@ -36,7 +36,7 @@ public class RecuperarTokenDoUsuarioIntegradorEllevenService {
                 .body(BodyInserters.fromFormData(credentials.toFormData()))
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, response -> handleHttpError("conclusão", response))
-                .bodyToMono(RecuperarTokenEllevenOutput.class)
+                .bodyToMono(RecuperarTokenEllevenOutputDTO.class)
                 .block();
     }
 
