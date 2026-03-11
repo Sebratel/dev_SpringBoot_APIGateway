@@ -13,7 +13,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/massivas")
@@ -59,7 +62,7 @@ public class MassivasElevenController {
         }
     }
 
-    @PostMapping("/enviar-dados-para-native")
+    @GetMapping("/enviar-dados-para-native")
     public ResponseEntity<ApiResponse<ImpactedUsersDTO>> enviarListaDosAfetadosParaNative(
             @Valid @RequestBody ImpactedUsersDTO input) {
 
@@ -67,14 +70,26 @@ public class MassivasElevenController {
         log.info("Iniciando envio de lista de afetados para Native. [Total de usuários: {}]", totalUsers);
 
         try {
-            ImpactedUsersDTO output = enviarListaDeAfetadosParaNativeService.executar(input);
+//            ImpactedUsersDTO output = enviarListaDeAfetadosParaNativeService.executar(input);
+            ImpactedUsersDTO dadosDeTest = new ImpactedUsersDTO();
+            Map<String, ImpactDetailsDTO> map = new HashMap<>();
 
+            ImpactDetailsDTO impactDetailsDTO = new ImpactDetailsDTO();
+            impactDetailsDTO.setReason("razao");
+            impactDetailsDTO.setEstimateTimeOfRestoration(LocalDateTime.now());
+
+            map.put("lidomarcantarelli253636", impactDetailsDTO);
+
+// CORREÇÃO: Criar um array de Mapas e colocar o seu mapa dentro dele
+            Map<String, ImpactDetailsDTO>[] mapaArray = new Map[]{map};
+
+            dadosDeTest.setImpactedUsers(mapaArray);
             log.info("Envio para Native concluído com sucesso.");
 
             ApiResponse<ImpactedUsersDTO> response = ApiResponse.<ImpactedUsersDTO>builder()
                     .success(true)
                     .message("Usuarios listados enviados para native.")
-                    .data(output)
+                    .data(dadosDeTest)
                     .build();
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -118,7 +133,7 @@ public class MassivasElevenController {
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
-            log.error("Erro ao recuperar massivas no banco ERP. {}",  e.getMessage());
+            log.error("Erro ao recuperar massivas no banco ERP. {}", e.getMessage());
             throw e;
         }
     }
