@@ -1,11 +1,14 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.dto.ApiResponse;
-import br.com.sebratel.bff.dto.massivas.*;
+import br.com.sebratel.bff.dto.massivas.CriacaoDeMassivaInputDTO;
+import br.com.sebratel.bff.dto.massivas.CriacaoDeMassivaOutputDTO;
+import br.com.sebratel.bff.dto.massivas.EllevenApiResponseDTO;
+import br.com.sebratel.bff.dto.massivas.MassivasBFFOutputDTO;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoInputDTO;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoOutputDTO;
-import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoEllevenApiService;
 import br.com.sebratel.bff.service.RecuperarTodasAsMassivasPeloBancoService;
+import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoEllevenApiService;
 import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoEllevenService;
 import br.com.sebratel.bff.service.massivas.EnviarListaDeAfetadosParaNativeService;
 import br.com.sebratel.bff.service.massivas.GetAllMassivesService;
@@ -16,10 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/massivas")
@@ -28,7 +28,6 @@ public class MassivasElevenController {
 
     private final AdicionarMassivaNoEllevenService adicionarMassivaNoEllevenService;
     private final AdicionarMassivaNoEllevenApiService adicionarMassivaNoEllevenApiService;
-    private final EnviarListaDeAfetadosParaNativeService enviarListaDeAfetadosParaNativeService;
     private final GetAllMassivesService getAllMassivesService;
     private final RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService;
 
@@ -38,7 +37,6 @@ public class MassivasElevenController {
                                     GetAllMassivesService getAllMassivesService, RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService) {
         this.adicionarMassivaNoEllevenService = adicionarMassivaNoEllevenService;
         this.adicionarMassivaNoEllevenApiService = adicionarMassivaNoEllevenApiService;
-        this.enviarListaDeAfetadosParaNativeService = enviarListaDeAfetadosParaNativeService;
         this.getAllMassivesService = getAllMassivesService;
         this.recuperarTodasAsMassivasPeloBancoService = recuperarTodasAsMassivasPeloBancoService;
     }
@@ -63,42 +61,6 @@ public class MassivasElevenController {
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
             log.error("Erro ao criar massiva no ERP para o solicitante {}: {}", input.getAssignmentDescription(), e.getMessage());
-            throw e;
-        }
-    }
-
-    @GetMapping("/enviar-dados-para-native")
-    public ResponseEntity<ApiResponse<ImpactedUsersDTO>> enviarListaDosAfetadosParaNative(
-            @Valid @RequestBody ImpactedUsersDTO input) {
-
-        int totalUsers = input.getImpactedUsers() != null ? input.getImpactedUsers().length : 0;
-        log.info("Iniciando envio de lista de afetados para Native. [Total de usuários: {}]", totalUsers);
-
-        try {
-            ImpactedUsersDTO output = enviarListaDeAfetadosParaNativeService.executar(input);
-            ImpactedUsersDTO dadosDeTest = new ImpactedUsersDTO();
-            Map<String, ImpactDetailsDTO> map = new HashMap<>();
-
-            ImpactDetailsDTO impactDetailsDTO = new ImpactDetailsDTO();
-            impactDetailsDTO.setReason("razao");
-            impactDetailsDTO.setEstimateTimeOfRestoration(LocalDateTime.now());
-
-            map.put("lidomarcantarelli253636", impactDetailsDTO);
-
-            Map<String, ImpactDetailsDTO>[] mapaArray = new Map[]{map};
-
-            dadosDeTest.setImpactedUsers(mapaArray);
-            log.info("Envio para Native concluído com sucesso.");
-
-            ApiResponse<ImpactedUsersDTO> response = ApiResponse.<ImpactedUsersDTO>builder()
-                    .success(true)
-                    .message("Usuarios listados enviados para native.")
-                    .data(dadosDeTest)
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.OK).body(response);
-        } catch (Exception e) {
-            log.error("Falha no envio da lista de {} usuários para o Native: {}", totalUsers, e.getMessage());
             throw e;
         }
     }

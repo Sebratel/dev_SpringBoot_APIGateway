@@ -29,7 +29,7 @@ public interface RecuperarTodasAsMassivasPeloBancoRepository extends JpaReposito
                 left join incident_types it on it.id = ai.incident_type_id
                 left join v_users vu on vu.id = a.created_by
                 left join v_users vu2 on vu2.id = a.responsible_id
-            where it.id in (1176, 302, 1257)
+            where it.id in (1176, 302, 1137)
                 and t2.title not in ('Encerrado', 'Cancelado')
             order by id desc
             """, nativeQuery = true)

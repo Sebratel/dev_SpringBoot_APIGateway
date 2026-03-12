@@ -1,0 +1,22 @@
+package br.com.sebratel.bff.repository.afetados.impl;
+
+import br.com.sebratel.bff.model.entity.UsuarioAfetado;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+
+
+@Repository
+public interface UsuarioAfetadoJPARepository extends JpaRepository<UsuarioAfetado, Long> {
+    Optional<UsuarioAfetado> findByPppoe(String pppoe);
+    List<UsuarioAfetado> findByProtocol(Long protocol);
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM assignment_clients WHERE protocol_id = :protocol", nativeQuery = true)
+    Integer deleteByProtocol(Long protocol);
+}
