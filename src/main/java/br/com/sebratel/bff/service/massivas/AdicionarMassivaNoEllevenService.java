@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 @Slf4j
 @Service
-public class AdicionarMassivaNoElevenService {
+public class AdicionarMassivaNoEllevenService {
 
     private final WebClient webClient;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -38,7 +38,7 @@ public class AdicionarMassivaNoElevenService {
 
 
     @Autowired
-    public AdicionarMassivaNoElevenService(WebClient webClient) {
+    public AdicionarMassivaNoEllevenService(WebClient webClient) {
         this.webClient = webClient;
     }
 
