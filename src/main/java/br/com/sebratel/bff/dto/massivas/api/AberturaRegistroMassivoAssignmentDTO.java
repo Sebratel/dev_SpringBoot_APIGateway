@@ -1,11 +1,15 @@
 package br.com.sebratel.bff.dto.massivas.api;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
-class AberturaRegistroMassivoAssignmentDTO {
+public class AberturaRegistroMassivoAssignmentDTO {
     private String title;
     private String description;
-    private String finalDate;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+    private LocalDateTime finalDate;
     private Integer companyPlaceId;
 }

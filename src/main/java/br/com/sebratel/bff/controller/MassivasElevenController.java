@@ -75,7 +75,7 @@ public class MassivasElevenController {
         log.info("Iniciando envio de lista de afetados para Native. [Total de usuários: {}]", totalUsers);
 
         try {
-//            ImpactedUsersDTO output = enviarListaDeAfetadosParaNativeService.executar(input);
+            ImpactedUsersDTO output = enviarListaDeAfetadosParaNativeService.executar(input);
             ImpactedUsersDTO dadosDeTest = new ImpactedUsersDTO();
             Map<String, ImpactDetailsDTO> map = new HashMap<>();
 
