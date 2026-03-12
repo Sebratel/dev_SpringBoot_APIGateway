@@ -80,7 +80,6 @@ public class MassivasElevenController {
 
             map.put("lidomarcantarelli253636", impactDetailsDTO);
 
-// CORREÇÃO: Criar um array de Mapas e colocar o seu mapa dentro dele
             Map<String, ImpactDetailsDTO>[] mapaArray = new Map[]{map};
 
             dadosDeTest.setImpactedUsers(mapaArray);
@@ -92,7 +91,7 @@ public class MassivasElevenController {
                     .data(dadosDeTest)
                     .build();
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (Exception e) {
             log.error("Falha no envio da lista de {} usuários para o Native: {}", totalUsers, e.getMessage());
             throw e;
@@ -123,15 +122,15 @@ public class MassivasElevenController {
         try {
             List<MassivasBFFOutputDTO> output = recuperarTodasAsMassivasPeloBancoService.executar();
 
-            log.info("Massivas recuperadas com sucesso no banco ERP");
+            log.info("Massivas recuperadas com sucesso no banco ERP.");
 
             ApiResponse<List<MassivasBFFOutputDTO>> response = ApiResponse.<List<MassivasBFFOutputDTO>>builder()
                     .success(true)
-                    .message("Massiva criada com sucesso no ERP.")
+                    .message("Massivas recuperadas com sucesso.")
                     .data(output)
                     .build();
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (Exception e) {
             log.error("Erro ao recuperar massivas no banco ERP. {}", e.getMessage());
             throw e;
