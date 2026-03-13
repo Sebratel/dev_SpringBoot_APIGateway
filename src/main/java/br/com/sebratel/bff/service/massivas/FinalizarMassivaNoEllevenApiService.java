@@ -1,0 +1,44 @@
+package br.com.sebratel.bff.service.massivas;
+
+import br.com.sebratel.bff.dto.massivas.api.FinalizaRegistroMassivoInputDTO;
+import br.com.sebratel.bff.dto.massivas.api.FinalizarRegistroMassivoOutputDTO;
+import br.com.sebratel.bff.service.RecuperarTokenDoUsuarioIntegradorEllevenService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+
+@Service
+@Slf4j
+public class FinalizarMassivaNoEllevenApiService {
+
+    private final WebClient webClient;
+    private final RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService;
+
+    @Autowired
+    public FinalizarMassivaNoEllevenApiService(WebClient webClient, RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService) {
+        this.webClient = webClient;
+        this.recuperarTokenDoUsuarioIntegradorEllevenService = recuperarTokenDoUsuarioIntegradorEllevenService;
+    }
+
+    public FinalizarRegistroMassivoOutputDTO executar(FinalizaRegistroMassivoInputDTO input) {
+        log.info("Iniciando finalização de massiva no ERP via API {}", this.getClass());
+        String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
+        log.info(token);
+
+        return this.webClient
+                .mutate()
+                .baseUrl("https://erp.sebratel.net.br:45715")
+                .build()
+                .post()
+                .uri("/external/integrations/thirdparty/projects/createsolicitationreport")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .bodyValue(input)
+                .retrieve()
+                .bodyToMono(FinalizarRegistroMassivoOutputDTO.class)
+                .block();
+    }
+}

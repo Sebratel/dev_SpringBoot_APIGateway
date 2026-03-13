@@ -1,12 +1,12 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.dto.ApiResponse;
-import br.com.sebratel.bff.dto.massivas.CriacaoDeMassivaInputDTO;
-import br.com.sebratel.bff.dto.massivas.CriacaoDeMassivaOutputDTO;
-import br.com.sebratel.bff.dto.massivas.EllevenApiResponseDTO;
-import br.com.sebratel.bff.dto.massivas.MassivasBFFOutputDTO;
+import br.com.sebratel.bff.dto.massivas.*;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoInputDTO;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoOutputDTO;
+import br.com.sebratel.bff.dto.massivas.api.FinalizaRegistroMassivoInputDTO;
+import br.com.sebratel.bff.dto.massivas.api.FinalizarRegistroMassivoOutputDTO;
+import br.com.sebratel.bff.service.massivas.FinalizarMassivaNoEllevenApiService;
 import br.com.sebratel.bff.service.RecuperarTodasAsMassivasPeloBancoService;
 import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoEllevenApiService;
 import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoEllevenService;
@@ -30,15 +30,17 @@ public class MassivasElevenController {
     private final AdicionarMassivaNoEllevenApiService adicionarMassivaNoEllevenApiService;
     private final GetAllMassivesService getAllMassivesService;
     private final RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService;
+    private final FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService;
 
     @Autowired
     public MassivasElevenController(AdicionarMassivaNoEllevenService adicionarMassivaNoEllevenService, AdicionarMassivaNoEllevenApiService adicionarMassivaNoEllevenApiService,
                                     EnviarListaDeAfetadosParaNativeService enviarListaDeAfetadosParaNativeService,
-                                    GetAllMassivesService getAllMassivesService, RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService) {
+                                    GetAllMassivesService getAllMassivesService, RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService, FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService) {
         this.adicionarMassivaNoEllevenService = adicionarMassivaNoEllevenService;
         this.adicionarMassivaNoEllevenApiService = adicionarMassivaNoEllevenApiService;
         this.getAllMassivesService = getAllMassivesService;
         this.recuperarTodasAsMassivasPeloBancoService = recuperarTodasAsMassivasPeloBancoService;
+        this.finalizarMassivaNoEllevenApiService = finalizarMassivaNoEllevenApiService;
     }
 
     @PostMapping
@@ -131,5 +133,35 @@ public class MassivasElevenController {
             throw e;
         }
     }
+
+    @DeleteMapping("/finalizar-chamado-via-api")
+    public ResponseEntity<FinalizarRegistroMassivoOutputDTO> finalizaRegistroMassivoViaApi(
+            @Valid @RequestBody FinalizaRegistroMassivoInputDTO input) {
+
+        log.info("Iniciando finalização de massiva no ERP via API.");
+
+        try {
+            FinalizarRegistroMassivoOutputDTO finalizarRegistroMassivoOutputDTO = finalizarMassivaNoEllevenApiService.executar(input);
+
+            if(finalizarRegistroMassivoOutputDTO.isSuccess()) {
+                log.info("Massiva finalizada com sucesso no ERP. [ID ASSIGNMENT: {}, MESSAGE: {}]",
+                        input.assignmentId(),
+                        input.description());
+
+                return ResponseEntity.ok(finalizarRegistroMassivoOutputDTO);
+
+            } else {
+                log.error("Erro ao finalizar massiva no ERP. [ID ASSIGNMENT: {}, MESSAGE: {}]",
+                        input.assignmentId(),
+                        input.description());
+
+                return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(finalizarRegistroMassivoOutputDTO);
+            }
+        } catch (Exception e) {
+            log.error("Erro ao finalizar massiva SERVER ERROR.  ASSIGNMENT: {}:\n {}", input.assignmentId(), e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 
 }
