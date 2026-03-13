@@ -50,6 +50,11 @@ public class UsuarioAfetadoService {
                 .build();
     }
 
+    public ImpactedUsersDTO getAll() {
+        log.info("Buscando usuários afetados");
+        return getImpactedUsersDTO(usuarioAfetadoRepository.findAll());
+    }
+
     public ImpactedUsersDTO getUsuariosByProtocol(Long protocol) {
         log.info("Buscando usuários afetados pelo protocolo: {}", protocol);
         return getImpactedUsersDTO(usuarioAfetadoRepository.findByProtocol(protocol));
