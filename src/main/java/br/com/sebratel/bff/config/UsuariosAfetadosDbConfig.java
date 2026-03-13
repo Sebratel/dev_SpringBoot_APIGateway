@@ -15,6 +15,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @EnableTransactionManagement
@@ -42,13 +44,16 @@ public class UsuariosAfetadosDbConfig {
     @Bean(name = "afetadosEntityManagerFactory")
     public LocalContainerEntityManagerFactoryBean afetadosEntityManagerFactory(
             EntityManagerFactoryBuilder builder, @Qualifier("afetadosDataSource") DataSource dataSource) {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("hibernate.dialect", "org.hibernate.dialect.MariaDBDialect");
         return builder
                 .dataSource(dataSource)
                 .packages("br.com.sebratel.bff.model.entity")
                 .persistenceUnit("afetados")
+                .properties(properties)
                 .build();
     }
-    
+
     @Bean(name = "afetadosTransactionManager")
     public PlatformTransactionManager afetadosTransactionManager(
             @Qualifier("afetadosEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
