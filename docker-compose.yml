@@ -34,16 +34,9 @@ services:
       - SERVER_PORT=8085
     depends_on:
       - redisjava
-      - chrome-node
     volumes:
       - ./meus-logs:/app/logs
       - ./python-logs:/var/log/app_python.log
-
-  chrome-node:
-    image: selenium/standalone-chrome:latest
-    container_name: chrome-node
-    shm_size: '2gb' # Essencial para evitar o "DevToolsActivePort" crash
-
   redisjava:
     image: redis:alpine
     container_name: redisjava

@@ -115,6 +115,11 @@ public class MassivasElevenController {
         try {
             AberturaRegistroMassivoOutputDTO output = adicionarMassivaNoEllevenApiService.executar(input);
 
+            if(!output.isSuccess()) {
+                ApiResponse<AberturaRegistroMassivoOutputDTO> apiResponse = ApiResponse.<AberturaRegistroMassivoOutputDTO>builder().success(false).message("Falha ao criar massiva no ERP. ERRO do lado Elleven").data(output).build();
+                return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(apiResponse);
+            }
+
             log.info("Massiva criada com sucesso no ERP. [ID PROTOCOLO: {}, ID ASSIGNMENT: {}, MESSAGE: {}]",
                     output.getResponse().getProtocol(),
                     output.getResponse().getAssignmentId(),
