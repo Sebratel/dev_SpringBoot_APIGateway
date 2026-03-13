@@ -47,3 +47,5 @@ services:
   redisjava:
     image: redis:alpine
     container_name: redisjava
+    ports:
+      - "6379:6379"
