@@ -13,19 +13,12 @@ import reactor.core.publisher.Mono;
 @Service
 public class EnviarListaDeAfetadosParaNativeService {
     public ImpactedUsersDTO executar(ImpactedUsersDTO input) {
-        WebClient webClient1 = WebClient.builder()
-                .baseUrl("https://endpoint.native.com.br")
-                .defaultHeader(HttpHeaders.ACCEPT, "*/*")
-                .defaultHeader("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7")
-                .build();
+       try{
 
-        return webClient1.post()
-                .uri(uri -> uri.path("/rota-native").build())
-                .bodyValue(input)
-                .retrieve()
-                .onStatus(HttpStatusCode::isError, this::handleHttpError)
-                .bodyToMono(ImpactedUsersDTO.class)
-                .block();
+       } catch (RuntimeException e) {
+           throw new RuntimeException(e);
+       }
+        return input;
     }
 
     private Mono<? extends Throwable> handleHttpError(ClientResponse response) {

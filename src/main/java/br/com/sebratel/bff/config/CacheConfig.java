@@ -17,7 +17,6 @@ public class CacheConfig {
 
     @Bean
     public RedisCacheConfiguration cacheConfiguration() {
-        // Configuramos o ObjectMapper para garantir suporte a JavaTime e segurança polimórfica
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.activateDefaultTyping(
@@ -26,8 +25,6 @@ public class CacheConfig {
                 JsonTypeInfo.As.PROPERTY
         );
 
-        // Utilizamos a Factory Method moderna RedisSerializer.json()
-        // Ela substitui o Jackson2JsonRedisSerializer e o GenericJackson2JsonRedisSerializer
         RedisSerializer<Object> serializer = RedisSerializer.json();
 
         return RedisCacheConfiguration.defaultCacheConfig()
