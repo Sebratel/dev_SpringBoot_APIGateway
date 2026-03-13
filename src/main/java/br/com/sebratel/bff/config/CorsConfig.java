@@ -13,16 +13,13 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
-    @Value("${app.cors.allowed-origin-patterns:https://app-splitters-sebratel-ceb1f.web.app/,https://sebratel.native-infinity.com.br/*,http://localhost:*}")
+    @Value("${app.cors.allowed-origin-patterns:https://app-splitters-sebratel-ceb1f.web.app,https://sebratel.native-infinity.com.br,http://localhost:*,http://127.0.0.1:*}")
     private String allowedOriginPatterns;
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(Arrays.stream(allowedOriginPatterns.split(","))
-                .map(String::trim)
-                .filter(origin -> !origin.isBlank())
-                .toList());
+        config.setAllowedOrigins(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
         config.setExposedHeaders(List.of("Content-Type"));
