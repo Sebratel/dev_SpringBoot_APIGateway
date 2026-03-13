@@ -25,7 +25,7 @@ public class UsuarioAfetadoService {
         this.usuarioAfetadoRepository = usuarioAfetadoRepository;
     }
 
-    @Transactional
+    @Transactional(transactionManager = "afetadosTransactionManager")
     public ImpactedUsersDTO createImpactedUsersDTO(List<UsuarioAfetado> input) {
         log.info("Salvando lista de {} usuários afetados", input.size());
         List<UsuarioAfetado> usuarioAfetados = usuarioAfetadoRepository.saveAll(input);
