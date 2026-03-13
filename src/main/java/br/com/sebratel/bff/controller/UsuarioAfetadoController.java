@@ -1,7 +1,9 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.dto.ApiResponse;
-import br.com.sebratel.bff.dto.massivas.ImpactedUsersDTO;
+import br.com.sebratel.bff.dto.massivas.ImpactDetailsOutputDTO;
+import br.com.sebratel.bff.dto.massivas.ImpactedUsersInputDTO;
+import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
 import br.com.sebratel.bff.model.entity.UsuarioAfetado;
 import br.com.sebratel.bff.service.UsuarioAfetadoService;
 import lombok.extern.slf4j.Slf4j;
@@ -25,14 +27,14 @@ public class UsuarioAfetadoController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<ImpactedUsersDTO>> getAllImpactedUsers() {
+    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> getAllImpactedUsers() {
         log.info("Iniciando busca de usuárioss afetados");
         try {
-            ImpactedUsersDTO usuariosAfetados = usuarioAfetadoService.getAll();
+            ImpactedUsersOutputDTO usuariosAfetados = usuarioAfetadoService.getAll();
 
             if (usuariosAfetados.getImpactedUsers().isEmpty()) {
                 log.warn("Nenhum usuário afetado encontrado.");
-                ApiResponse<ImpactedUsersDTO> response = ApiResponse.<ImpactedUsersDTO>builder()
+                ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                         .success(false)
                         .message("Nenhum usuário afetado encontrado")
                         .data(usuariosAfetados)
@@ -41,7 +43,7 @@ public class UsuarioAfetadoController {
             }
 
             log.info("Busca concluída. Encontrados {} usuários.", usuariosAfetados.getImpactedUsers().size());
-            ApiResponse<ImpactedUsersDTO> response = ApiResponse.<ImpactedUsersDTO>builder()
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(true)
                     .message("Usuários afetados encontrados com sucesso.")
                     .data(usuariosAfetados)
@@ -50,7 +52,7 @@ public class UsuarioAfetadoController {
 
         } catch (Exception e) {
             log.error("Erro ao buscar usuários: {}", e.getMessage(), e);
-            ApiResponse<ImpactedUsersDTO> response = ApiResponse.<ImpactedUsersDTO>builder()
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(false)
                     .message("Erro ao buscar usuários: " + e.getMessage())
                     .build();
@@ -59,13 +61,13 @@ public class UsuarioAfetadoController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ImpactedUsersDTO>> createUsuarioAfetado(@RequestBody List<UsuarioAfetado> usuarioAfetado) {
+    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> createUsuarioAfetado(@RequestBody List<UsuarioAfetado> usuarioAfetado) {
         log.info("Iniciando processo de criação de usuário afetado para o protocolo");
         try {
-            ImpactedUsersDTO savedUsuario = usuarioAfetadoService.createImpactedUsersDTO(usuarioAfetado);
+            ImpactedUsersOutputDTO savedUsuario = usuarioAfetadoService.createImpactedUsersDTO(usuarioAfetado);
             log.info("Usuários afetados para o protocolo criado com sucesso.");
 
-            ApiResponse<ImpactedUsersDTO> response = ApiResponse.<ImpactedUsersDTO>builder()
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(true)
                     .message("Usuário afetado criado com sucesso.")
                     .data(savedUsuario)
@@ -73,7 +75,7 @@ public class UsuarioAfetadoController {
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
             log.error("Erro ao criar usuários afetados para o protocolo \n{}", e.getMessage());
-            ApiResponse<ImpactedUsersDTO> response = ApiResponse.<ImpactedUsersDTO>builder()
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(false)
                     .message("Erro ao criar usuário afetado: " + e.getMessage())
                     .build();
@@ -82,10 +84,10 @@ public class UsuarioAfetadoController {
     }
 
     @GetMapping("/pppoe/{pppoe}")
-    public ResponseEntity<ApiResponse<ImpactedUsersDTO>> getUsuariosAfetadosByPppoe(@PathVariable String pppoe) {
+    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> getUsuariosAfetadosByPppoe(@PathVariable String pppoe) {
         log.info("Iniciando busca de usuários afetados pelo PPPoE: {}", pppoe);
         try {
-            ImpactedUsersDTO usuariosAfetados = usuarioAfetadoService.getUsuariosAfetadosByPppoe(pppoe);
+            ImpactedUsersOutputDTO usuariosAfetados = usuarioAfetadoService.getUsuariosAfetadosByPppoe(pppoe);
 
             if (usuariosAfetados.getImpactedUsers().isEmpty()) {
                 log.warn("Nenhum usuário afetado encontrado para o PPPoE: {}", pppoe);
@@ -93,7 +95,7 @@ public class UsuarioAfetadoController {
                 log.info("Busca por PPPoE {} concluída. Encontrados {} usuários.", pppoe, usuariosAfetados.getImpactedUsers().size());
             }
 
-            ApiResponse<ImpactedUsersDTO> response = ApiResponse.<ImpactedUsersDTO>builder()
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(true)
                     .message("Busca por PPPoE realizada com sucesso.")
                     .data(usuariosAfetados)
@@ -101,7 +103,7 @@ public class UsuarioAfetadoController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Erro ao buscar usuários por PPPoE {}: {}", pppoe, e.getMessage(), e);
-            ApiResponse<ImpactedUsersDTO> response = ApiResponse.<ImpactedUsersDTO>builder()
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(false)
                     .message("Erro ao buscar usuários por PPPoE: " + e.getMessage())
                     .build();
@@ -110,14 +112,14 @@ public class UsuarioAfetadoController {
     }
 
     @GetMapping("/protocol/{protocol}")
-    public ResponseEntity<ApiResponse<ImpactedUsersDTO>> getUsuariosAfetadosByProtocol(@PathVariable Long protocol) {
+    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> getUsuariosAfetadosByProtocol(@PathVariable Long protocol) {
         log.info("Iniciando busca de usuários afetados pelo protocolo: {}", protocol);
         try {
-            ImpactedUsersDTO usuariosAfetados = usuarioAfetadoService.getUsuariosByProtocol(protocol);
+            ImpactedUsersOutputDTO usuariosAfetados = usuarioAfetadoService.getUsuariosByProtocol(protocol);
 
             if (usuariosAfetados.getImpactedUsers().isEmpty()) {
                 log.warn("Nenhum usuário afetado encontrado para o protocolo: {}", protocol);
-                ApiResponse<ImpactedUsersDTO> response = ApiResponse.<ImpactedUsersDTO>builder()
+                ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                         .success(false)
                         .message("Nenhum usuário afetado encontrado para o protocolo: " + protocol)
                         .data(usuariosAfetados)
@@ -126,7 +128,7 @@ public class UsuarioAfetadoController {
             }
 
             log.info("Busca por protocolo {} concluída. Encontrados {} usuários.", protocol, usuariosAfetados.getImpactedUsers().size());
-            ApiResponse<ImpactedUsersDTO> response = ApiResponse.<ImpactedUsersDTO>builder()
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(true)
                     .message("Usuários afetados encontrados com sucesso.")
                     .data(usuariosAfetados)
@@ -135,7 +137,7 @@ public class UsuarioAfetadoController {
 
         } catch (Exception e) {
             log.error("Erro ao buscar usuários por protocolo {}: {}", protocol, e.getMessage(), e);
-            ApiResponse<ImpactedUsersDTO> response = ApiResponse.<ImpactedUsersDTO>builder()
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(false)
                     .message("Erro ao buscar usuários por protocolo: " + e.getMessage())
                     .build();

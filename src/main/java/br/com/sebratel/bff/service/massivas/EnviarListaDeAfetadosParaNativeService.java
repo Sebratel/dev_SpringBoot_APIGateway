@@ -1,18 +1,15 @@
 package br.com.sebratel.bff.service.massivas;
 
-import br.com.sebratel.bff.dto.massivas.ImpactedUsersDTO;
+import br.com.sebratel.bff.dto.massivas.ImpactedUsersInputDTO;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.ClientResponse;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 @Slf4j
 @Service
 public class EnviarListaDeAfetadosParaNativeService {
-    public ImpactedUsersDTO executar(ImpactedUsersDTO input) {
+    public ImpactedUsersInputDTO executar(ImpactedUsersInputDTO input) {
        try{
 
        } catch (RuntimeException e) {
