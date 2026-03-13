@@ -1,7 +1,9 @@
 package br.com.sebratel.bff.service;
 
-import br.com.sebratel.bff.dto.massivas.ImpactDetailsDTO;
-import br.com.sebratel.bff.dto.massivas.ImpactedUsersDTO;
+import br.com.sebratel.bff.dto.massivas.ImpactDetailsInputDTO;
+import br.com.sebratel.bff.dto.massivas.ImpactDetailsOutputDTO;
+import br.com.sebratel.bff.dto.massivas.ImpactedUsersInputDTO;
+import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
 import br.com.sebratel.bff.exceptions.ResourceNotFoundException;
 import br.com.sebratel.bff.model.entity.UsuarioAfetado;
 import br.com.sebratel.bff.repository.afetados.UsuarioAfetadoRepository;
@@ -10,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,41 +30,46 @@ public class UsuarioAfetadoService {
     }
 
     @Transactional(transactionManager = "afetadosTransactionManager")
-    public ImpactedUsersDTO createImpactedUsersDTO(List<UsuarioAfetado> input) {
+    public ImpactedUsersOutputDTO createImpactedUsersDTO(List<UsuarioAfetado> input) {
         log.info("Salvando lista de {} usuários afetados", input.size());
         List<UsuarioAfetado> usuarioAfetados = usuarioAfetadoRepository.saveAll(input);
         log.info("Usuários afetados para o protocolo criados com sucesso.");
         return getImpactedUsersDTO(usuarioAfetados);
     }
 
-    private ImpactedUsersDTO getImpactedUsersDTO(List<UsuarioAfetado> usuariosAfetados) {
+    private ImpactedUsersOutputDTO getImpactedUsersDTO(List<UsuarioAfetado> usuariosAfetados) {
         log.debug("Criando DTO de usuários afetados.{}", usuariosAfetados);
-        List<Map<String, ImpactDetailsDTO>> impactedUsersDTO = usuariosAfetados.stream().map(usuarioAfetado -> {
-            ImpactDetailsDTO impactDetailsDTO = ImpactDetailsDTO.builder()
+        List<Map<String, ImpactDetailsOutputDTO>> impactedUsersDTO = usuariosAfetados.stream().map(usuarioAfetado -> {
+            LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
+            LocalDateTime finish = usuarioAfetado.getFinishDate();
+            long hoursRemaining = ChronoUnit.HOURS.between(now, finish);
+            long estimateTimeOfRestoration = Math.max(0, hoursRemaining);
+
+            ImpactDetailsOutputDTO impactDetailsDTO = ImpactDetailsOutputDTO.builder()
                     .reason(usuarioAfetado.getReason())
-                    .estimateTimeOfRestoration(usuarioAfetado.getFinishDate())
+                    .estimateTimeOfRestoration(estimateTimeOfRestoration)
                     .build();
-            Map<String, ImpactDetailsDTO> impactedUsers = new HashMap<>();
+            Map<String, ImpactDetailsOutputDTO> impactedUsers = new HashMap<>();
             impactedUsers.put(usuarioAfetado.getPppoe(), impactDetailsDTO);
             return impactedUsers;
         }).toList();
 
-        return ImpactedUsersDTO.builder()
+        return ImpactedUsersOutputDTO.builder()
                 .impactedUsers(impactedUsersDTO)
                 .build();
     }
 
-    public ImpactedUsersDTO getAll() {
+    public ImpactedUsersOutputDTO getAll() {
         log.info("Buscando usuários afetados");
         return getImpactedUsersDTO(usuarioAfetadoRepository.findAll());
     }
 
-    public ImpactedUsersDTO getUsuariosByProtocol(Long protocol) {
+    public ImpactedUsersOutputDTO getUsuariosByProtocol(Long protocol) {
         log.info("Buscando usuários afetados pelo protocolo: {}", protocol);
         return getImpactedUsersDTO(usuarioAfetadoRepository.findByProtocol(protocol));
     }
 
-    public ImpactedUsersDTO getUsuariosAfetadosByPppoe(String pppoe) {
+    public ImpactedUsersOutputDTO getUsuariosAfetadosByPppoe(String pppoe) {
         log.info("Buscando usuário afetado pelo PPPoE: {}", pppoe);
         UsuarioAfetado usuarioAfetado = usuarioAfetadoRepository.findByPppoe(pppoe).orElseThrow(() -> new ResourceNotFoundException("Usuário afetado não encontrado"));
         log.info("Usuário afetado encontrado: {}", usuarioAfetado);
@@ -73,4 +82,3 @@ public class UsuarioAfetadoService {
         log.info("{} linhas foram afetadas na deleção dos usuarios de protocolo {}", numeroDeLinhasAfetadas, protocol);
     }
 }
-

@@ -5,17 +5,15 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Data
 @Builder
-public class ImpactedUsersDTO {
+public class ImpactedUsersInputDTO {
     @NotNull(message = "O campo é obrigatório")
     @NotEmpty(message = "A lista não pode ser vazia")
     @JsonProperty("impactedUsers")
-    private List<Map<String, ImpactDetailsDTO>> impactedUsers;
+    private List<Map<String, ImpactDetailsInputDTO>> impactedUsers;
 }
