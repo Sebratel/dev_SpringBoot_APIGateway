@@ -37,4 +37,9 @@ public class UsuarioAfetadoRepositoryImpl implements UsuarioAfetadoRepository {
     public Integer deleteByProtocol(Long protocol) {
         return jpaRepository.deleteByProtocol(protocol);
     }
+
+    @Override
+    public List<UsuarioAfetado> findAll() {
+        return jpaRepository.findAll();
+    }
 }

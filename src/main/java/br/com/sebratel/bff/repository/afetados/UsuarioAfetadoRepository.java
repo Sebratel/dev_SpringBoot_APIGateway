@@ -11,4 +11,5 @@ public interface UsuarioAfetadoRepository {
     Optional<UsuarioAfetado> findByPppoe(String pppoe);
     List<UsuarioAfetado> findByProtocol(Long protocol);
     Integer deleteByProtocol(Long protocol);
+    List<UsuarioAfetado> findAll();
 }

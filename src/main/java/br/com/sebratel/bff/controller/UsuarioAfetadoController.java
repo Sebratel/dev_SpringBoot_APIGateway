@@ -24,6 +24,40 @@ public class UsuarioAfetadoController {
         this.usuarioAfetadoService = usuarioAfetadoService;
     }
 
+    @GetMapping
+    public ResponseEntity<ApiResponse<ImpactedUsersDTO>> getAllImpactedUsers() {
+        log.info("Iniciando busca de usuárioss afetados");
+        try {
+            ImpactedUsersDTO usuariosAfetados = usuarioAfetadoService.getAll();
+
+            if (usuariosAfetados.getImpactedUsers().isEmpty()) {
+                log.warn("Nenhum usuário afetado encontrado.");
+                ApiResponse<ImpactedUsersDTO> response = ApiResponse.<ImpactedUsersDTO>builder()
+                        .success(false)
+                        .message("Nenhum usuário afetado encontrado")
+                        .data(usuariosAfetados)
+                        .build();
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+
+            log.info("Busca concluída. Encontrados {} usuários.", usuariosAfetados.getImpactedUsers().size());
+            ApiResponse<ImpactedUsersDTO> response = ApiResponse.<ImpactedUsersDTO>builder()
+                    .success(true)
+                    .message("Usuários afetados encontrados com sucesso.")
+                    .data(usuariosAfetados)
+                    .build();
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Erro ao buscar usuários: {}", e.getMessage(), e);
+            ApiResponse<ImpactedUsersDTO> response = ApiResponse.<ImpactedUsersDTO>builder()
+                    .success(false)
+                    .message("Erro ao buscar usuários: " + e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<ImpactedUsersDTO>> createUsuarioAfetado(@RequestBody List<UsuarioAfetado> usuarioAfetado) {
         log.info("Iniciando processo de criação de usuário afetado para o protocolo");
