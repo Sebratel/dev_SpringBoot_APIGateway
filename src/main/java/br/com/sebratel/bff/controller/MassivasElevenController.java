@@ -4,8 +4,12 @@ import br.com.sebratel.bff.dto.ApiResponse;
 import br.com.sebratel.bff.dto.massivas.CriacaoDeMassivaInputDTO;
 import br.com.sebratel.bff.dto.massivas.CriacaoDeMassivaOutputDTO;
 import br.com.sebratel.bff.dto.massivas.EllevenApiResponseDTO;
-import br.com.sebratel.bff.dto.massivas.ImpactedUsersDTO;
-import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoElevenService;
+import br.com.sebratel.bff.dto.massivas.MassivasBFFOutputDTO;
+import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoInputDTO;
+import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoOutputDTO;
+import br.com.sebratel.bff.service.RecuperarTodasAsMassivasPeloBancoService;
+import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoEllevenApiService;
+import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoEllevenService;
 import br.com.sebratel.bff.service.massivas.EnviarListaDeAfetadosParaNativeService;
 import br.com.sebratel.bff.service.massivas.GetAllMassivesService;
 import jakarta.validation.Valid;
@@ -15,22 +19,26 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/massivas")
 @Slf4j
 public class MassivasElevenController {
 
-    private final AdicionarMassivaNoElevenService adicionarMassivaNoElevenService;
-    private final EnviarListaDeAfetadosParaNativeService enviarListaDeAfetadosParaNativeService;
+    private final AdicionarMassivaNoEllevenService adicionarMassivaNoEllevenService;
+    private final AdicionarMassivaNoEllevenApiService adicionarMassivaNoEllevenApiService;
     private final GetAllMassivesService getAllMassivesService;
+    private final RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService;
 
     @Autowired
-    public MassivasElevenController(AdicionarMassivaNoElevenService adicionarMassivaNoElevenService,
+    public MassivasElevenController(AdicionarMassivaNoEllevenService adicionarMassivaNoEllevenService, AdicionarMassivaNoEllevenApiService adicionarMassivaNoEllevenApiService,
                                     EnviarListaDeAfetadosParaNativeService enviarListaDeAfetadosParaNativeService,
-                                    GetAllMassivesService getAllMassivesService) {
-        this.adicionarMassivaNoElevenService = adicionarMassivaNoElevenService;
-        this.enviarListaDeAfetadosParaNativeService = enviarListaDeAfetadosParaNativeService;
+                                    GetAllMassivesService getAllMassivesService, RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService) {
+        this.adicionarMassivaNoEllevenService = adicionarMassivaNoEllevenService;
+        this.adicionarMassivaNoEllevenApiService = adicionarMassivaNoEllevenApiService;
         this.getAllMassivesService = getAllMassivesService;
+        this.recuperarTodasAsMassivasPeloBancoService = recuperarTodasAsMassivasPeloBancoService;
     }
 
     @PostMapping
@@ -40,7 +48,7 @@ public class MassivasElevenController {
         log.info("Iniciando criação de massiva no ERP. [Solicitante: {}]", input.getAssignmentDescription());
 
         try {
-            CriacaoDeMassivaOutputDTO output = adicionarMassivaNoElevenService.salvarNoBancoERP(input);
+            CriacaoDeMassivaOutputDTO output = adicionarMassivaNoEllevenService.salvarNoBancoERP(input);
 
             log.info("Massiva criada com sucesso no ERP. [ID Massiva: {}]", output.getId());
 
@@ -53,31 +61,6 @@ public class MassivasElevenController {
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
             log.error("Erro ao criar massiva no ERP para o solicitante {}: {}", input.getAssignmentDescription(), e.getMessage());
-            throw e;
-        }
-    }
-
-    @PostMapping("/enviar-dados-para-native")
-    public ResponseEntity<ApiResponse<ImpactedUsersDTO>> enviarListaDosAfetadosParaNative(
-            @Valid @RequestBody ImpactedUsersDTO input) {
-
-        int totalUsers = input.getImpactedUsers() != null ? input.getImpactedUsers().length : 0;
-        log.info("Iniciando envio de lista de afetados para Native. [Total de usuários: {}]", totalUsers);
-
-        try {
-            ImpactedUsersDTO output = enviarListaDeAfetadosParaNativeService.executar(input);
-
-            log.info("Envio para Native concluído com sucesso.");
-
-            ApiResponse<ImpactedUsersDTO> response = ApiResponse.<ImpactedUsersDTO>builder()
-                    .success(true)
-                    .message("Usuarios listados enviados para native.")
-                    .data(output)
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (Exception e) {
-            log.error("Falha no envio da lista de {} usuários para o Native: {}", totalUsers, e.getMessage());
             throw e;
         }
     }
@@ -100,4 +83,53 @@ public class MassivasElevenController {
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
+    @GetMapping("/recuperar-pelo-banco")
+    public ResponseEntity<ApiResponse<List<MassivasBFFOutputDTO>>> recuperarTodasAsMassivasPeloBanco() {
+        try {
+            List<MassivasBFFOutputDTO> output = recuperarTodasAsMassivasPeloBancoService.executar();
+
+            log.info("Massivas recuperadas com sucesso no banco ERP.");
+
+            ApiResponse<List<MassivasBFFOutputDTO>> response = ApiResponse.<List<MassivasBFFOutputDTO>>builder()
+                    .success(true)
+                    .message("Massivas recuperadas com sucesso.")
+                    .data(output)
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        } catch (Exception e) {
+            log.error("Erro ao recuperar massivas no banco ERP. {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    @PostMapping("/salvar-massiva-via-api")
+    public ResponseEntity<ApiResponse<AberturaRegistroMassivoOutputDTO>> criarMassivaComDadosDoFlutter(
+            @Valid @RequestBody AberturaRegistroMassivoInputDTO input) {
+
+        log.info("Iniciando criação de massiva no ERP via API. [Solicitante: {}]", input.getPersonId());
+
+        try {
+            AberturaRegistroMassivoOutputDTO output = adicionarMassivaNoEllevenApiService.executar(input);
+
+            log.info("Massiva criada com sucesso no ERP. [ID PROTOCOLO: {}, ID ASSIGNMENT: {}, MESSAGE: {}]",
+                    output.getResponse().getProtocol(),
+                    output.getResponse().getAssignmentId(),
+                    output.getResponse().getMessage());
+
+
+            ApiResponse<AberturaRegistroMassivoOutputDTO> response = ApiResponse.<AberturaRegistroMassivoOutputDTO>builder()
+                    .success(true)
+                    .message("Massiva criada com sucesso no ERP.")
+                    .data(output)
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            log.error("Erro ao criar massiva no ERP para o solicitante {}:\n {}", input.getPersonId(), e.getMessage());
+            throw e;
+        }
+    }
+
 }
