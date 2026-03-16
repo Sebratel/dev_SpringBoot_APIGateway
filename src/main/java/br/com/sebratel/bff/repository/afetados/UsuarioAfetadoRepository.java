@@ -14,4 +14,5 @@ public interface UsuarioAfetadoRepository {
     Integer deleteByProtocol(Long protocol);
     List<UsuarioAfetado> findAll();
     Integer updateUsersByProtocol(Long protocol, LocalDateTime finishDate);
+    Optional<UsuarioAfetado> findByContractId(Long contractId);
 }

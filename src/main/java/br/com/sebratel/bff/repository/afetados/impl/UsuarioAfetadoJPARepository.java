@@ -26,4 +26,6 @@ public interface UsuarioAfetadoJPARepository extends JpaRepository<UsuarioAfetad
     @Transactional
     @Query(value = "UPDATE assignment_clients SET finish_date = :finishDate  WHERE protocol_id = :protocol", nativeQuery = true)
     Integer updateUsersByProtocol(@Param("protocol") Long protocol, @Param("finishDate") LocalDateTime finishDate);
+
+    Optional<UsuarioAfetado> findByContractId(Long contractId);
 }

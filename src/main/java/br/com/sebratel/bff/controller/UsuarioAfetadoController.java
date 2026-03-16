@@ -110,6 +110,35 @@ public class UsuarioAfetadoController {
         }
     }
 
+    @GetMapping("/contract/{contractId}")
+    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> getUsuariosAfetadosByContractId(@PathVariable Long contractId) {
+        log.info("Iniciando busca de usuários afetados pelo contractId: {}", contractId);
+        try {
+            ImpactedUsersOutputDTO usuariosAfetados = usuarioAfetadoService.getUsuariosAfetadosByContractId(contractId);
+
+            if (usuariosAfetados.getImpactedUsers().isEmpty()) {
+                log.warn("Nenhum usuário afetado encontrado para o contractId: {}", contractId);
+            } else {
+                log.info("Busca por contractId {} concluída. Encontrados {} usuários.", contractId, usuariosAfetados.getImpactedUsers().size());
+            }
+
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(true)
+                    .message("Busca por PPPoE realizada com sucesso.")
+                    .data(usuariosAfetados)
+                    .build();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Erro ao buscar usuários por PPPoE {}: {}", contractId, e.getMessage(), e);
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(false)
+                    .message("Erro ao buscar usuários por PPPoE: " + e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+
     @GetMapping("/protocol/{protocol}")
     public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> getUsuariosAfetadosByProtocol(@PathVariable Long protocol) {
         log.info("Iniciando busca de usuários afetados pelo protocolo: {}", protocol);

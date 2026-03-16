@@ -15,5 +15,5 @@ public class ImpactedUsersInputDTO {
     @NotNull(message = "O campo é obrigatório")
     @NotEmpty(message = "A lista não pode ser vazia")
     @JsonProperty("impactedUsers")
-    private List<Map<String, ImpactDetailsInputDTO>> impactedUsers;
+    private List<Map<Long, ImpactDetailsInputDTO>> impactedUsers;
 }

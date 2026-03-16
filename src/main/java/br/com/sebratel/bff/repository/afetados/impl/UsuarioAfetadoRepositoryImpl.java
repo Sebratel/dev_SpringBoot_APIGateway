@@ -48,4 +48,9 @@ public class UsuarioAfetadoRepositoryImpl implements UsuarioAfetadoRepository {
     public Integer updateUsersByProtocol(Long protocol, LocalDateTime finishDate) {
         return jpaRepository.updateUsersByProtocol(protocol, finishDate);
     }
+
+    @Override
+    public Optional<UsuarioAfetado> findByContractId(Long contractId) {
+        return jpaRepository.findByContractId(contractId);
+    }
 }

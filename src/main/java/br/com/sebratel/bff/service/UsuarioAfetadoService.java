@@ -37,7 +37,7 @@ public class UsuarioAfetadoService {
 
     private ImpactedUsersOutputDTO getImpactedUsersDTO(List<UsuarioAfetado> usuariosAfetados) {
         log.debug("Criando DTO de usuários afetados.{}", usuariosAfetados);
-        List<Map<String, ImpactDetailsOutputDTO>> impactedUsersDTO = usuariosAfetados.stream().map(usuarioAfetado -> {
+        List<Map<Long, ImpactDetailsOutputDTO>> impactedUsersDTO = usuariosAfetados.stream().map(usuarioAfetado -> {
             LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
             LocalDateTime finish = usuarioAfetado.getFinishDate();
             long hoursRemaining = ChronoUnit.HOURS.between(now, finish);
@@ -47,8 +47,8 @@ public class UsuarioAfetadoService {
                     .reason(usuarioAfetado.getReason())
                     .estimateTimeOfRestoration(estimateTimeOfRestoration)
                     .build();
-            Map<String, ImpactDetailsOutputDTO> impactedUsers = new HashMap<>();
-            impactedUsers.put(usuarioAfetado.getPppoe(), impactDetailsDTO);
+            Map<Long, ImpactDetailsOutputDTO> impactedUsers = new HashMap<>();
+            impactedUsers.put(usuarioAfetado.getContractId(), impactDetailsDTO);
             return impactedUsers;
         }).toList();
 
@@ -95,5 +95,12 @@ public class UsuarioAfetadoService {
         if (totalDeLinhasAfetadas == 0) {
             log.warn("Nenhuma linha afetada para o protocolo {} ", protocol);
         }
+    }
+
+    public ImpactedUsersOutputDTO getUsuariosAfetadosByContractId(Long contractId) {
+        log.info("Buscando usuário afetado pelo email: {}", contractId);
+        UsuarioAfetado usuarioAfetado = usuarioAfetadoRepository.findByContractId(contractId).orElseThrow(() -> new ResourceNotFoundException("Usuário afetado não encontrado"));
+        log.info("Usuário afetado encontrado por email: {}", usuarioAfetado);
+        return getImpactedUsersDTO(List.of(usuarioAfetado));
     }
 }

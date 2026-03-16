@@ -28,6 +28,8 @@ public class UsuarioAfetado {
     Long protocol;
     @Column(name = "motive")
     String reason;
+    @Column(name = "contract_id")
+    Long contractId;
     @Column(name = "finish_date")
     LocalDateTime finishDate;
     LocalDateTime created;
