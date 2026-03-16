@@ -18,15 +18,19 @@ public class RecuperarSolicitacoesDeUmUsuarioService {
 
     private final WebClient webClient;
     private final CacheManager cacheManager;
+    private final RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService;
+
 
     @Autowired
-    public RecuperarSolicitacoesDeUmUsuarioService(WebClient webClient, CacheManager cacheManager) {
+    public RecuperarSolicitacoesDeUmUsuarioService(WebClient webClient, CacheManager cacheManager, RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService) {
         this.webClient = webClient;
         this.cacheManager = cacheManager;
+        this.recuperarTokenDoUsuarioIntegradorEllevenService = recuperarTokenDoUsuarioIntegradorEllevenService;
     }
 
-    public RecuperarSolicitacaoDeClienteOutputDTO executar(String token, String clientId) {
+    public RecuperarSolicitacaoDeClienteOutputDTO executar(String clientId) {
 
+        String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
         String url = "https://erp.sebratel.net.br:45715/external/integrations/thirdparty/solicitationlist/" + clientId + "?allAssignments=false";
         ExchangeStrategies strategies = ExchangeStrategies.builder()
                 .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(100 * 1024 * 1024))

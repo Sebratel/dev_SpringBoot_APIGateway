@@ -15,6 +15,7 @@ import br.com.sebratel.bff.service.massivas.GetAllMassivesService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -166,6 +167,12 @@ public class MassivasElevenController {
             log.error("Erro ao finalizar massiva SERVER ERROR.  ASSIGNMENT: {}:\n {}", input.assignmentId(), e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    @CacheEvict("token-de-integracao")
+    @PostMapping("/invalidate-token")
+    public void tokenCacheEvict() {
+        log.info("token de integração removido do cache");
     }
 
 

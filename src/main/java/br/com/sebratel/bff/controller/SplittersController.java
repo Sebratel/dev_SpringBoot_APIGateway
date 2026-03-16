@@ -9,8 +9,6 @@ import br.com.sebratel.bff.service.RecuperarSolicitacoesDeUmUsuarioService;
 import br.com.sebratel.bff.service.RecuperarTokenDoUsuarioIntegradorEllevenService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,7 +25,10 @@ public class SplittersController {
     private final RecuperarSolicitacoesDeUmUsuarioService recuperarSolicitacoesDeUmUsuarioService;
 
     @Autowired
-    public SplittersController(RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService, ListarSplittersService listarSplittersService, CacheManager cacheManager, ListarOltsService listarOltsService, RecuperarSolicitacoesDeUmUsuarioService recuperarSolicitacoesDeUmUsuarioService) {
+    public SplittersController(RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService,
+                               ListarSplittersService listarSplittersService,
+                               ListarOltsService listarOltsService,
+                               RecuperarSolicitacoesDeUmUsuarioService recuperarSolicitacoesDeUmUsuarioService) {
         this.recuperarTokenDoUsuarioIntegradorEllevenService = recuperarTokenDoUsuarioIntegradorEllevenService;
         this.listarSplittersService = listarSplittersService;
         this.listarOltsService = listarOltsService;
@@ -41,32 +42,16 @@ public class SplittersController {
 
     @GetMapping("/listarSplitters")
     public EllevenSplitterResponseDTO listarSplitters() {
-        RecuperarTokenEllevenOutputDTO auth = recuperarTokenDoUsuarioIntegradorEllevenService.executar();
-        return listarSplittersService.executar(auth.accessToken());
+        return listarSplittersService.executar();
     }
 
     @GetMapping("/listarOlts")
     public EllevenSplitterResponseDTO listarOlts() {
-        RecuperarTokenEllevenOutputDTO auth = recuperarTokenDoUsuarioIntegradorEllevenService.executar();
-        return listarOltsService.executar(auth.accessToken());
+        return listarOltsService.executar();
     }
 
     @GetMapping("/solicitacoes/cliente/{clientId}")
     public RecuperarSolicitacaoDeClienteOutputDTO recuperarSolicitacoesDeUmCliente(@PathVariable String clientId) {
-        try {
-            RecuperarTokenEllevenOutputDTO auth = recuperarTokenDoUsuarioIntegradorEllevenService.executar();
-            return recuperarSolicitacoesDeUmUsuarioService.executar(auth.accessToken(), clientId);
-        } catch (Exception e) {
-            log.error("Não foi possível realizar a chamada. Cancelando o token");
-            invalidarToken();
-            throw new RuntimeException(e);
-        }
+            return recuperarSolicitacoesDeUmUsuarioService.executar(clientId);
     }
-
-    @CacheEvict(value = "token-de-integracao", key = "'token-static-key'")
-    public void invalidarToken() {
-        log.info("Token invalidado do cache!");
-    }
-
-
 }

@@ -1,5 +1,6 @@
 package br.com.sebratel.bff.service;
 
+import br.com.sebratel.bff.annotations.TokenRetry;
 import br.com.sebratel.bff.dto.splitters.EllevenSplitterResponseDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,13 +16,17 @@ import reactor.core.publisher.Mono;
 public class ListarSplittersService {
 
     private final WebClient webClient;
+    private final RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService;
 
     @Autowired
-    public ListarSplittersService(WebClient webClient) {
+    public ListarSplittersService(WebClient webClient, RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService) {
         this.webClient = webClient;
+        this.recuperarTokenDoUsuarioIntegradorEllevenService = recuperarTokenDoUsuarioIntegradorEllevenService;
     }
 
-    public EllevenSplitterResponseDTO executar(String token) {
+    @TokenRetry
+    public EllevenSplitterResponseDTO executar() {
+        String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
         String url = "https://erp.sebratel.net.br:45715/external/map/splitter/all";
         ExchangeStrategies strategies = ExchangeStrategies.builder()
                 .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(100 * 1024 * 1024))

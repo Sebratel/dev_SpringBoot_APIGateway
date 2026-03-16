@@ -10,13 +10,16 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Service
 public class ListarOltsService {
     private final WebClient webClient;
+    private final RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService;
 
     @Autowired
-    public ListarOltsService(WebClient webClient) {
+    public ListarOltsService(WebClient webClient, RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService) {
         this.webClient = webClient;
+        this.recuperarTokenDoUsuarioIntegradorEllevenService = recuperarTokenDoUsuarioIntegradorEllevenService;
     }
 
-    public EllevenSplitterResponseDTO executar(String token) {
+    public EllevenSplitterResponseDTO executar() {
+        String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
         String url = "https://erp.sebratel.net.br:45715/external/map/olt/all";
         ExchangeStrategies strategies = ExchangeStrategies.builder()
                 .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(100 * 1024 * 1024))
