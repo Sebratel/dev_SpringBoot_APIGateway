@@ -1,8 +1,6 @@
 package br.com.sebratel.bff.service;
 
-import br.com.sebratel.bff.dto.massivas.ImpactDetailsInputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactDetailsOutputDTO;
-import br.com.sebratel.bff.dto.massivas.ImpactedUsersInputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
 import br.com.sebratel.bff.exceptions.ResourceNotFoundException;
 import br.com.sebratel.bff.model.entity.UsuarioAfetado;
@@ -80,5 +78,22 @@ public class UsuarioAfetadoService {
         log.info("Removendo usuários do protocolo: {}", protocol);
         Integer numeroDeLinhasAfetadas = usuarioAfetadoRepository.deleteByProtocol(protocol);
         log.info("{} linhas foram afetadas na deleção dos usuarios de protocolo {}", numeroDeLinhasAfetadas, protocol);
+    }
+
+    @Transactional(transactionManager = "afetadosTransactionManager")
+    public void alterarDataEstimadaParaFinalizacao(Long protocol, LocalDateTime finishDate) {
+        log.info("Alterando data estimada para finalização");
+        List<UsuarioAfetado> affectedUsers = usuarioAfetadoRepository.findByProtocol(protocol);
+        if (affectedUsers.isEmpty()) {
+            log.warn("Nenhum usuário afetado encontrado para o protocolo: {}", protocol);
+            throw new ResourceNotFoundException("Nenhum usuário afetado encontrado para o protocolo: " + protocol);
+        }
+        log.info("Foram encontrados {} usuarios no protocolo {}", affectedUsers.size(), protocol);
+        Integer totalDeLinhasAfetadas = usuarioAfetadoRepository.updateUsersByProtocol(protocol, finishDate);
+        log.info("Data de finalização alterada para {} nos usuarios de protocolo {}", finishDate, protocol);
+
+        if (totalDeLinhasAfetadas == 0) {
+            log.warn("Nenhuma linha afetada para o protocolo {} ", protocol);
+        }
     }
 }

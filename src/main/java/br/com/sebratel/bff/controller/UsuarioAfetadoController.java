@@ -1,8 +1,6 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.dto.ApiResponse;
-import br.com.sebratel.bff.dto.massivas.ImpactDetailsOutputDTO;
-import br.com.sebratel.bff.dto.massivas.ImpactedUsersInputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
 import br.com.sebratel.bff.model.entity.UsuarioAfetado;
 import br.com.sebratel.bff.service.UsuarioAfetadoService;
@@ -12,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -164,6 +163,31 @@ public class UsuarioAfetadoController {
             ApiResponse<String> response = ApiResponse.<String>builder()
                     .success(false)
                     .message("Erro ao remover usuários do protocolo: " + e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @PatchMapping("/protocol/{protocol}")
+    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> alterarDataDeFinalizacaoPorProtocolo(@PathVariable Long protocol, @RequestParam LocalDateTime finishDate)
+    {
+        log.info("Iniciando alteração de data de finalização para o protocolo: {}", protocol);
+        try {
+            usuarioAfetadoService.alterarDataEstimadaParaFinalizacao(protocol, finishDate);
+            log.info("Data de finalização alterada para {} nos usuarios de protocolo {}", finishDate, protocol);
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(true)
+                    .message("Data de finalização alterada para " + finishDate + " nos usuarios de protocolo " + protocol)
+                    .data(null)
+                    .build();
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Erro ao alterar data de finalização para o protocolo {}: {}", protocol, e.getMessage(), e);
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(false)
+                    .data(null)
+                    .message("Erro ao alterar data de finalização para o protocolo: " + protocol)
                     .build();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }

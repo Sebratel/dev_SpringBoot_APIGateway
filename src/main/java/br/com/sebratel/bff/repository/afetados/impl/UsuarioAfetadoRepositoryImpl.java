@@ -5,6 +5,7 @@ import br.com.sebratel.bff.repository.afetados.UsuarioAfetadoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,5 +42,10 @@ public class UsuarioAfetadoRepositoryImpl implements UsuarioAfetadoRepository {
     @Override
     public List<UsuarioAfetado> findAll() {
         return jpaRepository.findAll();
+    }
+
+    @Override
+    public Integer updateUsersByProtocol(Long protocol, LocalDateTime finishDate) {
+        return jpaRepository.updateUsersByProtocol(protocol, finishDate);
     }
 }
