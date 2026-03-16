@@ -24,7 +24,7 @@ public class ContractDataService {
         this.contractActivationRepository = contractActivationRepository;
     }
 
-    @Cacheable(value = "relatorioContratosCompleto")
+    @Cacheable(value = "contracts-activation", key = "'dados-completos'")
     @Transactional(readOnly = true)
     public List<RelatorioFinalDTO> getDadosCompletosCache() {
         return contractActivationRepository.findMergedContractData()
