@@ -28,7 +28,9 @@ public class RecuperarTodasAsMassivasPeloBancoService {
                         p.getSTATUS(),
                         p.getTIPO_SOLICITACAO(),
                         p.getSOLICITANTE(),
-                        p.getRESPONSAVEL()
+                        p.getRESPONSAVEL(),
+                        p.getCATALOGO(),
+                        p.getPONTODEACESSO()
                 )).toList();
     }
 }

@@ -21,7 +21,9 @@ public interface RecuperarTodasAsMassivasPeloBancoRepository extends JpaReposito
                 t2.title as STATUS,
                 it.title as TIPO_SOLICITACAO,
                 vu.name as SOLICITANTE,
-                vu2.name as RESPONSAVEL
+                vu2.name as RESPONSAVEL,
+                cs.title as CATALOGO,
+                aap.title as PONTODEACESSO
             from assignments a
                 left join assignment_incidents ai on ai.assignment_id = a.id
                 left join teams t on t.id = ai.team_id
@@ -29,6 +31,8 @@ public interface RecuperarTodasAsMassivasPeloBancoRepository extends JpaReposito
                 left join incident_types it on it.id = ai.incident_type_id
                 left join v_users vu on vu.id = a.created_by
                 left join v_users vu2 on vu2.id = a.responsible_id
+                left join catalog_services cs on cs.id = ai.catalog_service_id
+                left join authentication_access_points aap on aap.id = ai.authentication_access_point_id
             where it.id in (1176, 302, 1257)
                 and t2.title not in ('Encerrado', 'Cancelado')
             order by id desc

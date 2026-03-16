@@ -28,7 +28,7 @@ public class CacheConfig {
         RedisSerializer<Object> serializer = RedisSerializer.json();
 
         return RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofHours(5))
+                .entryTtl(Duration.ofSeconds(3500))
                 .disableCachingNullValues()
                 .serializeValuesWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(serializer)

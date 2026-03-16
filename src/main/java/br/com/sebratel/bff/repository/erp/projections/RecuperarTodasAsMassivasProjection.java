@@ -20,4 +20,6 @@ public interface RecuperarTodasAsMassivasProjection {
     String getSOLICITANTE();
 
     String getRESPONSAVEL();
+    String getPONTODEACESSO();
+    String getCATALOGO();
 }

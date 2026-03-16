@@ -11,5 +11,7 @@ public record MassivasBFFOutputDTO(
         String status,
         String tituloIncidente,
         String criadoPor,
-        String responsavel) {
+        String responsavel,
+        String catalogo,
+        String pontoDeACesso) {
 }
