@@ -5,6 +5,7 @@ import br.com.sebratel.bff.dto.splitters.EllevenSplitterResponseDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
@@ -26,6 +27,7 @@ public class ListarSplittersService {
 
     @TokenRetry
     public EllevenSplitterResponseDTO executar() {
+        log.info("Listando todos os splitters.");
         String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
         String url = "https://erp.sebratel.net.br:45715/external/map/splitter/all";
         ExchangeStrategies strategies = ExchangeStrategies.builder()
@@ -43,6 +45,31 @@ public class ListarSplittersService {
                 .block();
 
 
+    }
+
+    @TokenRetry
+    public EllevenSplitterResponseDTO executar(int inicio, int quantidade) {
+        log.info("Listando splitters paginados. Início: {}, Quantidade: {}", inicio, quantidade);
+        String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
+        ExchangeStrategies strategies = ExchangeStrategies.builder()
+                .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(100 * 1024 * 1024))
+                .build();
+
+        return webClient.mutate()
+                .exchangeStrategies(strategies)
+                .baseUrl("https://erp.sebratel.net.br:45715")
+                .build()
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/external/map/splitter/all/paged")
+                        .queryParam("page", inicio)
+                        .queryParam("pageSize", quantidade)
+                        .build())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, response -> handleHttpError("listar splitter erro", response))
+                .bodyToMono(EllevenSplitterResponseDTO.class)
+                .block();
     }
 
 

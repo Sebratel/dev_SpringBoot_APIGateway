@@ -5,7 +5,7 @@ import java.util.List;
 public record EllevenSplitterResponseDTO(
         boolean success,
         Object messages,
-        List<NetworkComponentDTO> response,
+        EllevenPaginatedDTO<List<NetworkComponentDTO>> response,
         String dataResponseType,
         Object elapsedTime
 ) {}

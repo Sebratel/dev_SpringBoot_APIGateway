@@ -9,10 +9,7 @@ import br.com.sebratel.bff.service.RecuperarSolicitacoesDeUmUsuarioService;
 import br.com.sebratel.bff.service.RecuperarTokenDoUsuarioIntegradorEllevenService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -43,6 +40,14 @@ public class SplittersController {
     @GetMapping("/listarSplitters")
     public EllevenSplitterResponseDTO listarSplitters() {
         return listarSplittersService.executar();
+    }
+
+    @GetMapping("/listarSplitters-paginado")
+    public EllevenSplitterResponseDTO listarSplittersPaginado(
+            @RequestParam(defaultValue = "0") int inicio,
+            @RequestParam(defaultValue = "20") int quantidade
+    ) {
+        return listarSplittersService.executar(inicio, quantidade);
     }
 
     @GetMapping("/listarOlts")

@@ -6,6 +6,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Id;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,13 +25,16 @@ public class UsuarioAfetado {
     Long id;
     @Column(name = "user_pppoe")
     String pppoe;
-    @Column(name = "protocol_id")
+    @NotNull(message = "O ID do protocolo é obrigatório")
+    @Column(name = "protocol_id", nullable = false)
     Long protocol;
     @Column(name = "motive")
     String reason;
-    @Column(name = "contract_id")
+    @NotNull(message = "O ID do contrato é obrigatório")
+    @Column(name = "contract_id", nullable = false)
     Long contractId;
-    @Column(name = "finish_date")
+    @NotNull(message = "A estimativa de finalização é obrigatória")
+    @Column(name = "finish_date", nullable = false)
     LocalDateTime finishDate;
     LocalDateTime created;
     @Column(name = "created_by")
