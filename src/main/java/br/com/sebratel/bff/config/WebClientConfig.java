@@ -20,7 +20,6 @@ public class WebClientConfig {
                 .baseUrl("https://erp-staging.sebratel.net.br")
                 .defaultHeader(HttpHeaders.ACCEPT, "*/*")
                 .defaultHeader("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7")
-                .defaultHeader("Connection", "keep-alive")
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8")
                 .defaultHeader("Origin", "https://erp-staging.sebratel.net.br")
                 .defaultHeader("Referer", "https://erp-staging.sebratel.net.br/network_maintenances")
