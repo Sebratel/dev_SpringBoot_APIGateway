@@ -3,7 +3,7 @@ package br.com.sebratel.bff.service;
 import br.com.sebratel.bff.dto.massivas.ImpactDetailsOutputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
 import br.com.sebratel.bff.exceptions.ResourceNotFoundException;
-import br.com.sebratel.bff.model.entity.UsuarioAfetado;
+import br.com.sebratel.bff.model.entity.UsuarioAfetadoEntity;
 import br.com.sebratel.bff.repository.afetados.UsuarioAfetadoRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,14 +28,14 @@ public class UsuarioAfetadoService {
     }
 
     @Transactional(transactionManager = "afetadosTransactionManager")
-    public ImpactedUsersOutputDTO createImpactedUsersDTO(List<UsuarioAfetado> input) {
+    public ImpactedUsersOutputDTO createImpactedUsersDTO(List<UsuarioAfetadoEntity> input) {
         log.info("Salvando lista de {} usuários afetados", input.size());
-        List<UsuarioAfetado> usuarioAfetados = usuarioAfetadoRepository.saveAll(input);
+        List<UsuarioAfetadoEntity> usuarioAfetadoEntities = usuarioAfetadoRepository.saveAll(input);
         log.info("Usuários afetados para o protocolo criados com sucesso.");
-        return getImpactedUsersDTO(usuarioAfetados);
+        return getImpactedUsersDTO(usuarioAfetadoEntities);
     }
 
-    private ImpactedUsersOutputDTO getImpactedUsersDTO(List<UsuarioAfetado> usuariosAfetados) {
+    private ImpactedUsersOutputDTO getImpactedUsersDTO(List<UsuarioAfetadoEntity> usuariosAfetados) {
         log.debug("Criando DTO de usuários afetados.{}", usuariosAfetados);
         List<Map<Long, ImpactDetailsOutputDTO>> impactedUsersDTO = usuariosAfetados.stream().map(usuarioAfetado -> {
             LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
@@ -69,9 +69,9 @@ public class UsuarioAfetadoService {
 
     public ImpactedUsersOutputDTO getUsuariosAfetadosByPppoe(String pppoe) {
         log.info("Buscando usuário afetado pelo PPPoE: {}", pppoe);
-        UsuarioAfetado usuarioAfetado = usuarioAfetadoRepository.findByPppoe(pppoe).orElseThrow(() -> new ResourceNotFoundException("Usuário afetado não encontrado"));
-        log.info("Usuário afetado encontrado: {}", usuarioAfetado);
-        return getImpactedUsersDTO(List.of(usuarioAfetado));
+        UsuarioAfetadoEntity usuarioAfetadoEntity = usuarioAfetadoRepository.findByPppoe(pppoe).orElseThrow(() -> new ResourceNotFoundException("Usuário afetado não encontrado"));
+        log.info("Usuário afetado encontrado: {}", usuarioAfetadoEntity);
+        return getImpactedUsersDTO(List.of(usuarioAfetadoEntity));
     }
 
     public void removeUsersByProtocol(Long protocol) {
@@ -83,7 +83,7 @@ public class UsuarioAfetadoService {
     @Transactional(transactionManager = "afetadosTransactionManager")
     public void alterarDataEstimadaParaFinalizacao(Long protocol, LocalDateTime finishDate) {
         log.info("Alterando data estimada para finalização");
-        List<UsuarioAfetado> affectedUsers = usuarioAfetadoRepository.findByProtocol(protocol);
+        List<UsuarioAfetadoEntity> affectedUsers = usuarioAfetadoRepository.findByProtocol(protocol);
         if (affectedUsers.isEmpty()) {
             log.warn("Nenhum usuário afetado encontrado para o protocolo: {}", protocol);
             throw new ResourceNotFoundException("Nenhum usuário afetado encontrado para o protocolo: " + protocol);
@@ -99,8 +99,8 @@ public class UsuarioAfetadoService {
 
     public ImpactedUsersOutputDTO getUsuariosAfetadosByContractId(Long contractId) {
         log.info("Buscando usuário afetado pelo email: {}", contractId);
-        UsuarioAfetado usuarioAfetado = usuarioAfetadoRepository.findByContractId(contractId).orElseThrow(() -> new ResourceNotFoundException("Usuário afetado não encontrado"));
-        log.info("Usuário afetado encontrado por email: {}", usuarioAfetado);
-        return getImpactedUsersDTO(List.of(usuarioAfetado));
+        UsuarioAfetadoEntity usuarioAfetadoEntity = usuarioAfetadoRepository.findByContractId(contractId).orElseThrow(() -> new ResourceNotFoundException("Usuário afetado não encontrado"));
+        log.info("Usuário afetado encontrado por email: {}", usuarioAfetadoEntity);
+        return getImpactedUsersDTO(List.of(usuarioAfetadoEntity));
     }
 }
