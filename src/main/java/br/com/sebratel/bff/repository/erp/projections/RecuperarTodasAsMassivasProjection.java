@@ -18,6 +18,7 @@ public interface RecuperarTodasAsMassivasProjection {
     String getTIPO_SOLICITACAO();
 
     String getSOLICITANTE();
+    LocalDateTime getSLA();
 
     String getRESPONSAVEL();
     String getPONTODEACESSO();
