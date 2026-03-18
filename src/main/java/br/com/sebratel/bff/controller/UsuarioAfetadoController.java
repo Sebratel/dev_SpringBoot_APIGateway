@@ -2,7 +2,7 @@ package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.dto.ApiResponse;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
-import br.com.sebratel.bff.model.entity.UsuarioAfetado;
+import br.com.sebratel.bff.model.entity.UsuarioAfetadoEntity;
 import br.com.sebratel.bff.service.UsuarioAfetadoService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,10 +60,10 @@ public class UsuarioAfetadoController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> createUsuarioAfetado(@RequestBody List<UsuarioAfetado> usuarioAfetado) {
+    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> createUsuarioAfetado(@RequestBody List<UsuarioAfetadoEntity> usuarioAfetadoEntity) {
         log.info("Iniciando processo de criação de usuário afetado para o protocolo");
         try {
-            ImpactedUsersOutputDTO savedUsuario = usuarioAfetadoService.createImpactedUsersDTO(usuarioAfetado);
+            ImpactedUsersOutputDTO savedUsuario = usuarioAfetadoService.createImpactedUsersDTO(usuarioAfetadoEntity);
             log.info("Usuários afetados para o protocolo criado com sucesso.");
 
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()

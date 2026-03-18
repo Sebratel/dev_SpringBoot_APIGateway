@@ -1,8 +1,6 @@
 package br.com.sebratel.bff.controller;
 
-import br.com.sebratel.bff.dto.splitters.EllevenSplitterResponseDTO;
-import br.com.sebratel.bff.dto.splitters.RecuperarSolicitacaoDeClienteOutputDTO;
-import br.com.sebratel.bff.dto.splitters.RecuperarTokenEllevenOutputDTO;
+import br.com.sebratel.bff.dto.splitters.*;
 import br.com.sebratel.bff.service.ListarOltsService;
 import br.com.sebratel.bff.service.ListarSplittersService;
 import br.com.sebratel.bff.service.RecuperarSolicitacoesDeUmUsuarioService;
@@ -10,6 +8,8 @@ import br.com.sebratel.bff.service.RecuperarTokenDoUsuarioIntegradorEllevenServi
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -38,12 +38,17 @@ public class SplittersController {
     }
 
     @GetMapping("/listarSplitters")
-    public EllevenSplitterResponseDTO listarSplitters() {
+    public EllevenSplitterResponseDTO<List<NetworkComponentDTO>> listarSplitters() {
         return listarSplittersService.executar();
     }
 
+    @GetMapping("/{splitterId}")
+    public EllevenSplitterResponseDTO<List<NetworkComponentDTO>> listarSplitterPeloId(@PathVariable Long splitterId) {
+        return listarSplittersService.executar(splitterId);
+    }
+
     @GetMapping("/listarSplitters-paginado")
-    public EllevenSplitterResponseDTO listarSplittersPaginado(
+    public EllevenSplitterResponseDTO<EllevenPaginatedDTO<List<NetworkComponentDTO>>> listarSplittersPaginado(
             @RequestParam(defaultValue = "0") int inicio,
             @RequestParam(defaultValue = "20") int quantidade
     ) {
@@ -51,7 +56,7 @@ public class SplittersController {
     }
 
     @GetMapping("/listarOlts")
-    public EllevenSplitterResponseDTO listarOlts() {
+    public EllevenSplitterResponseDTO<List<NetworkComponentDTO>> listarOlts() {
         return listarOltsService.executar();
     }
 

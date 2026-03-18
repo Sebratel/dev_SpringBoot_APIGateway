@@ -1,9 +1,15 @@
 package br.com.sebratel.bff.service;
 
 import br.com.sebratel.bff.annotations.TokenRetry;
+import br.com.sebratel.bff.dto.splitters.EllevenPaginatedDTO;
 import br.com.sebratel.bff.dto.splitters.EllevenSplitterResponseDTO;
+import br.com.sebratel.bff.dto.splitters.NetworkComponentDTO;
+import br.com.sebratel.bff.exceptions.ResourceNotFoundException;
+import br.com.sebratel.bff.repository.erp.projections.SplitterProjection;
+import br.com.sebratel.bff.repository.erp.splitters.SplitterRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
@@ -12,21 +18,25 @@ import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @Service
 @Slf4j
 public class ListarSplittersService {
 
     private final WebClient webClient;
     private final RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService;
+    private final SplitterRepository splitterRepository;
 
     @Autowired
-    public ListarSplittersService(WebClient webClient, RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService) {
+    public ListarSplittersService(WebClient webClient, RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService, SplitterRepository splitterRepository) {
         this.webClient = webClient;
         this.recuperarTokenDoUsuarioIntegradorEllevenService = recuperarTokenDoUsuarioIntegradorEllevenService;
+        this.splitterRepository = splitterRepository;
     }
 
     @TokenRetry
-    public EllevenSplitterResponseDTO executar() {
+    public EllevenSplitterResponseDTO<List<NetworkComponentDTO>> executar() {
         log.info("Listando todos os splitters.");
         String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
         String url = "https://erp.sebratel.net.br:45715/external/map/splitter/all";
@@ -41,14 +51,13 @@ public class ListarSplittersService {
                 .uri(url)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .retrieve()
-                .bodyToMono(EllevenSplitterResponseDTO.class)
+                .onStatus(HttpStatusCode::isError, response -> handleHttpError("listar splitter erro", response))
+                .bodyToMono(new ParameterizedTypeReference<EllevenSplitterResponseDTO<List<NetworkComponentDTO>>>() {})
                 .block();
-
-
     }
 
     @TokenRetry
-    public EllevenSplitterResponseDTO executar(int inicio, int quantidade) {
+    public EllevenSplitterResponseDTO<EllevenPaginatedDTO<List<NetworkComponentDTO>>> executar(int inicio, int quantidade) {
         log.info("Listando splitters paginados. Início: {}, Quantidade: {}", inicio, quantidade);
         String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
         ExchangeStrategies strategies = ExchangeStrategies.builder()
@@ -68,8 +77,23 @@ public class ListarSplittersService {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, response -> handleHttpError("listar splitter erro", response))
-                .bodyToMono(EllevenSplitterResponseDTO.class)
+                .bodyToMono(new ParameterizedTypeReference<EllevenSplitterResponseDTO<EllevenPaginatedDTO<List<NetworkComponentDTO>>>>() {})
                 .block();
+    }
+
+    @TokenRetry
+    public EllevenSplitterResponseDTO<List<NetworkComponentDTO>> executar(Long splitterId) {
+        log.info("Listando Splitter {}", splitterId);
+        SplitterProjection splitterProjection = splitterRepository.getSplitterById(splitterId)
+                .orElseThrow(() -> new ResourceNotFoundException("Não foi encontrado splitter. {}"));
+        return new EllevenSplitterResponseDTO<List<NetworkComponentDTO>>(
+                true,
+                null,
+                null,
+                null,
+                null
+        );
+
     }
 
 

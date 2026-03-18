@@ -1,11 +1,15 @@
 package br.com.sebratel.bff.service;
 
 import br.com.sebratel.bff.dto.splitters.EllevenSplitterResponseDTO;
+import br.com.sebratel.bff.dto.splitters.NetworkComponentDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
+
+import java.util.List;
 
 @Service
 public class ListarOltsService {
@@ -18,7 +22,7 @@ public class ListarOltsService {
         this.recuperarTokenDoUsuarioIntegradorEllevenService = recuperarTokenDoUsuarioIntegradorEllevenService;
     }
 
-    public EllevenSplitterResponseDTO executar() {
+    public EllevenSplitterResponseDTO<List<NetworkComponentDTO>> executar() {
         String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
         String url = "https://erp.sebratel.net.br:45715/external/map/olt/all";
         ExchangeStrategies strategies = ExchangeStrategies.builder()
@@ -32,7 +36,7 @@ public class ListarOltsService {
                 .uri(url)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .retrieve()
-                .bodyToMono(EllevenSplitterResponseDTO.class)
+                .bodyToMono(new ParameterizedTypeReference<EllevenSplitterResponseDTO<List<NetworkComponentDTO>>>(){})
                 .block();
     }
 }
