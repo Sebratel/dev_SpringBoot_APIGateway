@@ -6,6 +6,7 @@ public record MassivasBFFOutputDTO(
         Long id,
         LocalDateTime criacao,
         LocalDateTime finalizado,
+        LocalDateTime sla,
         String protocolo,
         String equipe,
         String status,

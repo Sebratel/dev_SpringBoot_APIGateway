@@ -23,6 +23,7 @@ public class RecuperarTodasAsMassivasPeloBancoService {
                         p.getID(),
                         p.getCRIACAO(),
                         p.getFINALIZADO(),
+                        p.getSLA(),
                         p.getPROTOCOLO(),
                         p.getEQUIPE(),
                         p.getSTATUS(),

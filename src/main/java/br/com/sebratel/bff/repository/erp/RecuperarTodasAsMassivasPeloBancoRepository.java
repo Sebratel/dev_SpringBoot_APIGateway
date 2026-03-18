@@ -15,6 +15,7 @@ public interface RecuperarTodasAsMassivasPeloBancoRepository extends JpaReposito
             SELECT
                 a.id as ID,
                 a.created as CRIACAO,
+                a.final_date as SLA,
                 a.conclusion_date as FINALIZADO,
                 ai.protocol as PROTOCOLO,
                 t.title as EQUIPE,
