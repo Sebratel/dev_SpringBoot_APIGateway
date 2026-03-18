@@ -22,7 +22,6 @@ public class ContratoPersonalizadoDTO {
     private String description;
     private String status;
 
-    // Construtor utilitário para converter da Projection
     public ContratoPersonalizadoDTO(ContratoPersonalizadoProjection projection) {
         this.nome = projection.getNome();
         this.numeroContrato = projection.getNumeroContrato();
