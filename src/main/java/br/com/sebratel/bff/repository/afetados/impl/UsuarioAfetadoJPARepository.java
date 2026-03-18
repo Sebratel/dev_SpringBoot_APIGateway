@@ -1,6 +1,6 @@
 package br.com.sebratel.bff.repository.afetados.impl;
 
-import br.com.sebratel.bff.model.entity.UsuarioAfetado;
+import br.com.sebratel.bff.model.entity.UsuarioAfetadoEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,9 +14,9 @@ import java.util.Optional;
 
 
 @Repository
-public interface UsuarioAfetadoJPARepository extends JpaRepository<UsuarioAfetado, Long> {
-    Optional<UsuarioAfetado> findByPppoe(String pppoe);
-    List<UsuarioAfetado> findByProtocol(Long protocol);
+public interface UsuarioAfetadoJPARepository extends JpaRepository<UsuarioAfetadoEntity, Long> {
+    Optional<UsuarioAfetadoEntity> findByPppoe(String pppoe);
+    List<UsuarioAfetadoEntity> findByProtocol(Long protocol);
     @Modifying
     @Transactional
     @Query(value = "DELETE FROM assignment_clients WHERE protocol_id = :protocol", nativeQuery = true)
@@ -27,5 +27,5 @@ public interface UsuarioAfetadoJPARepository extends JpaRepository<UsuarioAfetad
     @Query(value = "UPDATE assignment_clients SET finish_date = :finishDate  WHERE protocol_id = :protocol", nativeQuery = true)
     Integer updateUsersByProtocol(@Param("protocol") Long protocol, @Param("finishDate") LocalDateTime finishDate);
 
-    Optional<UsuarioAfetado> findByContractId(Long contractId);
+    Optional<UsuarioAfetadoEntity> findByContractId(Long contractId);
 }

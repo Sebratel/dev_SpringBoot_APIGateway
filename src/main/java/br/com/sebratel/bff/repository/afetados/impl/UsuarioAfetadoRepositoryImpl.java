@@ -1,6 +1,6 @@
 package br.com.sebratel.bff.repository.afetados.impl;
 
-import br.com.sebratel.bff.model.entity.UsuarioAfetado;
+import br.com.sebratel.bff.model.entity.UsuarioAfetadoEntity;
 import br.com.sebratel.bff.repository.afetados.UsuarioAfetadoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -20,17 +20,17 @@ public class UsuarioAfetadoRepositoryImpl implements UsuarioAfetadoRepository {
     }
 
     @Override
-    public List<UsuarioAfetado> saveAll(List<UsuarioAfetado> usuarioAfetado) {
-        return jpaRepository.saveAll(usuarioAfetado);
+    public List<UsuarioAfetadoEntity> saveAll(List<UsuarioAfetadoEntity> usuarioAfetadoEntity) {
+        return jpaRepository.saveAll(usuarioAfetadoEntity);
     }
 
     @Override
-    public Optional<UsuarioAfetado> findByPppoe(String pppoe) {
+    public Optional<UsuarioAfetadoEntity> findByPppoe(String pppoe) {
         return jpaRepository.findByPppoe(pppoe);
     }
 
     @Override
-    public List<UsuarioAfetado> findByProtocol(Long protocol) {
+    public List<UsuarioAfetadoEntity> findByProtocol(Long protocol) {
         return jpaRepository.findByProtocol(protocol);
     }
 
@@ -40,7 +40,7 @@ public class UsuarioAfetadoRepositoryImpl implements UsuarioAfetadoRepository {
     }
 
     @Override
-    public List<UsuarioAfetado> findAll() {
+    public List<UsuarioAfetadoEntity> findAll() {
         return jpaRepository.findAll();
     }
 
@@ -50,7 +50,7 @@ public class UsuarioAfetadoRepositoryImpl implements UsuarioAfetadoRepository {
     }
 
     @Override
-    public Optional<UsuarioAfetado> findByContractId(Long contractId) {
+    public Optional<UsuarioAfetadoEntity> findByContractId(Long contractId) {
         return jpaRepository.findByContractId(contractId);
     }
 }
