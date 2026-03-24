@@ -7,7 +7,7 @@ import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoOutputDTO;
 import br.com.sebratel.bff.dto.massivas.api.FinalizaRegistroMassivoInputDTO;
 import br.com.sebratel.bff.dto.massivas.api.FinalizarRegistroMassivoOutputDTO;
 import br.com.sebratel.bff.service.massivas.FinalizarMassivaNoEllevenApiService;
-import br.com.sebratel.bff.service.RecuperarTodasAsMassivasPeloBancoService;
+import br.com.sebratel.bff.service.massivas.RecuperarTodasAsMassivasPeloBancoService;
 import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoEllevenApiService;
 import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoEllevenService;
 import br.com.sebratel.bff.service.massivas.EnviarListaDeAfetadosParaNativeService;
