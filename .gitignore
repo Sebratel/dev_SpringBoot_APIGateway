@@ -38,3 +38,4 @@ build/
 aj*.txt
 *.log.*
 logs/**
+/meus-logs/bff.log
