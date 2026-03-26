@@ -1,10 +1,7 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.dto.splitters.*;
-import br.com.sebratel.bff.service.ListarOltsService;
-import br.com.sebratel.bff.service.ListarSplittersService;
-import br.com.sebratel.bff.service.RecuperarSolicitacoesDeUmUsuarioService;
-import br.com.sebratel.bff.service.RecuperarTokenDoUsuarioIntegradorEllevenService;
+import br.com.sebratel.bff.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -20,22 +17,31 @@ public class SplittersController {
     private final ListarSplittersService listarSplittersService;
     private final ListarOltsService listarOltsService;
     private final RecuperarSolicitacoesDeUmUsuarioService recuperarSolicitacoesDeUmUsuarioService;
+    private final GetConnectionsService getConnectionsService;
 
     @Autowired
     public SplittersController(RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService,
                                ListarSplittersService listarSplittersService,
                                ListarOltsService listarOltsService,
-                               RecuperarSolicitacoesDeUmUsuarioService recuperarSolicitacoesDeUmUsuarioService) {
+                               RecuperarSolicitacoesDeUmUsuarioService recuperarSolicitacoesDeUmUsuarioService,
+                               GetConnectionsService getConnectionsService) {
         this.recuperarTokenDoUsuarioIntegradorEllevenService = recuperarTokenDoUsuarioIntegradorEllevenService;
         this.listarSplittersService = listarSplittersService;
         this.listarOltsService = listarOltsService;
         this.recuperarSolicitacoesDeUmUsuarioService = recuperarSolicitacoesDeUmUsuarioService;
+        this.getConnectionsService = getConnectionsService;
     }
 
     @GetMapping("/recuperarToken")
     public RecuperarTokenEllevenOutputDTO recuperarTokenDoUsuarioIntegradorElleven() {
         return recuperarTokenDoUsuarioIntegradorEllevenService.executar();
     }
+
+    @GetMapping("/listarConnections")
+    public EllevenSplitterResponseDTO<List<ConnectionDTO>> listarConnections() {
+        return getConnectionsService.executar();
+    }
+
 
     @GetMapping("/listarSplitters")
     public EllevenSplitterResponseDTO<List<NetworkComponentDTO>> listarSplitters() {

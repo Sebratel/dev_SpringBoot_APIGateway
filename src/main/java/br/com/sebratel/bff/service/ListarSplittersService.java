@@ -9,6 +9,7 @@ import br.com.sebratel.bff.repository.erp.projections.SplitterProjection;
 import br.com.sebratel.bff.repository.erp.splitters.SplitterRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -36,6 +37,7 @@ public class ListarSplittersService {
     }
 
     @TokenRetry
+    @Cacheable(value="splitters", key="'splitters'" )
     public EllevenSplitterResponseDTO<List<NetworkComponentDTO>> executar() {
         log.info("Listando todos os splitters.");
         String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();

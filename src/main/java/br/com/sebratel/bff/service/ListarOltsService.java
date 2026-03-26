@@ -3,6 +3,7 @@ package br.com.sebratel.bff.service;
 import br.com.sebratel.bff.dto.splitters.EllevenSplitterResponseDTO;
 import br.com.sebratel.bff.dto.splitters.NetworkComponentDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class ListarOltsService {
         this.recuperarTokenDoUsuarioIntegradorEllevenService = recuperarTokenDoUsuarioIntegradorEllevenService;
     }
 
+    @Cacheable(value="splitters", key="'olts'")
     public EllevenSplitterResponseDTO<List<NetworkComponentDTO>> executar() {
         String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
         String url = "https://erp.sebratel.net.br:45715/external/map/olt/all";
