@@ -37,7 +37,6 @@ public class ListarSplittersService {
     }
 
     @TokenRetry
-    @Cacheable(value="splitters", key="'splitters'" )
     public EllevenSplitterResponseDTO<List<NetworkComponentDTO>> executar() {
         log.info("Listando todos os splitters.");
         String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();

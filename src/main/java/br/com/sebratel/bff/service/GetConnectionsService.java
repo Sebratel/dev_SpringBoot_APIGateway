@@ -32,7 +32,6 @@ public class GetConnectionsService {
     }
 
     @TokenRetry
-    @Cacheable(value = "splitters", key = "'connections'")
     public EllevenSplitterResponseDTO<List<ConnectionDTO>> executar() {
         log.info("Listando todas as connections.");
 

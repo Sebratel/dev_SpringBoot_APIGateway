@@ -23,7 +23,6 @@ public class ListarOltsService {
         this.recuperarTokenDoUsuarioIntegradorEllevenService = recuperarTokenDoUsuarioIntegradorEllevenService;
     }
 
-    @Cacheable(value="splitters", key="'olts'")
     public EllevenSplitterResponseDTO<List<NetworkComponentDTO>> executar() {
         String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
         String url = "https://erp.sebratel.net.br:45715/external/map/olt/all";
