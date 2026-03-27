@@ -45,7 +45,7 @@ public class UsuarioAfetadoService {
 
             ImpactDetailsOutputDTO impactDetailsDTO = ImpactDetailsOutputDTO.builder()
                     .reason(usuarioAfetado.getReason())
-                    .estimateTimeOfRestoration(estimateTimeOfRestoration)
+                    .estimateTimeOfRestoration(estimateTimeOfRestoration > 0 ?estimateTimeOfRestoration : 1)
                     .build();
             Map<Long, ImpactDetailsOutputDTO> impactedUsers = new HashMap<>();
             impactedUsers.put(usuarioAfetado.getContractId(), impactDetailsDTO);
