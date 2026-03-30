@@ -20,4 +20,7 @@ public class PersonEntity {
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
+
+    @Column(name = "tx_id")
+    String txId;
 }
