@@ -35,6 +35,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/api/v1/afetados/contract/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "api/v1/matrix").permitAll()
                         .anyRequest().authenticated()
                 ).oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.decoder(jwtDecoder()))

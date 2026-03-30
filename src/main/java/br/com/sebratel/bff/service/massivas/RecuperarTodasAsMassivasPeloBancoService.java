@@ -1,7 +1,7 @@
 package br.com.sebratel.bff.service.massivas;
 
 import br.com.sebratel.bff.dto.massivas.MassivasBFFOutputDTO;
-import br.com.sebratel.bff.repository.erp.RecuperarTodasAsMassivasPeloBancoRepository;
+import br.com.sebratel.bff.repository.erp.massivas.RecuperarTodasAsMassivasPeloBancoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

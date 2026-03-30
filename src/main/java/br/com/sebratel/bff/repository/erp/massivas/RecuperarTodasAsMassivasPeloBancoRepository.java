@@ -1,4 +1,4 @@
-package br.com.sebratel.bff.repository.erp;
+package br.com.sebratel.bff.repository.erp.massivas;
 
 import br.com.sebratel.bff.model.ErpContract;
 import br.com.sebratel.bff.repository.erp.projections.RecuperarTodasAsMassivasProjection;
@@ -21,8 +21,8 @@ public interface RecuperarTodasAsMassivasPeloBancoRepository extends JpaReposito
                 t.title as EQUIPE,
                 t2.title as STATUS,
                 it.title as TIPO_SOLICITACAO,
-                vu.name as SOLICITANTE,
-                vu2.name as RESPONSAVEL,
+                v.name as SOLICITANTE, -- CREATED
+                p2.name as RESPONSAVEL, -- REQUESTOR
                 cs.title as CATALOGO,
                 aap.title as PONTODEACESSO
             from assignments a
@@ -30,8 +30,8 @@ public interface RecuperarTodasAsMassivasPeloBancoRepository extends JpaReposito
                 left join teams t on t.id = ai.team_id
                 left join incident_status t2 on t2.id = ai.incident_status_id
                 left join incident_types it on it.id = ai.incident_type_id
-                left join v_users vu on vu.id = a.created_by
-                left join v_users vu2 on vu2.id = a.responsible_id
+                left join v_users v on v.id = a.created_by
+                left join people p2 on p2.id = a.requestor_id
                 left join catalog_services cs on cs.id = ai.catalog_service_id
                 left join authentication_access_points aap on aap.id = ai.authentication_access_point_id
             where it.id in (1176, 302, 1257)
