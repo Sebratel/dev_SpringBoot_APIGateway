@@ -2,6 +2,7 @@ package br.com.sebratel.bff.config;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -22,6 +23,12 @@ import java.util.List;
 @Slf4j
 public class SecurityConfig {
 
+    @Value("${spring.security.user.name}")
+    private String username;
+
+    @Value("${spring.security.user.password}")
+    private String password;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -33,20 +40,22 @@ public class SecurityConfig {
                     return corsConfiguration;
                 }))
                 .csrf(AbstractHttpConfigurer::disable)
+                .httpBasic(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/api/v1/afetados/contract/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "api/v1/matrix").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/matrix").permitAll()
+                        .requestMatchers("/api/v1/token/google").authenticated()
                         .anyRequest().authenticated()
-                ).oauth2ResourceServer(oauth2 -> oauth2
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.decoder(jwtDecoder()))
                         .authenticationEntryPoint((request, response, authException) -> {
-                            log.warn("Tentativa de acesso negada: {}", authException.getMessage());
+                            log.warn("Acesso negada: {}", authException.getMessage());
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.getWriter().write("Acesso restrito: Token inválido ou domínio não autorizado.");
+                            response.setCharacterEncoding("UTF-8");
+                            response.getWriter().write("Acesso restrito: Token inválido ou não fornecido.");
                         })
-        );
-
-
+                );
 
         return http.build();
     }
@@ -60,5 +69,16 @@ public class SecurityConfig {
         OAuth2TokenValidator<Jwt> combinedValidator = new DelegatingOAuth2TokenValidator<>(withIssuer, sebratelValidator);
         jwtDecoder.setJwtValidator(combinedValidator);
         return jwtDecoder;
+    }
+
+    @Bean
+    public org.springframework.security.core.userdetails.UserDetailsService userDetailsService() {
+        var user = org.springframework.security.core.userdetails.User.builder()
+                .username(username)
+                .password("{noop}" + password)
+                .roles("USER")
+                .build();
+
+        return new org.springframework.security.provisioning.InMemoryUserDetailsManager(user);
     }
 }
