@@ -2,7 +2,9 @@ package br.com.sebratel.bff.service.massivas;
 
 import br.com.sebratel.bff.dto.massivas.api.FinalizaRegistroMassivoInputDTO;
 import br.com.sebratel.bff.dto.massivas.api.FinalizarRegistroMassivoOutputDTO;
+import br.com.sebratel.bff.model.Employee;
 import br.com.sebratel.bff.service.RecuperarTokenDoUsuarioIntegradorEllevenService;
+import br.com.sebratel.bff.utils.JwtInformation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -27,6 +29,11 @@ public class FinalizarMassivaNoEllevenApiService {
         log.info("Iniciando finalização de massiva no ERP via API {}", this.getClass());
         String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
         log.info(token);
+
+        Employee x = JwtInformation.retrieveUserData();
+        String email = x.email();
+        String name = x.name();
+        input.setDescription(input.getDescription() + " - " + name + "("+ email +")");
 
         return this.webClient
                 .mutate()

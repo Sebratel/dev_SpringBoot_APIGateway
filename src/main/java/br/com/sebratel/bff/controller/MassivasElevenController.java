@@ -151,20 +151,20 @@ public class MassivasElevenController {
 
             if(finalizarRegistroMassivoOutputDTO.isSuccess()) {
                 log.info("Massiva finalizada com sucesso no ERP. [ID ASSIGNMENT: {}, MESSAGE: {}]",
-                        input.assignmentId(),
-                        input.description());
+                        input.getAssignmentId(),
+                        input.getDescription());
 
                 return ResponseEntity.ok(finalizarRegistroMassivoOutputDTO);
 
             } else {
                 log.error("Erro ao finalizar massiva no ERP. [ID ASSIGNMENT: {}, MESSAGE: {}]",
-                        input.assignmentId(),
-                        input.description());
+                        input.getAssignmentId(),
+                        input.getDescription());
 
                 return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(finalizarRegistroMassivoOutputDTO);
             }
         } catch (Exception e) {
-            log.error("Erro ao finalizar massiva SERVER ERROR.  ASSIGNMENT: {}:\n {}", input.assignmentId(), e.getMessage());
+            log.error("Erro ao finalizar massiva SERVER ERROR.  ASSIGNMENT: {}:\n {}", input.getAssignmentId(), e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

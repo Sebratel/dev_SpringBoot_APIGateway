@@ -2,9 +2,11 @@ package br.com.sebratel.bff.service.massivas;
 
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoInputDTO;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoOutputDTO;
+import br.com.sebratel.bff.model.Employee;
 import br.com.sebratel.bff.model.entity.UsuarioAfetadoEntity;
 import br.com.sebratel.bff.service.EmployeeService;
 import br.com.sebratel.bff.service.RecuperarTokenDoUsuarioIntegradorEllevenService;
+import br.com.sebratel.bff.utils.JwtInformation;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,22 +39,34 @@ public class AdicionarMassivaNoEllevenApiService {
     }
 
     public AberturaRegistroMassivoOutputDTO executar(@Valid AberturaRegistroMassivoInputDTO input) {
-        log.info("Iniciando processo de abertura de registro massivo no Elleven para o título: {}", input.getAssignment().getTitle());
+        Employee x = JwtInformation.retrieveUserData();
+        String email = x.email();
+        String name = x.name();
 
-        String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
-        String url = "https://erp.sebratel.net.br:45715/external/integrations/thirdparty/opendetailedsolicitation";
+        input.getAssignment().setDescription(input.getAssignment().getDescription() + " - " + name + "("+ email +")");
 
-        log.debug("Verificando se existem contratos B2B entre os usuários afetados...");
-        boolean hasB2B = employeeService.hasB2BinInput(input.getAffectedUsers().stream().map(UsuarioAfetadoEntity::getContractId).toList());
-
-        int incidentTypeId = this.decideForIncidentOrMassiveEvent(input, hasB2B);
-        input.setIncidentTypeId(incidentTypeId);
-
-        log.info("Tipo de incidente decidido: {} (Baseado em hasB2B: {} e Qtd Afetados: {})",
-                incidentTypeId, hasB2B, input.getAffectedUsersQuantity());
+        log.info("[MASSIVA] Usuário {} ({}) solicitando abertura de registro: '{}'. Total de usuários afetados: {}",
+                name, email, input.getAssignment().getTitle(), input.getAffectedUsersQuantity());
 
         try {
-            log.info("Enviando requisição POST para a API Elleven em: {}", url);
+            log.debug("[MASSIVA] Buscando token de integração...");
+            String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
+            String url = "https://erp.sebratel.net.br:45715/external/integrations/thirdparty/opendetailedsolicitation";
+
+            log.debug("[MASSIVA] Analisando contratos para identificar presença de B2B...");
+            boolean hasB2B = employeeService.hasB2BinInput(input.getAffectedUsers().stream().map(UsuarioAfetadoEntity::getContractId).toList());
+
+            int incidentTypeId = this.decideForIncidentOrMassiveEvent(input, hasB2B);
+            input.setIncidentTypeId(incidentTypeId);
+
+            log.info("[MASSIVA] Regra de negócio aplicada: IncidentTypeId definido como {} (Possui B2B: {})",
+                    incidentTypeId, hasB2B);
+
+            log.info("[MASSIVA] Enviando payload para Elleven API: {}", url);
+
+            // Medindo o tempo de resposta da API externa (opcional, mas muito útil)
+            long startTime = System.currentTimeMillis();
+
             AberturaRegistroMassivoOutputDTO response = webClient
                     .post()
                     .uri(url)
@@ -63,18 +77,26 @@ public class AdicionarMassivaNoEllevenApiService {
                     .bodyToMono(AberturaRegistroMassivoOutputDTO.class)
                     .block();
 
-            log.info("Registro massivo criado com sucesso no Elleven. Resposta: {}", response);
+            long duration = System.currentTimeMillis() - startTime;
+
+            log.info("[MASSIVA] Sucesso! Registro criado no Elleven em {}ms. Resposta: {}", duration, response);
             return response;
 
         } catch (WebClientResponseException.Unauthorized e) {
-            log.error("Erro 401 (Não autorizado) ao tentar acessar a API do Elleven.");
+            log.error("[MASSIVA-ERRO] Erro de autenticação (401) na API Elleven. Verificando limpeza de cache.");
             if (cacheManager.getCache("token-de-integracao") != null) {
-                log.warn("Limpando cache 'token-de-integracao' devido a expiração ou invalidade do token.");
+                log.warn("[MASSIVA-CACHE] Token inválido detectado. Evicting 'token-static-key' do cache.");
                 Objects.requireNonNull(cacheManager.getCache("token-de-integracao")).evict("token-static-key");
             }
             throw e;
+        } catch (WebClientResponseException e) {
+            // Log específico para erros de API (4xx ou 5xx) com o corpo do erro da API
+            log.error("[MASSIVA-ERRO] Falha na API Elleven. Status: {}. Response Body: {}",
+                    e.getStatusCode(), e.getResponseBodyAsString());
+            throw e;
         } catch (Exception e) {
-            log.error("Erro inesperado ao processar abertura de massiva no Elleven: {}", e.getMessage(), e);
+            log.error("[MASSIVA-ERRO] Falha crítica ao processar massiva. Título: {}. Causa: {}",
+                    input.getAssignment().getTitle(), e.getMessage(), e);
             throw e;
         }
     }
