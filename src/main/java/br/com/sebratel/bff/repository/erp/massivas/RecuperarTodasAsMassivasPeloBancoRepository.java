@@ -34,7 +34,7 @@ public interface RecuperarTodasAsMassivasPeloBancoRepository extends JpaReposito
                 left join people p2 on p2.id = a.requestor_id
                 left join catalog_services cs on cs.id = ai.catalog_service_id
                 left join authentication_access_points aap on aap.id = ai.authentication_access_point_id
-            where it.id in (1176, 302, 1257)
+            where it.id in (1176, 302, 1257, 1265)
                 and t2.title not in ('Encerrado', 'Cancelado')
             order by id desc
             """, nativeQuery = true)
