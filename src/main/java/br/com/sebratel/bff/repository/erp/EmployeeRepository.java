@@ -3,8 +3,10 @@ package br.com.sebratel.bff.repository.erp;
 import br.com.sebratel.bff.model.entity.PersonEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -21,4 +23,17 @@ public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
                 vu.email = :email
             """, nativeQuery = true)
     Optional<Long> findPersonIdByEmail(String email);
+
+    @Query(value = """
+    SELECT EXISTS (
+        SELECT 1
+        FROM authentication_contracts ac
+        JOIN contracts c ON c.id = ac.contract_id
+        JOIN people p ON p.id = c.client_id
+        JOIN insignias i ON i.id = p.insignia_id
+        WHERE p.id IN (:list)
+        AND i.title IN ('Contrato Corporativo PME', 'Contrato Corporativo')
+    )
+    """, nativeQuery = true)
+    boolean hasB2BinInput(@Param("list") List<Long> list);
 }

@@ -1,11 +1,7 @@
 package br.com.sebratel.bff.model.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.Id;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
+import br.com.sebratel.bff.enums.ClientType;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -33,6 +29,9 @@ public class UsuarioAfetadoEntity {
     @Column(name = "motive")
     @Size(min = 15, message = "O motivo deve ter pelo menos 15 caracteres (motive)")
     String reason;
+    @Enumerated(EnumType.STRING)
+    @Column(name="corporate_client")
+    ClientType ClientType;
     @NotNull(message = "O ID do contrato é obrigatório (contractId)")
     @Column(name = "contract_id", nullable = false)
     Long contractId;

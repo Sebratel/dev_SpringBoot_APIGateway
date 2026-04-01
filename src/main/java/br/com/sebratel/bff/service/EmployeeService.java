@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @Slf4j
 public class EmployeeService {
@@ -22,4 +24,7 @@ public class EmployeeService {
         return employeeRepository.findPersonIdByEmail(email).orElseThrow(() -> new ResourceNotFoundException("PersonId não encontrado com o email fornecido: " + email ));
     }
 
+    public boolean hasB2BinInput(List<Long> list) {
+        return employeeRepository.hasB2BinInput(list);
+    }
 }
