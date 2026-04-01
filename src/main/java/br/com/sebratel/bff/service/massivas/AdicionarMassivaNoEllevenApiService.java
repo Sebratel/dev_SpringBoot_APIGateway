@@ -23,8 +23,13 @@ import java.util.Objects;
 @Slf4j
 public class AdicionarMassivaNoEllevenApiService {
 
-    public static final int ID_FOR_NORMAL_INCIDENT = 1265;
-    public static final int ID_FOR_MASSIVE_INCIDENT = 1257;
+    public static final int MASSIVE_EVENT_INCIDENT_TYPE_ID = 1265;
+    public static final int MASSIVE_EVENT_CATALOG_SERVICE_ID = 1179;
+    public static final String MASSIVE_EVENT_CATEGORY_SOCILITATION = "MASSIVAS - 002";
+    public static final int NORMAL_EVENT_INCIDENT_TYPE_ID = 1257;
+    public static final int NORMAL_EVENT_CATALOG_SERVICE_ID = 1173;
+    public static final String NORMAL_EVENT_CATEGORY_SOCILITATION = "MASSIVAS - 001";
+
     private final RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService;
     private final WebClient webClient;
     private final CacheManager cacheManager;
@@ -53,14 +58,11 @@ public class AdicionarMassivaNoEllevenApiService {
             String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
             String url = "https://erp.sebratel.net.br:45715/external/integrations/thirdparty/opendetailedsolicitation";
 
-            log.debug("[MASSIVA] Analisando contratos para identificar presença de B2B...");
-            boolean hasB2B = employeeService.hasB2BinInput(input.getAffectedUsers().stream().map(UsuarioAfetadoEntity::getContractId).toList());
 
-            int incidentTypeId = this.decideForIncidentOrMassiveEvent(input, hasB2B);
-            input.setIncidentTypeId(incidentTypeId);
+            input = this.decideForIncidentOrMassiveEvent(input);
 
-            log.info("[MASSIVA] Regra de negócio aplicada: IncidentTypeId definido como {} (Possui B2B: {})",
-                    incidentTypeId, hasB2B);
+            log.info("[MASSIVA] Regra de negócio aplicada: IncidentTypeId definido como {}",
+                    input.getIncidentTypeId());
 
             log.info("[MASSIVA] Enviando payload para Elleven API: {}", url);
 
@@ -101,12 +103,22 @@ public class AdicionarMassivaNoEllevenApiService {
         }
     }
 
-    private int decideForIncidentOrMassiveEvent(AberturaRegistroMassivoInputDTO input, boolean hasB2B) {
-        if(!hasB2B && input.getAffectedUsersQuantity() <= 15){
-            log.debug("Critérios atendidos para Incidente Normal (ID: {})", ID_FOR_NORMAL_INCIDENT);
-            return ID_FOR_NORMAL_INCIDENT;
+    private AberturaRegistroMassivoInputDTO decideForIncidentOrMassiveEvent(AberturaRegistroMassivoInputDTO input) {
+
+        log.debug("[MASSIVA] Analisando contratos para identificar presença de B2B...");
+        boolean hasB2B = employeeService.hasB2BinInput(input.getAffectedUsers().stream().map(UsuarioAfetadoEntity::getContractId).toList());
+        boolean isMassiveEvent = hasB2B || input.getAffectedUsersQuantity() > 15;
+        if(isMassiveEvent){
+            log.debug("Critérios atendidos para Evento Massivo (TITLE: {})", input.getAssignment().getTitle());
+            input.setIncidentTypeId(MASSIVE_EVENT_INCIDENT_TYPE_ID);
+            input.setSolicitationServiceCategory1(MASSIVE_EVENT_CATEGORY_SOCILITATION);
+            input.setCatalogServiceId(MASSIVE_EVENT_CATALOG_SERVICE_ID);
+            return input;
         }
-        log.debug("Critérios atendidos para Evento Massivo (ID: {})", ID_FOR_MASSIVE_INCIDENT);
-        return ID_FOR_MASSIVE_INCIDENT;
+
+        input.setIncidentTypeId(NORMAL_EVENT_INCIDENT_TYPE_ID);
+        input.setSolicitationServiceCategory1(NORMAL_EVENT_CATEGORY_SOCILITATION);
+        input.setCatalogServiceId(NORMAL_EVENT_CATALOG_SERVICE_ID);
+        return input;
     }
 }
