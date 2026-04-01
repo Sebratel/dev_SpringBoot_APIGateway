@@ -27,7 +27,6 @@ public class UsuarioAfetadoEntity {
     @Column(name = "protocol_id", nullable = false)
     Long protocol;
     @Column(name = "motive")
-    @Size(min = 15, message = "O motivo deve ter pelo menos 15 caracteres (motive)")
     String reason;
     @Enumerated(EnumType.STRING)
     @Column(name="corporate_client")
