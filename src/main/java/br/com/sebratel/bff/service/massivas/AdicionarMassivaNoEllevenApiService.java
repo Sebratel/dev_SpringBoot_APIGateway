@@ -23,12 +23,12 @@ import java.util.Objects;
 @Slf4j
 public class AdicionarMassivaNoEllevenApiService {
 
-    public static final int MASSIVE_EVENT_INCIDENT_TYPE_ID = 1265;
-    public static final int MASSIVE_EVENT_CATALOG_SERVICE_ID = 1179;
-    public static final String MASSIVE_EVENT_CATEGORY_SOCILITATION = "MASSIVAS - 002";
-    public static final int NORMAL_EVENT_INCIDENT_TYPE_ID = 1257;
-    public static final int NORMAL_EVENT_CATALOG_SERVICE_ID = 1173;
-    public static final String NORMAL_EVENT_CATEGORY_SOCILITATION = "MASSIVAS - 001";
+    public static final int NORMAL_EVENT_INCIDENT_TYPE_ID = 1265;
+    public static final int NORMAL_EVENT_CATALOG_SERVICE_ID = 1179;
+    public static final String NORMAL_EVENT_CATEGORY_SOCILITATION = "MASSIVAS - 002";
+    public static final int MASSIVE_EVENT_INCIDENT_TYPE_ID = 1257;
+    public static final int MASSIVE_EVENT_CATALOG_SERVICE_ID = 1173;
+    public static final String MASSIVE_EVENT_CATEGORY_SOCILITATION = "MASSIVAS - 001";
 
     private final RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService;
     private final WebClient webClient;
