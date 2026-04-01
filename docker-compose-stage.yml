@@ -1,0 +1,61 @@
+version: "3.8"
+
+services:
+  gateway-app:
+    container_name: bff-java-service
+    restart: unless-stopped
+    ports:
+      - "8082:8085"
+    environment:
+      # Aplicação
+      - APP_NAME=bff
+      - SPRING_PROFILES_ACTIVE=default
+
+      # Segurança
+      - SECURITY_USER=${SECURITY_USER}
+      - SECURITY_PASS=${SECURITY_PASS}
+
+      # Banco ERP (PostgreSQL)
+      - ERP_DB_URL=${ERP_DB_URL}
+      - ERP_DB_USER=${ERP_DB_USER}
+      - ERP_DB_PASS=${ERP_DB_PASS}
+
+      # Banco Radius (PostgreSQL)
+      - RADIUS_DB_URL=${RADIUS_DB_URL}
+      - RADIUS_DB_USER=${RADIUS_DB_USER}
+      - RADIUS_DB_PASS=${RADIUS_DB_PASS}
+
+      # Redis (já existente no ambiente)
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+
+      # Logs
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FILE_PATH=${LOG_FILE_PATH:-logs/bff.log}
+
+      # MariaDB
+      - AFETADOS_DB_URL=${AFETADOS_DB_URL}
+      - AFETADOS_DB_USER=${AFETADOS_DB_USER}
+      - AFETADOS_DB_PASS=${AFETADOS_DB_PASS}
+
+      # Usuario Integrador Elleven
+
+      - ELLEVEN_CLIENT_ID=${ELLEVEN_CLIENT_ID}
+      - ELLEVEN_CLIENT_SECRET=${ELLEVEN_CLIENT_SECRET}
+      - ELLEVEN_CLIENT_SYNDATA=${ELLEVEN_CLIENT_SYNDATA}
+      - ELLEVEN_CLIENT_GRANT_TYPE=${ELLEVEN_CLIENT_GRANT_TYPE}
+      - ELLEVEN_CLIENT_SCOPE=${ELLEVEN_CLIENT_SCOPE}
+
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_CLIENT_SCOPE=${GOOGLE_CLIENT_SCOPE}
+
+
+    volumes:
+      - bff-logs:/app/logs
+
+
+volumes:
+  bff-logs:
+    driver: local
