@@ -1,7 +1,7 @@
 package br.com.sebratel.bff.controller;
 
-import br.com.sebratel.bff.dto.MovimentacaoEstoqueDTO;
-import br.com.sebratel.bff.service.MovimentacaoEstoqueService;
+import br.com.sebratel.bff.dto.InventoryMovesDTO;
+import br.com.sebratel.bff.service.InventoryMovesService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,23 +18,23 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(MovimentacaoEstoqueController.class)
+@WebMvcTest(InventoryMovesController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class MovimentacaoEstoqueControllerTest {
+class InventoryMovesControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private MovimentacaoEstoqueService movimentacaoEstoqueService;
+    private InventoryMovesService inventoryMovesService;
 
     @Test
     @DisplayName("Deve retornar 200 ao listar movimentações de estoque")
     void getEstoque_Sucesso() throws Exception {
-        MovimentacaoEstoqueDTO dto = new MovimentacaoEstoqueDTO("", 1L, "", "",2.0, 1);
-        List<MovimentacaoEstoqueDTO> lista = List.of(dto);
+        InventoryMovesDTO dto = new InventoryMovesDTO("", 1L, "", "",2.0, 1);
+        List<InventoryMovesDTO> lista = List.of(dto);
 
-        when(movimentacaoEstoqueService.listarEstoque()).thenReturn(lista);
+        when(inventoryMovesService.listarEstoque()).thenReturn(lista);
 
         mockMvc.perform(get("/api/v1/estoque/movimentacao")
                         .contentType(MediaType.APPLICATION_JSON))

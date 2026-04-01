@@ -1,6 +1,6 @@
 package br.com.sebratel.bff.repository.erp.projections;
 
-public interface EstoqueProjection {
+public interface InventoryProjection {
     Long getId();
     String getCodigo();
     String getDescricao();

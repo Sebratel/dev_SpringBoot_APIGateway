@@ -1,5 +1,5 @@
 package br.com.sebratel.bff.dto;
-public record MovimentacaoEstoqueDTO(
+public record InventoryMovesDTO(
         String codigos,
         Long id,
         String descricao,

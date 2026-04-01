@@ -39,3 +39,5 @@ aj*.txt
 *.log.*
 logs/**
 /meus-logs/bff.log
+/meus-logs/*
+/meus-logs/**

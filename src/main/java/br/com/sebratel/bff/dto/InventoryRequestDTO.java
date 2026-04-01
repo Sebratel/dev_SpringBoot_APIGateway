@@ -5,6 +5,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class EstoqueRequestDTO {
+public class InventoryRequestDTO {
     private String nome;
 }

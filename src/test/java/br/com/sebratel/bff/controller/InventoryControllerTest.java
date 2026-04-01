@@ -1,8 +1,8 @@
 package br.com.sebratel.bff.controller;
 
-import br.com.sebratel.bff.dto.EstoqueRequestDTO;
-import br.com.sebratel.bff.dto.EstoqueTecnicoDTO;
-import br.com.sebratel.bff.service.EstoqueService;
+import br.com.sebratel.bff.dto.InventoryRequestDTO;
+import br.com.sebratel.bff.dto.TechnicianInventoryDTO;
+import br.com.sebratel.bff.service.InventoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,9 +21,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(EstoqueController.class)
+@WebMvcTest(InventoryController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class EstoqueControllerTest {
+class InventoryControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -32,18 +32,18 @@ class EstoqueControllerTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
-    private EstoqueService estoqueService;
+    private InventoryService inventoryService;
 
     @Test
     @DisplayName("Deve retornar 200 ao buscar estoque por técnico")
     void getEstoque_Sucesso() throws Exception {
-        EstoqueRequestDTO requestDTO = new EstoqueRequestDTO();
+        InventoryRequestDTO requestDTO = new InventoryRequestDTO();
         requestDTO.setNome("Tecnico Teste");
 
-        EstoqueTecnicoDTO responseDTO = new EstoqueTecnicoDTO("","","",1L, 1L);
-        List<EstoqueTecnicoDTO> lista = List.of(responseDTO);
+        TechnicianInventoryDTO responseDTO = new TechnicianInventoryDTO("","","",1L, 1L);
+        List<TechnicianInventoryDTO> lista = List.of(responseDTO);
 
-        when(estoqueService.buscarEstoquePorTecnico(anyString())).thenReturn(lista);
+        when(inventoryService.getInventoryByTechnician(anyString())).thenReturn(lista);
 
         mockMvc.perform(post("/api/v1/estoque/tecnico")
                         .contentType(MediaType.APPLICATION_JSON)

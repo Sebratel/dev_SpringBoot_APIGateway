@@ -1,6 +1,6 @@
 package br.com.sebratel.bff.service;
 
-import br.com.sebratel.bff.dto.MovimentacaoEstoqueDTO;
+import br.com.sebratel.bff.dto.InventoryMovesDTO;
 import br.com.sebratel.bff.repository.erp.MovimentacaoEstoqueRepository;
 import br.com.sebratel.bff.repository.erp.projections.MovimentacaoEstoqueProjection;
 import org.junit.jupiter.api.Test;
@@ -15,13 +15,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class MovimentacaoEstoqueServiceTest {
+class InventoryMovesServiceTest {
 
     @Mock
     private MovimentacaoEstoqueRepository movimentacaoEstoqueRepository;
 
     @InjectMocks
-    private MovimentacaoEstoqueService service;
+    private InventoryMovesService service;
 
     @Test
     void deveListarEstoqueComMapeamentoCorreto() {
@@ -37,13 +37,13 @@ class MovimentacaoEstoqueServiceTest {
         when(movimentacaoEstoqueRepository.findEstoqueMovimentacoes()).thenReturn(List.of(p));
 
         // WHEN
-        List<MovimentacaoEstoqueDTO> resultado = service.listarEstoque();
+        List<InventoryMovesDTO> resultado = service.listarEstoque();
 
         // THEN
         assertNotNull(resultado);
         assertEquals(1, resultado.size());
 
-        MovimentacaoEstoqueDTO dto = resultado.get(0);
+        InventoryMovesDTO dto = resultado.get(0);
         assertEquals("COD-01", dto.codigos());
         assertEquals(10L, dto.id());
         assertEquals("Produto Teste", dto.descricao());
@@ -60,7 +60,7 @@ class MovimentacaoEstoqueServiceTest {
         when(movimentacaoEstoqueRepository.findEstoqueMovimentacoes()).thenReturn(List.of());
 
         // WHEN
-        List<MovimentacaoEstoqueDTO> resultado = service.listarEstoque();
+        List<InventoryMovesDTO> resultado = service.listarEstoque();
 
         // THEN
         assertNotNull(resultado);
@@ -79,7 +79,7 @@ class MovimentacaoEstoqueServiceTest {
         when(movimentacaoEstoqueRepository.findEstoqueMovimentacoes()).thenReturn(List.of(p));
 
         // WHEN
-        List<MovimentacaoEstoqueDTO> resultado = service.listarEstoque();
+        List<InventoryMovesDTO> resultado = service.listarEstoque();
 
         // THEN
         assertNotNull(resultado);

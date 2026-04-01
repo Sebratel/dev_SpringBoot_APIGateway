@@ -1,6 +1,6 @@
 package br.com.sebratel.bff.dto;
 
-public record EstoqueTecnicoDTO(
+public record TechnicianInventoryDTO(
 
         String codigo,
         String descricao,
