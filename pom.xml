@@ -10,7 +10,7 @@
     </parent>
     <groupId>br.com.sebratel</groupId>
     <artifactId>bff</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.2-SNAPSHOT</version>
     <name>bff</name>
     <description>BFF for Sebratel services</description>
 
