@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 
 @Service
 public class MatrixService {
@@ -28,11 +29,10 @@ public class MatrixService {
 
         ContractProjection contractProjection = personRepository.findContractByCPF(cpf);
 
-        UsuarioAfetadoEntity usuarioAfetadoEntity = usuarioAfetadoRepository
-                .findByContractId(contractProjection.getContractId())
-                .orElse(null);
+        Optional<UsuarioAfetadoEntity> usuarioAfetadoEntity = usuarioAfetadoRepository
+                .findByContractId(contractProjection.getContractId());
 
-        if(usuarioAfetadoEntity == null) {
+        if(usuarioAfetadoEntity.isEmpty()) {
             return MatrixMassiveOutputDTO
                     .builder()
                     .statusCliente("not_found_client")
@@ -43,13 +43,14 @@ public class MatrixService {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        long hoursBetween = ChronoUnit.HOURS.between(now, usuarioAfetadoEntity.getFinishDate());
+        UsuarioAfetadoEntity usuarioAfetado = usuarioAfetadoEntity.get();
+        long hoursBetween = ChronoUnit.HOURS.between(now, usuarioAfetado.getFinishDate());
         Integer numberOfHours = (hoursBetween <= 0) ? 1 : (int) hoursBetween;
 
         return MatrixMassiveOutputDTO
                 .builder()
                 .resolutionTime(numberOfHours)
-                .resolutionTimeHour("" + usuarioAfetadoEntity.getFinishDate().getHour())
+                .resolutionTimeHour("" + usuarioAfetado.getFinishDate().getHour())
                 .authenticationProblems(1L)
                 .statusCliente("client_found")
                 .build();
