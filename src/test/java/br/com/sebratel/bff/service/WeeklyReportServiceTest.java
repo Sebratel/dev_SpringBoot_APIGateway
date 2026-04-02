@@ -19,13 +19,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class ApoioSemanalServiceTest {
+class WeeklyReportServiceTest {
 
     @Mock
     private ContractActivationRepository repository;
 
     @InjectMocks
-    private ApoioSemanalService service;
+    private WeeklyReportService service;
 
     @Test
     void deveListarDadosCompletosRemovendoDuplicadosEMapeandoMes() {
@@ -47,7 +47,7 @@ class ApoioSemanalServiceTest {
 
         when(repository.findMergedContractData()).thenReturn(List.of(p1, p2, p3));
 
-        List<RelatorioFinalDTO> resultado = service.streamRelatorioPorVendedor("C1").toList();
+        List<RelatorioFinalDTO> resultado = service.sellersReportStream("C1").toList();
 
         assertEquals(2, resultado.size());
         assertEquals("Janeiro", resultado.get(0).mesDaCriacao());
@@ -72,10 +72,10 @@ class ApoioSemanalServiceTest {
                     null, null, "3", "VENDEDOR TESTE", "C3", "FTTH", "Ativo", null, "Fevereiro");
 
             // Injetando dados via Mockito para simular a chamada ao método cacheado internamente
-            ApoioSemanalService serviceSpy = spy(service);
-            doReturn(List.of(dtoMatch, dtoVendedorErrado, dtoMesErrado)).when(serviceSpy).streamRelatorioPorVendedor("C1");
+            WeeklyReportService serviceSpy = spy(service);
+            doReturn(List.of(dtoMatch, dtoVendedorErrado, dtoMesErrado)).when(serviceSpy).sellersReportStream("C1");
 
-            Stream<RelatorioFinalDTO> resultado = serviceSpy.streamRelatorioPorVendedor("  vendedor teste  ");
+            Stream<RelatorioFinalDTO> resultado = serviceSpy.sellersReportStream("  vendedor teste  ");
 
             List<RelatorioFinalDTO> lista = resultado.toList();
             assertEquals(1, lista.size());
@@ -89,10 +89,10 @@ class ApoioSemanalServiceTest {
         RelatorioFinalDTO dtoVendedorNulo = new RelatorioFinalDTO(
                 null, null, "1", null, "C1", "FTTH", "Ativo", null, "Janeiro");
 
-        ApoioSemanalService serviceSpy = spy(service);
-        doReturn(List.of(dtoVendedorNulo)).when(serviceSpy).streamRelatorioPorVendedor("C1");
+        WeeklyReportService serviceSpy = spy(service);
+        doReturn(List.of(dtoVendedorNulo)).when(serviceSpy).sellersReportStream("C1");
 
-        Stream<RelatorioFinalDTO> resultado = serviceSpy.streamRelatorioPorVendedor("QUALQUER");
+        Stream<RelatorioFinalDTO> resultado = serviceSpy.sellersReportStream("QUALQUER");
 
         assertTrue(resultado.findAny().isEmpty());
     }
@@ -106,7 +106,7 @@ class ApoioSemanalServiceTest {
 
         when(repository.findMergedContractData()).thenReturn(List.of(p));
 
-        List<RelatorioFinalDTO> resultado = service.streamRelatorioPorVendedor("C1").toList();
+        List<RelatorioFinalDTO> resultado = service.sellersReportStream("C1").toList();
 
         // Verifica se "maio" virou "Maio" (Primeira letra maiúscula)
         assertEquals("Maio", resultado.get(0).mesDaCriacao());
