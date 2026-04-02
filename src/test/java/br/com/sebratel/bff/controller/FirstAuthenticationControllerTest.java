@@ -1,5 +1,6 @@
 package br.com.sebratel.bff.controller;
 
+import br.com.sebratel.bff.BaseTest;
 import br.com.sebratel.bff.dto.FirstAuthenticationDTO;
 import br.com.sebratel.bff.service.FirstAuthenticationService;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(FirstAuthenticationController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class FirstAuthenticationControllerTest {
+class FirstAuthenticationControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;

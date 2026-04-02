@@ -1,5 +1,6 @@
 package br.com.sebratel.bff.controller;
 
+import br.com.sebratel.bff.BaseTest;
 import br.com.sebratel.bff.dto.RelatorioFinalDTO;
 import br.com.sebratel.bff.dto.ActiveSellersInputDTO;
 import br.com.sebratel.bff.service.WeeklyReportService;
@@ -23,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(WeeklyReportController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class WeeklyReportControllerTest {
+class WeeklyReportControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -54,7 +55,7 @@ class WeeklyReportControllerTest {
         when(apoioSemanalService.sellersReportStream(anyString()))
                 .thenReturn(Stream.of(dto));
 
-        mockMvc.perform(get("/api/v1/contract-payments/vendedor")
+        mockMvc.perform(get("/api/v1/apoio-semanal/vendedor")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(input)))
                 .andExpect(status().isOk())
@@ -64,7 +65,7 @@ class WeeklyReportControllerTest {
     @Test
     @DisplayName("Deve retornar 400 quando o corpo da requisição é inválido")
     void getPorVendedor_BadRequest() throws Exception {
-        mockMvc.perform(get("/api/v1/contract-payments/vendedor")
+        mockMvc.perform(get("/api/v1/apoio-semanal/vendedor")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(""))
                 .andExpect(status().isBadRequest());

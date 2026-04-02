@@ -1,8 +1,7 @@
 package br.com.sebratel.bff.service;
 
 import br.com.sebratel.bff.dto.RelatorioFinalDTO;
-import br.com.sebratel.bff.repository.erp.ContractActivationRepository;
-import br.com.sebratel.bff.repository.erp.projections.ContractActivationProjection;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -15,100 +14,94 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class WeeklyReportServiceTest {
 
     @Mock
-    private ContractActivationRepository repository;
+    private ContractDataService contractDataService;
 
     @InjectMocks
-    private WeeklyReportService service;
+    private WeeklyReportService weeklyReportService;
 
     @Test
-    void deveListarDadosCompletosRemovendoDuplicadosEMapeandoMes() {
-        ContractActivationProjection p1 = mock(ContractActivationProjection.class);
-        when(p1.getClientes()).thenReturn("Cliente A");
-        when(p1.getContrato()).thenReturn("100");
-        when(p1.getDataCriacaoContrato()).thenReturn(LocalDateTime.of(2024, 1, 15, 10, 0));
-
-        // Duplicado de p1 (mesmo cliente e contrato)
-        ContractActivationProjection p2 = mock(ContractActivationProjection.class);
-        when(p2.getClientes()).thenReturn("Cliente A");
-        when(p2.getContrato()).thenReturn("100");
-
-        // Objeto com data nula para testar condição do mapToDTO
-        ContractActivationProjection p3 = mock(ContractActivationProjection.class);
-        when(p3.getClientes()).thenReturn("Cliente B");
-        when(p3.getContrato()).thenReturn("200");
-        when(p3.getDataCriacaoContrato()).thenReturn(null);
-
-        when(repository.findMergedContractData()).thenReturn(List.of(p1, p2, p3));
-
-        List<RelatorioFinalDTO> resultado = service.sellersReportStream("C1").toList();
-
-        assertEquals(2, resultado.size());
-        assertEquals("Janeiro", resultado.get(0).mesDaCriacao());
-        assertEquals("", resultado.get(1).mesDaCriacao()); // Data nula resulta em string vazia
-    }
-
-    @Test
+    @DisplayName("Deve filtrar corretamente por vendedor e mês atual (com capitalização)")
     void deveFiltrarPorVendedorEMesAtualComSucesso() {
-        // Fixando a data para Janeiro para o teste ser determinístico
-        LocalDate dataFixa = LocalDate.of(2024, 1, 1);
+        // GIVEN: Fixamos a data em Janeiro
+        LocalDate dataFixa = LocalDate.of(2024, 1, 15);
+
         try (MockedStatic<LocalDate> mockedLocalDate = mockStatic(LocalDate.class)) {
             mockedLocalDate.when(LocalDate::now).thenReturn(dataFixa);
 
-            // Criando DTOs mockados que simulariam o retorno do cache
-            RelatorioFinalDTO dtoMatch = new RelatorioFinalDTO(
-                    null, null, "1", "VENDEDOR TESTE", "C1", "FTTH", "Ativo", null, "Janeiro");
+            RelatorioFinalDTO dtoMatch = createDTO("VENDEDOR TESTE", "Janeiro");
+            RelatorioFinalDTO dtoVendedorErrado = createDTO("OUTRO VENDEDOR", "Janeiro");
+            RelatorioFinalDTO dtoMesErrado = createDTO("VENDEDOR TESTE", "Fevereiro");
 
-            RelatorioFinalDTO dtoVendedorErrado = new RelatorioFinalDTO(
-                    null, null, "2", "OUTRO", "C2", "FTTH", "Ativo", null, "Janeiro");
+            when(contractDataService.getDadosCompletosCache())
+                    .thenReturn(List.of(dtoMatch, dtoVendedorErrado, dtoMesErrado));
 
-            RelatorioFinalDTO dtoMesErrado = new RelatorioFinalDTO(
-                    null, null, "3", "VENDEDOR TESTE", "C3", "FTTH", "Ativo", null, "Fevereiro");
+            // WHEN
+            List<RelatorioFinalDTO> lista = weeklyReportService.sellersReportStream("  vendedor teste  ").toList();
 
-            // Injetando dados via Mockito para simular a chamada ao método cacheado internamente
-            WeeklyReportService serviceSpy = spy(service);
-            doReturn(List.of(dtoMatch, dtoVendedorErrado, dtoMesErrado)).when(serviceSpy).sellersReportStream("C1");
-
-            Stream<RelatorioFinalDTO> resultado = serviceSpy.sellersReportStream("  vendedor teste  ");
-
-            List<RelatorioFinalDTO> lista = resultado.toList();
-            assertEquals(1, lista.size());
-            assertEquals("VENDEDOR TESTE", lista.get(0).vendedor());
-            assertEquals("Janeiro", lista.get(0).mesDaCriacao());
+            // THEN
+            assertThat(lista).hasSize(1);
+            assertThat(lista.get(0).vendedor()).isEqualTo("VENDEDOR TESTE");
+            assertThat(lista.get(0).mesDaCriacao()).isEqualTo("Janeiro");
         }
     }
 
     @Test
-    void deveRetornarStreamVazioQuandoVendedorForNuloNoFiltro() {
-        RelatorioFinalDTO dtoVendedorNulo = new RelatorioFinalDTO(
-                null, null, "1", null, "C1", "FTTH", "Ativo", null, "Janeiro");
+    @DisplayName("Deve retornar vazio quando o vendedor for nulo no cache")
+    void deveRetornarVazioQuandoVendedorForNuloNoCache() {
+        // O construtor da record que sugeri antes trata null para "",
+        // mas aqui testamos o comportamento do filtro caso venha nulo.
+        RelatorioFinalDTO dtoVendedorNulo = createDTO(null, "Janeiro");
 
-        WeeklyReportService serviceSpy = spy(service);
-        doReturn(List.of(dtoVendedorNulo)).when(serviceSpy).sellersReportStream("C1");
+        when(contractDataService.getDadosCompletosCache()).thenReturn(List.of(dtoVendedorNulo));
 
-        Stream<RelatorioFinalDTO> resultado = serviceSpy.sellersReportStream("QUALQUER");
+        Stream<RelatorioFinalDTO> resultado = weeklyReportService.sellersReportStream("QUALQUER");
 
-        assertTrue(resultado.findAny().isEmpty());
+        assertThat(resultado.toList()).isEmpty();
     }
 
     @Test
-    void deveVerificarCapitalizacaoDoMesNoMapToDTO() {
-        ContractActivationProjection p = mock(ContractActivationProjection.class);
-        when(p.getDataCriacaoContrato()).thenReturn(LocalDateTime.of(2024, 5, 10, 0, 0)); // Maio
-        when(p.getClientes()).thenReturn("Cliente");
-        when(p.getContrato()).thenReturn("1");
+    @DisplayName("Deve respeitar a capitalização do mês ao filtrar (ex: Maio)")
+    void deveRespeitarCapitalizacaoDoMes() {
+        // GIVEN: Fixamos em Maio
+        LocalDate dataMaio = LocalDate.of(2024, 5, 1);
 
-        when(repository.findMergedContractData()).thenReturn(List.of(p));
+        try (MockedStatic<LocalDate> mockedLocalDate = mockStatic(LocalDate.class)) {
+            mockedLocalDate.when(LocalDate::now).thenReturn(dataMaio);
 
-        List<RelatorioFinalDTO> resultado = service.sellersReportStream("C1").toList();
+            RelatorioFinalDTO dtoMaio = createDTO("VENDEDOR", "Maio");
+            when(contractDataService.getDadosCompletosCache()).thenReturn(List.of(dtoMaio));
 
-        // Verifica se "maio" virou "Maio" (Primeira letra maiúscula)
-        assertEquals("Maio", resultado.get(0).mesDaCriacao());
+            // WHEN
+            List<RelatorioFinalDTO> resultado = weeklyReportService.sellersReportStream("VENDEDOR").toList();
+
+            // THEN
+            assertThat(resultado).isNotEmpty();
+            assertThat(resultado.get(0).mesDaCriacao()).isEqualTo("Maio");
+        }
+    }
+
+    /**
+     * Ajustado para bater com os campos da sua Record:
+     * dataCriacaoContrato, dataAtivacao, contrato, vendedor, clientes, tecnologia, statusContrato, statusCancelamento, mesDaCriacao
+     */
+    private RelatorioFinalDTO createDTO(String vendedor, String mes) {
+        return new RelatorioFinalDTO(
+                LocalDateTime.now(), // dataCriacaoContrato
+                LocalDateTime.now(), // dataAtivacao
+                "CTR-123",           // contrato
+                vendedor,            // vendedor
+                "Cliente Teste",     // clientes
+                "FTTH",              // tecnologia
+                "Ativo",             // statusContrato
+                null,                // statusCancelamento
+                mes                  // mesDaCriacao
+        );
     }
 }

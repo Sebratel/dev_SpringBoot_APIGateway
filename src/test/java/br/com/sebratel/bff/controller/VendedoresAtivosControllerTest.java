@@ -1,5 +1,6 @@
 package br.com.sebratel.bff.controller;
 
+import br.com.sebratel.bff.BaseTest;
 import br.com.sebratel.bff.dto.VendedoresAtivosDTO;
 import br.com.sebratel.bff.service.VendedoresAtivosService;
 import org.junit.jupiter.api.DisplayName;
@@ -20,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(VendedoresAtivosController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class VendedoresAtivosControllerTest {
+class VendedoresAtivosControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;

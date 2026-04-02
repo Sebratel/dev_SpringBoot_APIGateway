@@ -1,5 +1,6 @@
 package br.com.sebratel.bff.controller;
 
+import br.com.sebratel.bff.BaseTest;
 import br.com.sebratel.bff.dto.RelatorioClienteNomeDuplicadoDTO;
 import br.com.sebratel.bff.service.RelatorioClienteNomeDuplicadoService;
 import org.junit.jupiter.api.DisplayName;
@@ -20,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(RelatorioClienteNomeDuplicadoController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class RelatorioClienteNomeDuplicadoControllerTest {
+class RelatorioClienteNomeDuplicadoControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;
