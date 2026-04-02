@@ -1,7 +1,6 @@
 package br.com.sebratel.bff.service;
 
 import br.com.sebratel.bff.dto.MatrixMassiveOutputDTO;
-import br.com.sebratel.bff.exceptions.ResourceNotFoundException;
 import br.com.sebratel.bff.model.entity.PersonEntity;
 import br.com.sebratel.bff.model.entity.UsuarioAfetadoEntity;
 import br.com.sebratel.bff.repository.afetados.UsuarioAfetadoRepository;
@@ -31,7 +30,17 @@ public class MatrixService {
 
         UsuarioAfetadoEntity usuarioAfetadoEntity = usuarioAfetadoRepository
                 .findByContractId(contractProjection.getContractId())
-                .orElseThrow(() -> new ResourceNotFoundException("Não existe contract_id vinculado ao CPF"));
+                .orElse(null);
+
+        if(usuarioAfetadoEntity == null) {
+            return MatrixMassiveOutputDTO
+                    .builder()
+                    .statusCliente("not_found_client")
+                    .authenticationProblems(0L)
+                    .resolutionTimeHour("23")
+                    .authenticationProblems(0L)
+                    .build();
+        }
 
         LocalDateTime now = LocalDateTime.now();
         long hoursBetween = ChronoUnit.HOURS.between(now, usuarioAfetadoEntity.getFinishDate());
@@ -42,6 +51,7 @@ public class MatrixService {
                 .resolutionTime(numberOfHours)
                 .resolutionTimeHour("" + usuarioAfetadoEntity.getFinishDate().getHour())
                 .authenticationProblems(1L)
+                .statusCliente("client_found")
                 .build();
     }
 
