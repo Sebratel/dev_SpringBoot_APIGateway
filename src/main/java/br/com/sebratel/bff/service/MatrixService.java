@@ -57,11 +57,12 @@ public class MatrixService {
                         .build();
             }
 
-
+            ContractProjection contract = contractProjection.get();
             Optional<UsuarioAfetadoEntity> usuarioAfetadoEntity = usuarioAfetadoRepository
-                    .findByContractId(contractProjection.get().getContractId());
+                    .findByContractId(contract.getContractId());
 
             if (usuarioAfetadoEntity.isEmpty()) {
+                log.error("NÃO FOI ENCONTRADO CLIENTE DE CONTRACT ID {}", contract.getContractId());
                 return MatrixMassiveOutputDTO
                         .builder()
                         .statusCliente("not_found_client")
