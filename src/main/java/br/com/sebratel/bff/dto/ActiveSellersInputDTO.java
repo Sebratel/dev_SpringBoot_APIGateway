@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
-public class VendedoresAtivosInputDTO {
+public class ActiveSellersInputDTO {
     String nome;
 }

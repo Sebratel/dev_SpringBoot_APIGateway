@@ -13,17 +13,17 @@ import java.util.stream.Stream;
 
 @Service
 @Slf4j
-public class ApoioSemanalService {
+public class WeeklyReportService {
 
     private final ContractDataService contractDataService;
 
     @Autowired
-    public ApoioSemanalService(ContractDataService contractDataService) {
+    public WeeklyReportService(ContractDataService contractDataService) {
         this.contractDataService = contractDataService;
     }
 
     @Transactional(readOnly = true)
-    public Stream<RelatorioFinalDTO> streamRelatorioPorVendedor(String nomeVendedor) {
+    public Stream<RelatorioFinalDTO> sellersReportStream(String nomeVendedor) {
         String mesAtual = LocalDate.now()
                 .getMonth()
                 .getDisplayName(TextStyle.FULL, new Locale("pt", "BR"));

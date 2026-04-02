@@ -1,8 +1,9 @@
 package br.com.sebratel.bff.controller;
 
+import br.com.sebratel.bff.BaseTest;
 import br.com.sebratel.bff.dto.RelatorioFinalDTO;
-import br.com.sebratel.bff.dto.VendedoresAtivosInputDTO;
-import br.com.sebratel.bff.service.ApoioSemanalService;
+import br.com.sebratel.bff.dto.ActiveSellersInputDTO;
+import br.com.sebratel.bff.service.WeeklyReportService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,9 +22,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(ApoioSemanalController.class)
+@WebMvcTest(WeeklyReportController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class ApoioSemanalControllerTest {
+class WeeklyReportControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -32,12 +33,12 @@ class ApoioSemanalControllerTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
-    private ApoioSemanalService apoioSemanalService;
+    private WeeklyReportService apoioSemanalService;
 
     @Test
     @DisplayName("Deve retornar 200 ao buscar dados do vendedor")
     void getPorVendedor_Sucesso() throws Exception {
-        VendedoresAtivosInputDTO input = new VendedoresAtivosInputDTO();
+        ActiveSellersInputDTO input = new ActiveSellersInputDTO();
         input.setNome("nome");
 
         RelatorioFinalDTO dto = new RelatorioFinalDTO(
@@ -51,10 +52,10 @@ class ApoioSemanalControllerTest {
                 "v8",
                 "v9"
         );
-        when(apoioSemanalService.streamRelatorioPorVendedor(anyString()))
+        when(apoioSemanalService.sellersReportStream(anyString()))
                 .thenReturn(Stream.of(dto));
 
-        mockMvc.perform(get("/api/v1/contract-payments/vendedor")
+        mockMvc.perform(get("/api/v1/apoio-semanal/vendedor")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(input)))
                 .andExpect(status().isOk())
@@ -64,7 +65,7 @@ class ApoioSemanalControllerTest {
     @Test
     @DisplayName("Deve retornar 400 quando o corpo da requisição é inválido")
     void getPorVendedor_BadRequest() throws Exception {
-        mockMvc.perform(get("/api/v1/contract-payments/vendedor")
+        mockMvc.perform(get("/api/v1/apoio-semanal/vendedor")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(""))
                 .andExpect(status().isBadRequest());

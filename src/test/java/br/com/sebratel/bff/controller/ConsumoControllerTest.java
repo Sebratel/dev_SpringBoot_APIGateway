@@ -1,5 +1,6 @@
 package br.com.sebratel.bff.controller;
 
+import br.com.sebratel.bff.BaseTest;
 import br.com.sebratel.bff.dto.ConsumoDTO;
 import br.com.sebratel.bff.service.ConsumoService;
 import org.junit.jupiter.api.DisplayName;
@@ -24,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(ConsumoController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class ConsumoControllerTest {
+class ConsumoControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;

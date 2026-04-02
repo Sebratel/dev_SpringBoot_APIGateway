@@ -1,5 +1,6 @@
 package br.com.sebratel.bff.controller;
 
+import br.com.sebratel.bff.BaseTest;
 import br.com.sebratel.bff.dto.ContractFirstPaymentDTO;
 import br.com.sebratel.bff.service.ContractPaymentService;
 import org.junit.jupiter.api.DisplayName;
@@ -20,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(ContractPaymentController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class ContractPaymentControllerTest {
+class ContractPaymentControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;

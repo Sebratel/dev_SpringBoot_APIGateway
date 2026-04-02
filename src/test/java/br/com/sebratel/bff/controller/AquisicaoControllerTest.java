@@ -1,5 +1,6 @@
 package br.com.sebratel.bff.controller;
 
+import br.com.sebratel.bff.BaseTest;
 import br.com.sebratel.bff.dto.AquisicaoDTO;
 import br.com.sebratel.bff.service.AquisicaoService;
 import org.junit.jupiter.api.DisplayName;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -21,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(AquisicaoController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class AquisicaoControllerTest {
+class AquisicaoControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;

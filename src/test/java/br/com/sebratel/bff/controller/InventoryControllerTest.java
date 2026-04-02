@@ -1,5 +1,6 @@
 package br.com.sebratel.bff.controller;
 
+import br.com.sebratel.bff.BaseTest;
 import br.com.sebratel.bff.dto.InventoryRequestDTO;
 import br.com.sebratel.bff.dto.TechnicianInventoryDTO;
 import br.com.sebratel.bff.service.InventoryService;
@@ -23,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(InventoryController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class InventoryControllerTest {
+class InventoryControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;
