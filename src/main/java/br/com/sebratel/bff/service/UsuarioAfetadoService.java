@@ -1,10 +1,14 @@
 package br.com.sebratel.bff.service;
 
+import br.com.sebratel.bff.dto.CreateImpactedUsersInputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactDetailsOutputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
+import br.com.sebratel.bff.dto.massivas.api.FinalizaRegistroMassivoInputDTO;
+import br.com.sebratel.bff.exceptions.DomainException;
 import br.com.sebratel.bff.exceptions.ResourceNotFoundException;
 import br.com.sebratel.bff.model.entity.UsuarioAfetadoEntity;
 import br.com.sebratel.bff.repository.afetados.UsuarioAfetadoRepository;
+import br.com.sebratel.bff.service.massivas.FinalizarMassivaNoEllevenApiService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,18 +23,41 @@ import java.util.Map;
 @Slf4j
 @Service
 public class UsuarioAfetadoService {
-
     private final UsuarioAfetadoRepository usuarioAfetadoRepository;
+    private final FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService;
 
     @Autowired
-    public UsuarioAfetadoService(UsuarioAfetadoRepository usuarioAfetadoRepository) {
+    public UsuarioAfetadoService(UsuarioAfetadoRepository usuarioAfetadoRepository, FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService) {
         this.usuarioAfetadoRepository = usuarioAfetadoRepository;
+        this.finalizarMassivaNoEllevenApiService = finalizarMassivaNoEllevenApiService;
     }
 
     @Transactional(transactionManager = "afetadosTransactionManager")
-    public ImpactedUsersOutputDTO createImpactedUsersDTO(List<UsuarioAfetadoEntity> input) {
-        log.info("Salvando lista de {} usuários afetados", input.size());
-        List<UsuarioAfetadoEntity> usuarioAfetadoEntities = usuarioAfetadoRepository.saveAll(input);
+    public ImpactedUsersOutputDTO createImpactedUsersDTO(CreateImpactedUsersInputDTO input) {
+        log.info("Salvando lista de {} usuários afetados", input.getUsuarioAfetadoEntities().size());
+        List<UsuarioAfetadoEntity> usuarioAfetadoEntities;
+        try {
+            usuarioAfetadoEntities = usuarioAfetadoRepository.saveAll(input.getUsuarioAfetadoEntities());
+            if(usuarioAfetadoEntities.isEmpty()) {
+                throw new DomainException("Não é aceito criar uma massiva sem clientes afetados. Verificar chamada");
+            }
+        } catch (Exception e) {
+            LocalDateTime now = LocalDateTime.now();
+            log.error("Erro ao criar evento ou incidente massivo: " +e + " com timestamp " + now);
+            log.error("Erro ao salvar usuários afetados. Chamando finalização massiva no Elleven.", e);
+            FinalizaRegistroMassivoInputDTO finalizarInput = FinalizaRegistroMassivoInputDTO
+                    .builder()
+                    .assignmentId(input.getAssignmentId().toString())
+                    .incidentStatusId("" + 8)
+                    .description("O protocolo teve que ser encerrado pois houve erro de comunicação entre os serviços voalle e splitters. Por favor entre em contato com o desenvolvimento assim que possível com a data " + now)
+                    .progress("0")
+                    .priority("35")
+                    .notificationTarget("0")
+                    .privateReport("true")
+                    .build();
+            finalizarMassivaNoEllevenApiService.executar(finalizarInput);
+            throw e;
+        }
         log.info("Usuários afetados para o protocolo criados com sucesso.");
         return getImpactedUsersDTO(usuarioAfetadoEntities);
     }
