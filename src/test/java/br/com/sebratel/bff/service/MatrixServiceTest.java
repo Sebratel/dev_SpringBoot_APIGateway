@@ -51,7 +51,7 @@ class MatrixServiceTest {
         MatrixMassiveOutputDTO result = service.getContractInfoByCPF(cpf);
 
         // Assert
-        assertEquals("client_found", result.getStatusCliente());
+        assertEquals("client_found", result.getStatus());
         assertEquals(1L, result.getAuthenticationProblems());
         assertNotNull(result.getResolutionTimeHour());
     }
@@ -66,7 +66,7 @@ class MatrixServiceTest {
         MatrixMassiveOutputDTO result = service.getContractInfoByCPF(cpf);
 
         // Assert
-        assertEquals("not_found_client", result.getStatusCliente());
+        assertEquals("not_found_client", result.getStatus());
         assertEquals(0L, result.getAuthenticationProblems());
         assertEquals("23", result.getResolutionTimeHour());
     }
@@ -83,7 +83,7 @@ class MatrixServiceTest {
         MatrixMassiveOutputDTO result = service.getContractInfoByCPF(cpf);
 
         // Assert
-        assertEquals("not_found_client", result.getStatusCliente());
+        assertEquals("not_found_client", result.getStatus());
     }
 
     @Test
@@ -102,7 +102,7 @@ class MatrixServiceTest {
         MatrixMassiveOutputDTO result = service.getContractInfoByCPF(cpf);
 
         // Assert
-        assertEquals("not_found_client", result.getStatusCliente());
+        assertEquals("not_found_client", result.getStatus());
     }
 
     @Test
@@ -115,7 +115,7 @@ class MatrixServiceTest {
         MatrixMassiveOutputDTO result = service.getContractInfoByCPF(cpf);
 
         // Assert
-        assertEquals("not_found_client", result.getStatusCliente());
+        assertEquals("not_found_client", result.getStatus());
     }
     @Test
     void getContractInfoByCPF_ShouldReturnResolutionTimeOne_WhenFinishDateIsInPast() {
@@ -138,7 +138,7 @@ class MatrixServiceTest {
         MatrixMassiveOutputDTO result = service.getContractInfoByCPF(cpf);
 
         // Assert
-        assertEquals("client_found", result.getStatusCliente());
+        assertEquals("client_found", result.getStatus());
         assertEquals(1, result.getResolutionTime()); // Branch: hoursBetween <= 0 ? 1 : (int) hoursBetween
     }
 }
