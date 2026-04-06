@@ -35,7 +35,7 @@ public class MatrixService {
             if (personEntity.isEmpty()) {
                 return MatrixMassiveOutputDTO
                         .builder()
-                        .statusCliente("not_found_client")
+                        .status("not_found_client")
                         .authenticationProblems(0L)
                         .resolutionTimeHour("23")
                         .authenticationProblems(0L)
@@ -50,7 +50,7 @@ public class MatrixService {
                 log.error("CLIENTE DE CPF {} NÃO TEM CONTRATO VINCULADO", cpf);
                 return MatrixMassiveOutputDTO
                         .builder()
-                        .statusCliente("not_found_client")
+                        .status("not_found_client")
                         .authenticationProblems(0L)
                         .resolutionTimeHour("23")
                         .authenticationProblems(0L)
@@ -65,7 +65,7 @@ public class MatrixService {
                 log.error("NÃO FOI ENCONTRADO CLIENTE DE CONTRACT ID {}", contract.getContractId());
                 return MatrixMassiveOutputDTO
                         .builder()
-                        .statusCliente("not_found_client")
+                        .status("not_found_client")
                         .authenticationProblems(0L)
                         .resolutionTimeHour("23")
                         .authenticationProblems(0L)
@@ -82,13 +82,13 @@ public class MatrixService {
                     .resolutionTime(numberOfHours)
                     .resolutionTimeHour("" + usuarioAfetado.getFinishDate().getHour())
                     .authenticationProblems(1L)
-                    .statusCliente("client_found")
+                    .status("client_found")
                     .build();
         }catch (Exception e) {
             log.warn(Arrays.toString(e.getStackTrace()));
             return MatrixMassiveOutputDTO
                     .builder()
-                    .statusCliente("not_found_client")
+                    .status("not_found_client")
                     .authenticationProblems(0L)
                     .resolutionTimeHour("23")
                     .authenticationProblems(0L)
