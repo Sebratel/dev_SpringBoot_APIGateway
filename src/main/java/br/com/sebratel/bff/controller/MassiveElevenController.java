@@ -107,7 +107,7 @@ public class MassiveElevenController {
         }
     }
 
-    @PostMapping("/save-massive-via-api")
+    @PostMapping({"/save-massive-via-api", "salvar-massiva-via-api"})
     public ResponseEntity<ApiResponse<AberturaRegistroMassivoOutputDTO>> createMassiveIncidentViaApi(
             @Valid @RequestBody AberturaRegistroMassivoInputDTO input) {
 

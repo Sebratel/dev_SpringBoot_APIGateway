@@ -1,8 +1,8 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.dto.ApiResponse;
+import br.com.sebratel.bff.dto.CreateImpactedUsersInputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
-import br.com.sebratel.bff.model.entity.UsuarioAfetadoEntity;
 import br.com.sebratel.bff.service.UsuarioAfetadoService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -60,10 +59,10 @@ public class AffectedUserController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> createImpactedUser(@RequestBody List<UsuarioAfetadoEntity> usuarioAfetadoEntity) {
+    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> createImpactedUser(@RequestBody CreateImpactedUsersInputDTO input) {
         log.info("Starting creation process of impacted user for protocol");
         try {
-            ImpactedUsersOutputDTO savedUser = usuarioAfetadoService.createImpactedUsersDTO(usuarioAfetadoEntity);
+            ImpactedUsersOutputDTO savedUser = usuarioAfetadoService.createImpactedUsersDTO(input);
             log.info("Impacted users for protocol successfully created.");
 
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
