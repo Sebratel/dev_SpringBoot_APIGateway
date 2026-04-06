@@ -1,0 +1,83 @@
+package br.com.sebratel.bff.service;
+
+import br.com.sebratel.bff.dto.EllevenCredentialsDTO;
+import br.com.sebratel.bff.dto.splitters.RecuperarTokenEllevenOutputDTO;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.http.MediaType;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class RecuperarTokenDoUsuarioIntegradorEllevenServiceTest {
+
+    @Mock
+    private WebClient webClient;
+
+    @Mock
+    private EllevenCredentialsDTO credentials;
+
+    @Mock
+    private CacheManager cacheManager;
+
+    @InjectMocks
+    private RecuperarTokenDoUsuarioIntegradorEllevenService service;
+
+    @Test
+    void executar_ShouldReturnToken_WhenApiSucceeds() {
+        // Arrange
+        RecuperarTokenEllevenOutputDTO expectedResponse = new RecuperarTokenEllevenOutputDTO("token", 3600, "bearer", "scope");
+        
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("client_id", "id");
+        when(credentials.toFormData()).thenReturn(formData);
+
+        WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+        WebClient.RequestBodySpec requestBodySpec = mock(WebClient.RequestBodySpec.class);
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.contentType(MediaType.APPLICATION_FORM_URLENCODED)).thenReturn(requestBodySpec);
+        when(requestBodySpec.body(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(RecuperarTokenEllevenOutputDTO.class)).thenReturn(Mono.just(expectedResponse));
+
+        // Act
+        RecuperarTokenEllevenOutputDTO result = service.executar();
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("token", result.accessToken());
+    }
+
+    @Test
+    void invalidateToken_ShouldEvictCache() {
+        // Arrange
+        Cache cache = mock(Cache.class);
+        when(cacheManager.getCache("token-de-integracao")).thenReturn(cache);
+
+        // Act
+        service.invalidateToken();
+
+        // Assert
+        verify(cache).evict("token-static-key");
+    }
+}

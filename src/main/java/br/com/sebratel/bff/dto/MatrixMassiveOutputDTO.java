@@ -3,8 +3,10 @@ package br.com.sebratel.bff.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -19,6 +21,7 @@ public class MatrixMassiveOutputDTO {
     @JsonProperty("resolution_time_hour")
     private String resolutionTimeHour;
 
-    private String statusCliente;
+    @JsonProperty("status")
+    private String status;
 
 }

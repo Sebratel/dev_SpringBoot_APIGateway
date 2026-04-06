@@ -1,0 +1,224 @@
+package br.com.sebratel.bff.controller;
+
+import br.com.sebratel.bff.dto.ApiResponse;
+import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
+import br.com.sebratel.bff.model.entity.UsuarioAfetadoEntity;
+import br.com.sebratel.bff.service.UsuarioAfetadoService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Slf4j
+@RestController
+@RequestMapping({"/api/v1/impacted-users", "/api/v1/usuario-afetado", "/api/v1/afetados"})
+public class AffectedUserController {
+
+    private final UsuarioAfetadoService usuarioAfetadoService;
+
+    @Autowired
+    public AffectedUserController(UsuarioAfetadoService usuarioAfetadoService) {
+        this.usuarioAfetadoService = usuarioAfetadoService;
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> getAllImpactedUsers() {
+        log.info("Starting search for impacted users");
+        try {
+            ImpactedUsersOutputDTO impactedUsers = usuarioAfetadoService.getAll();
+
+            if (impactedUsers.getImpactedUsers().isEmpty()) {
+                log.warn("No impacted users found.");
+                ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                        .success(false)
+                        .message("No impacted users found")
+                        .data(impactedUsers)
+                        .build();
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+
+            log.info("Search completed. Found {} users.", impactedUsers.getImpactedUsers().size());
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(true)
+                    .message("Impacted users successfully found.")
+                    .data(impactedUsers)
+                    .build();
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error searching for users: {}", e.getMessage(), e);
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(false)
+                    .message("Error searching for users: " + e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> createImpactedUser(@RequestBody List<UsuarioAfetadoEntity> usuarioAfetadoEntity) {
+        log.info("Starting creation process of impacted user for protocol");
+        try {
+            ImpactedUsersOutputDTO savedUser = usuarioAfetadoService.createImpactedUsersDTO(usuarioAfetadoEntity);
+            log.info("Impacted users for protocol successfully created.");
+
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(true)
+                    .message("Impacted user successfully created.")
+                    .data(savedUser)
+                    .build();
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            log.error("Error creating impacted users for protocol \n{}", e.getMessage());
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(false)
+                    .message("Error creating impacted user: " + e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @GetMapping("/pppoe/{pppoe}")
+    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> getImpactedUsersByPppoe(@PathVariable String pppoe) {
+        log.info("Starting search for impacted users by PPPoE: {}", pppoe);
+        try {
+            ImpactedUsersOutputDTO impactedUsers = usuarioAfetadoService.getUsuariosAfetadosByPppoe(pppoe);
+
+            if (impactedUsers.getImpactedUsers().isEmpty()) {
+                log.warn("No impacted user found for PPPoE: {}", pppoe);
+            } else {
+                log.info("Search by PPPoE {} completed. Found {} users.", pppoe, impactedUsers.getImpactedUsers().size());
+            }
+
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(true)
+                    .message("Search by PPPoE successfully performed.")
+                    .data(impactedUsers)
+                    .build();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error searching for users by PPPoE {}: {}", pppoe, e.getMessage(), e);
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(false)
+                    .message("Error searching for users by PPPoE: " + e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @GetMapping("/contract/{contractId}")
+    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> getImpactedUsersByContractId(@PathVariable Long contractId) {
+        log.info("Starting search for impacted users by contractId: {}", contractId);
+        try {
+            ImpactedUsersOutputDTO impactedUsers = usuarioAfetadoService.getUsuariosAfetadosByContractId(contractId);
+
+            if (impactedUsers.getImpactedUsers().isEmpty()) {
+                log.warn("No impacted user found for contractId: {}", contractId);
+            } else {
+                log.info("Search by contractId {} completed. Found {} users.", contractId, impactedUsers.getImpactedUsers().size());
+            }
+
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(true)
+                    .message("Search by PPPoE successfully performed.")
+                    .data(impactedUsers)
+                    .build();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error searching for users by PPPoE {}: {}", contractId, e.getMessage(), e);
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(false)
+                    .message("Error searching for users by PPPoE: " + e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+
+    @GetMapping("/protocol/{protocol}")
+    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> getImpactedUsersByProtocol(@PathVariable Long protocol) {
+        log.info("Starting search for impacted users by protocol: {}", protocol);
+        try {
+            ImpactedUsersOutputDTO impactedUsers = usuarioAfetadoService.getUsuariosByProtocol(protocol);
+
+            if (impactedUsers.getImpactedUsers().isEmpty()) {
+                log.warn("No impacted user found for protocol: {}", protocol);
+                ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                        .success(false)
+                        .message("No impacted user found for protocol: " + protocol)
+                        .data(impactedUsers)
+                        .build();
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+
+            log.info("Search by protocol {} completed. Found {} users.", protocol, impactedUsers.getImpactedUsers().size());
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(true)
+                    .message("Impacted users successfully found.")
+                    .data(impactedUsers)
+                    .build();
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error searching for users by protocol {}: {}", protocol, e.getMessage(), e);
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(false)
+                    .message("Error searching for users by protocol: " + e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @DeleteMapping("/protocol/{protocol}")
+    public ResponseEntity<ApiResponse<String>> removeUsersByProtocol(@PathVariable Long protocol) {
+        log.info("Starting removal of impacted users by protocol: {}", protocol);
+        try {
+            usuarioAfetadoService.removeUsersByProtocol(protocol);
+
+            log.info("Users for protocol {} successfully removed.", protocol);
+
+            ApiResponse<String> response = ApiResponse.<String>builder()
+                    .success(true)
+                    .message("Users for protocol " + protocol + " successfully removed.")
+                    .build();
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error removing users for protocol {}: {}", protocol, e.getMessage(), e);
+            ApiResponse<String> response = ApiResponse.<String>builder()
+                    .success(false)
+                    .message("Error removing users for protocol: " + e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @PatchMapping("/protocol/{protocol}")
+    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> updateFinishDateByProtocol(@PathVariable Long protocol, @RequestParam LocalDateTime finishDate)
+    {
+        log.info("Starting update of finish date for protocol: {}", protocol);
+        try {
+            usuarioAfetadoService.alterarDataEstimadaParaFinalizacao(protocol, finishDate);
+            log.info("Finish date updated to {} for users of protocol {}", finishDate, protocol);
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(true)
+                    .message("Finish date updated to " + finishDate + " for users of protocol " + protocol)
+                    .data(null)
+                    .build();
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error updating finish date for protocol {}: {}", protocol, e.getMessage(), e);
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(false)
+                    .data(null)
+                    .message("Error updating finish date for protocol: " + protocol)
+                    .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+}

@@ -1,0 +1,46 @@
+package br.com.sebratel.bff.controller;
+
+import br.com.sebratel.bff.BaseTest;
+import br.com.sebratel.bff.dto.RelatorioClienteNomeDuplicadoDTO;
+import br.com.sebratel.bff.service.RelatorioClienteNomeDuplicadoService;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(DuplicateClientNameReportController.class)
+@AutoConfigureMockMvc(addFilters = false)
+class DuplicateClientNameReportControllerTest extends BaseTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private RelatorioClienteNomeDuplicadoService relatorioClienteNomeDuplicadoService;
+
+    @Test
+    @DisplayName("Should return 200 when listing clients with duplicate names")
+    void getDuplicateClientNames_Success() throws Exception {
+        RelatorioClienteNomeDuplicadoDTO dto = new RelatorioClienteNomeDuplicadoDTO("", "", "");
+        List<RelatorioClienteNomeDuplicadoDTO> list = List.of(dto);
+
+        when(relatorioClienteNomeDuplicadoService.listarClientesNomesDuplicados()).thenReturn(list);
+
+        mockMvc.perform(get("/api/v1/reports/duplicate-client-names")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+}

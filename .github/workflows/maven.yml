@@ -23,13 +23,21 @@ jobs:
 
     - name: Build with Maven
       # O comando 'verify' executa testes unitários, JaCoCo e Allure results
-      run: mvn -B clean verify --file pom.xml
+      run: ./mvnw -B clean verify --file pom.xml
 
     - name: Upload JaCoCo Coverage Report
       uses: actions/upload-artifact@v4
       with:
         name: jacoco-report
         path: target/site/jacoco/
+        retention-days: 7
+
+    - name: Upload Cucumber Beautiful Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cucumber-report
+        path: target/cucumber-reports/beautiful/
         retention-days: 7
 
     - name: Update dependency graph
