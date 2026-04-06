@@ -63,4 +63,28 @@ class InventoryServiceTest {
         // Assert
         assertTrue(result.isEmpty());
     }
+    @Test
+    void getInventoryByTechnician_ShouldHandleNullFieldsInProjection() {
+        // Arrange
+        String technicianName = "John Doe";
+        InventoryProjection p1 = mock(InventoryProjection.class);
+        when(p1.getTecnico()).thenReturn(null); // Branch: view.getTecnico() != null (false)
+
+        InventoryProjection p2 = mock(InventoryProjection.class);
+        when(p2.getTecnico()).thenReturn("JOHN DOE");
+        when(p2.getPossui()).thenReturn(null); // Branch: view.getPossui() != null (false)
+        when(p2.getCodigo()).thenReturn("C2");
+        when(p2.getDescricao()).thenReturn("Desc 2");
+        when(p2.getId()).thenReturn(2L);
+
+        when(provider.getFullInventory()).thenReturn(List.of(p1, p2));
+
+        // Act
+        List<TechnicianInventoryDTO> result = service.getInventoryByTechnician(technicianName);
+
+        // Assert
+        assertEquals(1, result.size());
+        assertEquals("JOHN DOE", result.get(0).tecnico());
+        assertEquals(0L, result.get(0).possui()); // Should fallback to 0L
+    }
 }

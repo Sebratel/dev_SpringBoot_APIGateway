@@ -5,6 +5,7 @@ import br.com.sebratel.bff.dto.splitters.EllevenSplitterResponseDTO;
 import br.com.sebratel.bff.dto.splitters.NetworkComponentDTO;
 import br.com.sebratel.bff.dto.splitters.RecuperarTokenEllevenOutputDTO;
 import br.com.sebratel.bff.exceptions.ResourceNotFoundException;
+import br.com.sebratel.bff.repository.erp.projections.SplitterProjection;
 import br.com.sebratel.bff.repository.erp.splitters.SplitterRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -16,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -48,13 +50,14 @@ class ListarSplittersServiceTest {
 
     @BeforeEach
     void setUp() {
-        lenient().when(webClient.mutate()).thenReturn(webClientBuilder);
-        lenient().when(webClientBuilder.exchangeStrategies(any(ExchangeStrategies.class)).build()).thenReturn(webClient);
+        stubWebClient();
     }
 
     private void stubWebClient() {
-        lenient().when(webClientBuilder.exchangeStrategies(any(ExchangeStrategies.class)).build()).thenReturn(webClient);
+        lenient().when(webClient.mutate()).thenReturn(webClientBuilder);
+        lenient().when(webClientBuilder.exchangeStrategies(any(ExchangeStrategies.class))).thenReturn(webClientBuilder);
         lenient().when(webClientBuilder.baseUrl(anyString())).thenReturn(webClientBuilder);
+        lenient().when(webClientBuilder.build()).thenReturn(webClient);
     }
 
     @Test
@@ -83,32 +86,103 @@ class ListarSplittersServiceTest {
     }
 
     @Test
-    @Disabled("Varargs header call in WebClient is unstable to mock in this specific chain")
     void executarPaginado_ShouldReturnSplitters_WhenApiSucceeds() {
+        stubWebClient();
         String token = "valid-token";
         when(tokenService.executar()).thenReturn(new RecuperarTokenEllevenOutputDTO(token, 3600, "bearer", "scope"));
 
         EllevenSplitterResponseDTO<EllevenPaginatedDTO<List<NetworkComponentDTO>>> expectedResponse = new EllevenSplitterResponseDTO<>(true, null, null, "type", null);
 
-        WebClient deepWebClient = mock(WebClient.class, RETURNS_DEEP_STUBS);
-        WebClient.Builder deepBuilder = mock(WebClient.Builder.class, RETURNS_DEEP_STUBS);
-        when(deepWebClient.mutate()).thenReturn(deepBuilder);
-        when(deepBuilder.baseUrl(anyString()).exchangeStrategies(any(ExchangeStrategies.class)).build()).thenReturn(deepWebClient);
-        
-        WebClient.RequestHeadersSpec specMock = mock(WebClient.RequestHeadersSpec.class);
-        when(deepWebClient.get().uri(any(Function.class))).thenReturn(specMock);
-        when(specMock.header(anyString(), any())).thenReturn(specMock);
-        when(specMock.header(anyString(), anyString())).thenReturn(specMock);
-        
+        WebClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
-        when(specMock.retrieve()).thenReturn(responseSpec);
+
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(any(Function.class))).thenReturn(requestHeadersSpec);
+        lenient().when(requestHeadersSpec.header(anyString(), any())).thenReturn(requestHeadersSpec);
+        lenient().when(requestHeadersSpec.header(anyString(), anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class))).thenReturn(Mono.just(expectedResponse));
 
-        ListarSplittersService localService = new ListarSplittersService(deepWebClient, tokenService, repository);
-        EllevenSplitterResponseDTO<EllevenPaginatedDTO<List<NetworkComponentDTO>>> result = localService.executar(0, 10);
+        EllevenSplitterResponseDTO<EllevenPaginatedDTO<List<NetworkComponentDTO>>> result = service.executar(0, 10);
 
         assertNotNull(result);
+        assertTrue(result.success());
+    }
+
+    @Test
+    void executarPaginado_ShouldThrowException_WhenApiFails() {
+        stubWebClient();
+        String token = "valid-token";
+        when(tokenService.executar()).thenReturn(new RecuperarTokenEllevenOutputDTO(token, 3600, "bearer", "scope"));
+
+        WebClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(any(Function.class))).thenReturn(requestHeadersSpec);
+        lenient().when(requestHeadersSpec.header(anyString(), any())).thenReturn(requestHeadersSpec);
+        lenient().when(requestHeadersSpec.header(anyString(), anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        lenient().when(responseSpec.onStatus(any(), any())).thenAnswer(invocation -> {
+            Function<ClientResponse, Mono<? extends Throwable>> errorHandler = invocation.getArgument(1);
+            ClientResponse response = mock(ClientResponse.class);
+            lenient().when(response.statusCode()).thenReturn(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR);
+            lenient().when(response.bodyToMono(String.class)).thenReturn(Mono.just("API Error"));
+            
+            Mono<? extends Throwable> errorMono = errorHandler.apply(response);
+            assertNotNull(errorMono);
+            return responseSpec;
+        });
+        when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class))).thenReturn(Mono.error(new RuntimeException("Falha na integração Elleven: API Error")));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> service.executar(0, 10));
+        assertTrue(exception.getMessage().contains("Falha na integração Elleven"));
+    }
+
+    @Test
+    void executar_ShouldThrowException_WhenApiFails() {
+        stubWebClient();
+        String token = "valid-token";
+        when(tokenService.executar()).thenReturn(new RecuperarTokenEllevenOutputDTO(token, 3600, "bearer", "scope"));
+
+        WebClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(anyString())).thenReturn(requestHeadersSpec);
+        lenient().when(requestHeadersSpec.header(anyString(), any())).thenReturn(requestHeadersSpec);
+        lenient().when(requestHeadersSpec.header(anyString(), anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        lenient().when(responseSpec.onStatus(any(), any())).thenAnswer(invocation -> {
+            Function<ClientResponse, Mono<? extends Throwable>> errorHandler = invocation.getArgument(1);
+            ClientResponse response = mock(ClientResponse.class);
+            lenient().when(response.statusCode()).thenReturn(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR);
+            lenient().when(response.bodyToMono(String.class)).thenReturn(Mono.just("API Error"));
+            
+            Mono<? extends Throwable> errorMono = errorHandler.apply(response);
+            assertNotNull(errorMono);
+            return responseSpec;
+        });
+        when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class))).thenReturn(Mono.error(new RuntimeException("Falha na integração Elleven: API Error")));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> service.executar());
+        assertTrue(exception.getMessage().contains("Falha na integração Elleven"));
+    }
+    @Test
+    void executarPorId_ShouldReturnSplitter_WhenFound() {
+        SplitterProjection projection = mock(SplitterProjection.class);
+        when(repository.getSplitterById(1L)).thenReturn(Optional.of(projection));
+
+        EllevenSplitterResponseDTO<List<NetworkComponentDTO>> result = service.executar(1L);
+
+        assertNotNull(result);
+        assertTrue(result.success());
+        assertEquals(1, result.response().size());
+        assertEquals(1L, result.response().get(0).id());
     }
 
     @Test

@@ -116,6 +116,84 @@ class AdicionarMassivaNoEllevenApiServiceTest {
     }
 
     @Test
+    void executarComoEventoMassivoPelaQuantidade() {
+        // Arrange
+        AberturaRegistroMassivoInputDTO input = new AberturaRegistroMassivoInputDTO();
+        AberturaRegistroMassivoAssignmentDTO assignment = new AberturaRegistroMassivoAssignmentDTO();
+        assignment.setTitle("Test Title");
+        assignment.setDescription("Test Description");
+        input.setAssignment(assignment);
+        input.setAffectedUsers(new ArrayList<>());
+        input.setAffectedUsersQuantity(16);
+
+        RecuperarTokenEllevenOutputDTO tokenOutput = new RecuperarTokenEllevenOutputDTO("fake-token", 3600, "Bearer", "all");
+        when(recuperarTokenService.executar()).thenReturn(tokenOutput);
+
+        when(employeeService.hasB2BinInput(any())).thenReturn(false);
+
+        WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+        WebClient.RequestBodySpec requestBodySpec = mock(WebClient.RequestBodySpec.class);
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.header(eq(HttpHeaders.AUTHORIZATION), anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
+        when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+
+        AberturaRegistroMassivoOutputDTO expectedOutput = new AberturaRegistroMassivoOutputDTO();
+        when(responseSpec.bodyToMono(AberturaRegistroMassivoOutputDTO.class)).thenReturn(Mono.just(expectedOutput));
+
+        // Act
+        AberturaRegistroMassivoOutputDTO result = service.executar(input);
+
+        // Assert
+        assertEquals(expectedOutput, result);
+        assertEquals(AdicionarMassivaNoEllevenApiService.MASSIVE_EVENT_INCIDENT_TYPE_ID, input.getIncidentTypeId());
+    }
+
+    @Test
+    void executarComoEventoMassivoPorTerB2B() {
+        // Arrange
+        AberturaRegistroMassivoInputDTO input = new AberturaRegistroMassivoInputDTO();
+        AberturaRegistroMassivoAssignmentDTO assignment = new AberturaRegistroMassivoAssignmentDTO();
+        assignment.setTitle("Test Title");
+        assignment.setDescription("Test Description");
+        input.setAssignment(assignment);
+        input.setAffectedUsers(new ArrayList<>());
+        input.setAffectedUsersQuantity(1);
+
+        RecuperarTokenEllevenOutputDTO tokenOutput = new RecuperarTokenEllevenOutputDTO("fake-token", 3600, "Bearer", "all");
+        when(recuperarTokenService.executar()).thenReturn(tokenOutput);
+
+        when(employeeService.hasB2BinInput(any())).thenReturn(true);
+
+        WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+        WebClient.RequestBodySpec requestBodySpec = mock(WebClient.RequestBodySpec.class);
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.header(eq(HttpHeaders.AUTHORIZATION), anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
+        when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+
+        AberturaRegistroMassivoOutputDTO expectedOutput = new AberturaRegistroMassivoOutputDTO();
+        when(responseSpec.bodyToMono(AberturaRegistroMassivoOutputDTO.class)).thenReturn(Mono.just(expectedOutput));
+
+        // Act
+        AberturaRegistroMassivoOutputDTO result = service.executar(input);
+
+        // Assert
+        assertEquals(expectedOutput, result);
+        assertEquals(AdicionarMassivaNoEllevenApiService.MASSIVE_EVENT_INCIDENT_TYPE_ID, input.getIncidentTypeId());
+    }
+
+    @Test
     void executarComErro401DeveLimparCache() {
         // Arrange
         AberturaRegistroMassivoInputDTO input = new AberturaRegistroMassivoInputDTO();
@@ -124,9 +202,11 @@ class AdicionarMassivaNoEllevenApiServiceTest {
         assignment.setDescription("Test Description");
         input.setAssignment(assignment);
         input.setAffectedUsers(new ArrayList<>());
+        input.setAffectedUsersQuantity(1);
 
         RecuperarTokenEllevenOutputDTO tokenOutput = new RecuperarTokenEllevenOutputDTO("invalid-token", 3600, "Bearer", "all");
         when(recuperarTokenService.executar()).thenReturn(tokenOutput);
+        when(employeeService.hasB2BinInput(any())).thenReturn(false);
 
         WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
         WebClient.RequestBodySpec requestBodySpec = mock(WebClient.RequestBodySpec.class);
@@ -149,5 +229,93 @@ class AdicionarMassivaNoEllevenApiServiceTest {
         // Act & Assert
         assertThrows(WebClientResponseException.Unauthorized.class, () -> service.executar(input));
         verify(cache).evict("token-static-key");
+    }
+
+    @Test
+    void executarComErro401SemCache() {
+        // Arrange
+        AberturaRegistroMassivoInputDTO input = new AberturaRegistroMassivoInputDTO();
+        AberturaRegistroMassivoAssignmentDTO assignment = new AberturaRegistroMassivoAssignmentDTO();
+        assignment.setTitle("Test Title");
+        assignment.setDescription("Test Description");
+        input.setAssignment(assignment);
+        input.setAffectedUsers(new ArrayList<>());
+        input.setAffectedUsersQuantity(1);
+
+        RecuperarTokenEllevenOutputDTO tokenOutput = new RecuperarTokenEllevenOutputDTO("invalid-token", 3600, "Bearer", "all");
+        when(recuperarTokenService.executar()).thenReturn(tokenOutput);
+        when(employeeService.hasB2BinInput(any())).thenReturn(false);
+
+        WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+        WebClient.RequestBodySpec requestBodySpec = mock(WebClient.RequestBodySpec.class);
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.header(anyString(), anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.contentType(any())).thenReturn(requestBodySpec);
+        when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+
+        WebClientResponseException.Unauthorized unauthorizedException = mock(WebClientResponseException.Unauthorized.class);
+        when(responseSpec.bodyToMono(AberturaRegistroMassivoOutputDTO.class)).thenReturn(Mono.error(unauthorizedException));
+
+        when(cacheManager.getCache("token-de-integracao")).thenReturn(null);
+
+        // Act & Assert
+        assertThrows(WebClientResponseException.Unauthorized.class, () -> service.executar(input));
+        verify(cacheManager).getCache("token-de-integracao");
+    }
+
+    @Test
+    void executarComWebClientResponseExceptionGeral() {
+        // Arrange
+        AberturaRegistroMassivoInputDTO input = new AberturaRegistroMassivoInputDTO();
+        AberturaRegistroMassivoAssignmentDTO assignment = new AberturaRegistroMassivoAssignmentDTO();
+        assignment.setTitle("Test Title");
+        assignment.setDescription("Test Description");
+        input.setAssignment(assignment);
+        input.setAffectedUsers(new ArrayList<>());
+        input.setAffectedUsersQuantity(1);
+
+        RecuperarTokenEllevenOutputDTO tokenOutput = new RecuperarTokenEllevenOutputDTO("token", 3600, "Bearer", "all");
+        when(recuperarTokenService.executar()).thenReturn(tokenOutput);
+        when(employeeService.hasB2BinInput(any())).thenReturn(false);
+
+        WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+        WebClient.RequestBodySpec requestBodySpec = mock(WebClient.RequestBodySpec.class);
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.header(anyString(), anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.contentType(any())).thenReturn(requestBodySpec);
+        when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+
+        WebClientResponseException badRequestException = mock(WebClientResponseException.class);
+        when(responseSpec.bodyToMono(AberturaRegistroMassivoOutputDTO.class)).thenReturn(Mono.error(badRequestException));
+
+        // Act & Assert
+        assertThrows(WebClientResponseException.class, () -> service.executar(input));
+    }
+
+    @Test
+    void executarComExceptionGeral() {
+        // Arrange
+        AberturaRegistroMassivoInputDTO input = new AberturaRegistroMassivoInputDTO();
+        AberturaRegistroMassivoAssignmentDTO assignment = new AberturaRegistroMassivoAssignmentDTO();
+        assignment.setTitle("Test Title");
+        assignment.setDescription("Test Description");
+        input.setAssignment(assignment);
+        input.setAffectedUsers(new ArrayList<>());
+        input.setAffectedUsersQuantity(1);
+
+        when(recuperarTokenService.executar()).thenThrow(new RuntimeException("Critical error"));
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> service.executar(input));
     }
 }

@@ -117,4 +117,28 @@ class MatrixServiceTest {
         // Assert
         assertEquals("not_found_client", result.getStatusCliente());
     }
+    @Test
+    void getContractInfoByCPF_ShouldReturnResolutionTimeOne_WhenFinishDateIsInPast() {
+        // Arrange
+        String cpf = "12345678900";
+        PersonEntity person = new PersonEntity();
+        person.setId(1L);
+
+        ContractProjection contract = mock(ContractProjection.class);
+        when(contract.getContractId()).thenReturn(100L);
+
+        UsuarioAfetadoEntity affected = new UsuarioAfetadoEntity();
+        affected.setFinishDate(LocalDateTime.now().minusHours(2)); // Branch: hoursBetween <= 0
+
+        when(personRepository.findByTxId(cpf)).thenReturn(Optional.of(person));
+        when(personRepository.findContractByCPF(cpf)).thenReturn(Optional.of(contract));
+        when(usuarioAfetadoRepository.findByContractId(100L)).thenReturn(Optional.of(affected));
+
+        // Act
+        MatrixMassiveOutputDTO result = service.getContractInfoByCPF(cpf);
+
+        // Assert
+        assertEquals("client_found", result.getStatusCliente());
+        assertEquals(1, result.getResolutionTime()); // Branch: hoursBetween <= 0 ? 1 : (int) hoursBetween
+    }
 }

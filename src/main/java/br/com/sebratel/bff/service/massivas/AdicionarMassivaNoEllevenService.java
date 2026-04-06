@@ -125,7 +125,10 @@ public class AdicionarMassivaNoEllevenService {
 
         // Logs de debug para rastrear a volumetria dos dados enviados
         log.debug("Mapeando dados: APs={}, Slots={}, Portas={}, Endereços={}",
-                apIds.length, slots.length, ports.length, addrs.length);
+                apIds != null ? apIds.length : 0,
+                slots != null ? slots.length : 0,
+                ports != null ? ports.length : 0,
+                addrs != null ? addrs.length : 0);
 
         addListToForm(formData, "access_point_ids[]", apIds);
         addListToForm(formData, "slot_olt[]", slots);

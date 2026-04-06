@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class QrCodeServiceTest {
 
     @InjectMocks
-    private QrCodeService service;
+    private QrCodeService service = new QrCodeService();
 
     @Test
     void gerarEDecryptar_ShouldWorkTogether() throws Exception {
@@ -44,5 +44,25 @@ class QrCodeServiceTest {
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> service.decryptarQrCode(invalidData));
+    }
+
+    @Test
+    void gerarQrCode_ShouldThrowException_WhenPublicKeyNotFound() {
+        QrCodeService serviceWithMissingKey = new QrCodeService("non_existent.pem", "id_rsa_private.pem");
+        QrCodeInputDTO input = new QrCodeInputDTO();
+        input.setJson("{}");
+
+        RuntimeException exception = assertThrows(RuntimeException.class, 
+                () -> serviceWithMissingKey.gerarQrCodeParaFuncionario(input));
+        assertEquals("Chave publica nao encontrada", exception.getMessage());
+    }
+
+    @Test
+    void decryptarQrCode_ShouldThrowException_WhenPrivateKeyNotFound() {
+        QrCodeService serviceWithMissingKey = new QrCodeService("id_rsa_public.pem", "non_existent.pem");
+
+        RuntimeException exception = assertThrows(RuntimeException.class, 
+                () -> serviceWithMissingKey.decryptarQrCode("someData"));
+        assertEquals("Falha na autenticação dos dados: Código inválido ou chave incorreta.", exception.getMessage());
     }
 }
