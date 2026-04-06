@@ -28,7 +28,7 @@ jobs:
       - name: Extrair Versão do pom.xml
         id: get_version
         run: |
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Comparar Versão com Última Tag
@@ -65,11 +65,11 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Executar Testes Unitários
-        run: mvn clean test
+      - name: Executar Testes Unitários e BDD
+        run: ./mvnw clean verify
 
       - name: Empacotar Projeto (Jar)
-        run: mvn package -DskipTests
+        run: ./mvnw package -DskipTests
 
       # Adicione aqui os passos de deploy ou push de imagem Docker se necessário
       - name: Log de Sucesso
