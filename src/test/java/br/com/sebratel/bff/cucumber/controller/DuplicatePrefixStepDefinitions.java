@@ -1,4 +1,6 @@
-package br.com.sebratel.bff.cucumber;
+package br.com.sebratel.bff.cucumber.controller;
+
+import br.com.sebratel.bff.cucumber.CommonStepDefinitions;
 
 import br.com.sebratel.bff.service.DuplicatePrefixService;
 import io.cucumber.java.en.Given;
