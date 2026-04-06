@@ -11,20 +11,20 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/vendedores")
-public class VendedoresAtivosController {
+@RequestMapping({"/api/v1/sellers", "/api/v1/vendedores"})
+public class ActiveSellersController {
 
 
     private final VendedoresAtivosService vendedoresAtivosService;
 
     @Autowired
-    public VendedoresAtivosController(VendedoresAtivosService vendedoresAtivosService) {
+    public ActiveSellersController(VendedoresAtivosService vendedoresAtivosService) {
         this.vendedoresAtivosService = vendedoresAtivosService;
     }
 
-    @GetMapping("/ativos")
-    public ResponseEntity<List<VendedoresAtivosDTO>> getAtivos() {
-        List<VendedoresAtivosDTO> vendedores = vendedoresAtivosService.listarVendedoresAtivos();
-        return ResponseEntity.ok(vendedores);
+    @GetMapping({"/active", "/ativos", "/vendedores-ativos"})
+    public ResponseEntity<List<VendedoresAtivosDTO>> getActiveSellers() {
+        List<VendedoresAtivosDTO> sellers = vendedoresAtivosService.listarVendedoresAtivos();
+        return ResponseEntity.ok(sellers);
     }
 }

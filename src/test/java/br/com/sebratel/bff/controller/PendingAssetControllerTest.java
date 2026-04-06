@@ -1,8 +1,8 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
-import br.com.sebratel.bff.dto.ContratoAtivacaoFaturaDTO;
-import br.com.sebratel.bff.service.ContratoAtivacaoFaturaService;
+import br.com.sebratel.bff.dto.PatrimonioPendenteDTO;
+import br.com.sebratel.bff.service.PatrimonioPendenteService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +12,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDate;
 import java.util.List;
 
 import static org.mockito.Mockito.when;
@@ -20,25 +19,25 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(ContratoAtivacaoFaturaController.class)
+@WebMvcTest(PendingAssetController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class ContratoAtivacaoFaturaControllerTest extends BaseTest {
+class PendingAssetControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private ContratoAtivacaoFaturaService contratoAtivacaoFaturaService;
+    private PatrimonioPendenteService patrimonioPendenteService;
 
     @Test
-    @DisplayName("Deve retornar 200 ao listar contratos com ativação pendente de fatura")
-    void getContratos_Sucesso() throws Exception {
-        ContratoAtivacaoFaturaDTO dto = new ContratoAtivacaoFaturaDTO("", "", "", LocalDate.now().atStartOfDay(), LocalDate.now());
-        List<ContratoAtivacaoFaturaDTO> lista = List.of(dto);
+    @DisplayName("Should return 200 when listing pending assets")
+    void getPendingAssets_Success() throws Exception {
+        PatrimonioPendenteDTO dto = new PatrimonioPendenteDTO("", "", "", 2.0);
+        List<PatrimonioPendenteDTO> list = List.of(dto);
 
-        when(contratoAtivacaoFaturaService.listarContratosRelacionados()).thenReturn(lista);
+        when(patrimonioPendenteService.listarPatrimoniosPendentes()).thenReturn(list);
 
-        mockMvc.perform(get("/api/v1/contratos/ativacao-pendente-fatura")
+        mockMvc.perform(get("/api/v1/assets/pending")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())

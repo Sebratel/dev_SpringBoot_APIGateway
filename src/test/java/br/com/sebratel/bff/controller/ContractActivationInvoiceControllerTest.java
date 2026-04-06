@@ -1,8 +1,8 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
-import br.com.sebratel.bff.dto.comercial.RelatorioPorVendedorDTO;
-import br.com.sebratel.bff.service.comercial.PrimeiroPaganteMensalService;
+import br.com.sebratel.bff.dto.ContratoAtivacaoFaturaDTO;
+import br.com.sebratel.bff.service.ContratoAtivacaoFaturaService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.mockito.Mockito.when;
@@ -19,25 +20,25 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(PrimeiroPaganteMensalController.class)
+@WebMvcTest(ContractActivationInvoiceController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class PrimeiroPaganteMensalControllerTest extends BaseTest {
+class ContractActivationInvoiceControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private PrimeiroPaganteMensalService primeiroPaganteMensalService;
+    private ContratoAtivacaoFaturaService contratoAtivacaoFaturaService;
 
     @Test
-    @DisplayName("Deve retornar 200 ao executar relatório de primeiro pagante mensal")
-    void executar_Sucesso() throws Exception {
-        RelatorioPorVendedorDTO dto = new RelatorioPorVendedorDTO();
-        List<RelatorioPorVendedorDTO> response = List.of(dto);
+    @DisplayName("Should return 200 when listing contracts with pending activation invoice")
+    void getContracts_Success() throws Exception {
+        ContratoAtivacaoFaturaDTO dto = new ContratoAtivacaoFaturaDTO("", "", "", LocalDate.now().atStartOfDay(), LocalDate.now());
+        List<ContratoAtivacaoFaturaDTO> list = List.of(dto);
 
-        when(primeiroPaganteMensalService.filtroELoop()).thenReturn(response);
+        when(contratoAtivacaoFaturaService.listarContratosRelacionados()).thenReturn(list);
 
-        mockMvc.perform(get("/api/v1/relatorios/primeiro-pagante-mensal")
+        mockMvc.perform(get("/api/v1/contracts/pending-activation-invoice")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())

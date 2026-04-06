@@ -1,8 +1,8 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
-import br.com.sebratel.bff.dto.ContratoSemFaturaDTO;
-import br.com.sebratel.bff.service.ContratoSemFaturaService;
+import br.com.sebratel.bff.dto.VendedoresAtivosDTO;
+import br.com.sebratel.bff.service.VendedoresAtivosService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,25 +19,27 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(ContratoSemFaturaController.class)
+@WebMvcTest(ActiveSellersController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class ContratoSemFaturaControllerTest extends BaseTest {
+class ActiveSellersControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private ContratoSemFaturaService contratoSemFaturaService;
+    private VendedoresAtivosService vendedoresAtivosService;
 
     @Test
-    @DisplayName("Deve retornar 200 ao listar contratos sem fatura")
-    void getContratosSemFatura_Sucesso() throws Exception {
-        ContratoSemFaturaDTO dto = new ContratoSemFaturaDTO("", "", 1L);
-        List<ContratoSemFaturaDTO> lista = List.of(dto);
+    @DisplayName("Should return 200 when listing active sellers")
+    void getActiveSellers_Success() throws Exception {
+        VendedoresAtivosDTO dto = new VendedoresAtivosDTO(
+                "", ""
+        );
+        List<VendedoresAtivosDTO> list = List.of(dto);
 
-        when(contratoSemFaturaService.listarContratosSemFatura()).thenReturn(lista);
+        when(vendedoresAtivosService.listarVendedoresAtivos()).thenReturn(list);
 
-        mockMvc.perform(get("/api/v1/contratos/sem-fatura")
+        mockMvc.perform(get("/api/v1/sellers/active")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())

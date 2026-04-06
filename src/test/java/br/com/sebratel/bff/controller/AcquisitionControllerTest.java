@@ -3,6 +3,7 @@ package br.com.sebratel.bff.controller;
 import br.com.sebratel.bff.BaseTest;
 import br.com.sebratel.bff.dto.AquisicaoDTO;
 import br.com.sebratel.bff.service.AquisicaoService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +22,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(AquisicaoController.class)
+@WebMvcTest(AcquisitionController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class AquisicaoControllerTest extends BaseTest {
+class AcquisitionControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -31,15 +32,27 @@ class AquisicaoControllerTest extends BaseTest {
     @MockitoBean
     private AquisicaoService aquisicaoService;
 
-    @Test
-    @DisplayName("Deve retornar 200 e a lista de aquisições com sucesso")
-    void getAquisicoes_Sucesso() throws Exception {
+    @BeforeEach
+    void setUp() {
         AquisicaoDTO dto = new AquisicaoDTO(1L, "", "", LocalDate.now(), "String", LocalDate.now(), 2.0, "3.0","String", "String");
-        List<AquisicaoDTO> lista = List.of(dto);
+        List<AquisicaoDTO> list = List.of(dto);
+        when(aquisicaoService.listarAquisicoes()).thenReturn(list);
+    }
 
-        when(aquisicaoService.listarAquisicoes()).thenReturn(lista);
+    @Test
+    @DisplayName("Should return 200 using the new English route")
+    void getAcquisitions_NewRoute_Success() throws Exception {
+        mockMvc.perform(get("/api/v1/acquisitions/recover-acquisition-orders")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$").isArray());
+    }
 
-        mockMvc.perform(get("/api/v1/aquisicoes/recuperar-pedidos-de-aquisicao")
+    @Test
+    @DisplayName("Should return 200 using the old Portuguese route")
+    void getAcquisitions_OldRoute_Success() throws Exception {
+        mockMvc.perform(get("/api/v1/aquisicoes/recover-acquisition-orders")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))

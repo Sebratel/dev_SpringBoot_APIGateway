@@ -1,8 +1,8 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
-import br.com.sebratel.bff.dto.VendedoresAtivosDTO;
-import br.com.sebratel.bff.service.VendedoresAtivosService;
+import br.com.sebratel.bff.dto.ContratoBloqueadoDTO;
+import br.com.sebratel.bff.service.ContratoBloqueadoService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.mockito.Mockito.when;
@@ -19,27 +20,25 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(VendedoresAtivosController.class)
+@WebMvcTest(BlockedContractController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class VendedoresAtivosControllerTest extends BaseTest {
+class BlockedContractControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private VendedoresAtivosService vendedoresAtivosService;
+    private ContratoBloqueadoService contratoBloqueadoService;
 
     @Test
-    @DisplayName("Deve retornar 200 ao listar vendedores ativos")
-    void getAtivos_Sucesso() throws Exception {
-        VendedoresAtivosDTO dto = new VendedoresAtivosDTO(
-                "", ""
-        );
-        List<VendedoresAtivosDTO> lista = List.of(dto);
+    @DisplayName("Should return 200 when listing blocked contracts")
+    void getBlockedContracts_Success() throws Exception {
+        ContratoBloqueadoDTO dto = new ContratoBloqueadoDTO("","","","","","","","","", "", "", LocalDate.now(), 1);
+        List<ContratoBloqueadoDTO> list = List.of(dto);
 
-        when(vendedoresAtivosService.listarVendedoresAtivos()).thenReturn(lista);
+        when(contratoBloqueadoService.listarContratosBloqueados()).thenReturn(list);
 
-        mockMvc.perform(get("/api/v1/vendedores/ativos")
+        mockMvc.perform(get("/api/v1/contracts/blocked")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())

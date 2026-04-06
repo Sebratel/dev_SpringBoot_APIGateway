@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/apoio-semanal")
+@RequestMapping({"/api/v1/weekly-reports", "/api/v1/apoio-semanal"})
 @Slf4j
 public class WeeklyReportController {
 

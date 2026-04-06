@@ -1,8 +1,8 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
-import br.com.sebratel.bff.dto.RelatorioClienteNomeDuplicadoDTO;
-import br.com.sebratel.bff.service.RelatorioClienteNomeDuplicadoService;
+import br.com.sebratel.bff.dto.UltimaConexaoDTO;
+import br.com.sebratel.bff.service.UltimaConexaoService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.Mockito.when;
@@ -19,25 +20,25 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(RelatorioClienteNomeDuplicadoController.class)
+@WebMvcTest(LastConnectionController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class RelatorioClienteNomeDuplicadoControllerTest extends BaseTest {
+class LastConnectionControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private RelatorioClienteNomeDuplicadoService relatorioClienteNomeDuplicadoService;
+    private UltimaConexaoService ultimaConexaoService;
 
     @Test
-    @DisplayName("Deve retornar 200 ao listar clientes com nomes duplicados")
-    void getClientesNomesDuplicados_Sucesso() throws Exception {
-        RelatorioClienteNomeDuplicadoDTO dto = new RelatorioClienteNomeDuplicadoDTO("", "", "");
-        List<RelatorioClienteNomeDuplicadoDTO> lista = List.of(dto);
+    @DisplayName("Should return 200 when listing last connections of contracts")
+    void getLastConnections_Success() throws Exception {
+        UltimaConexaoDTO dto = new UltimaConexaoDTO("", LocalDateTime.now(), LocalDateTime.now(), LocalDateTime.now(), 2L, 2L, "");
+        List<UltimaConexaoDTO> list = List.of(dto);
 
-        when(relatorioClienteNomeDuplicadoService.listarClientesNomesDuplicados()).thenReturn(lista);
+        when(ultimaConexaoService.listarUltimasConexoes()).thenReturn(list);
 
-        mockMvc.perform(get("/api/v1/relatorios/clientes-nomes-duplicados")
+        mockMvc.perform(get("/api/v1/contracts/last-connections")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())

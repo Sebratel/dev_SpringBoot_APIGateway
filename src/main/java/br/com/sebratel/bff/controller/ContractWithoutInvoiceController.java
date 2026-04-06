@@ -10,17 +10,17 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/contratos")
-public class ContratoSemFaturaController {
+@RequestMapping({"/api/v1/contracts", "/api/v1/contrato-sem-fatura", "/api/v1/contratos"})
+public class ContractWithoutInvoiceController {
 
     private final ContratoSemFaturaService service;
 
-    public ContratoSemFaturaController(ContratoSemFaturaService service) {
+    public ContractWithoutInvoiceController(ContratoSemFaturaService service) {
         this.service = service;
     }
 
-    @GetMapping("/sem-fatura")
-    public ResponseEntity<List<ContratoSemFaturaDTO>> getContratosSemFatura() {
+    @GetMapping({"/without-invoice", "/sem-fatura"})
+    public ResponseEntity<List<ContratoSemFaturaDTO>> getContractsWithoutInvoice() {
         return ResponseEntity.ok(service.listarContratosSemFatura());
     }
 }

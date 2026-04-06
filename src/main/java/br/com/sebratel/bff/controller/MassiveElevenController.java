@@ -23,9 +23,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/massivas")
+@RequestMapping({"/api/v1/massive-incidents", "/api/v1/massivas-eleven", "/api/v1/massivas"})
 @Slf4j
-public class MassivasElevenController {
+public class MassiveElevenController {
 
     private final AdicionarMassivaNoEllevenService adicionarMassivaNoEllevenService;
     private final AdicionarMassivaNoEllevenApiService adicionarMassivaNoEllevenApiService;
@@ -34,7 +34,7 @@ public class MassivasElevenController {
     private final FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService;
 
     @Autowired
-    public MassivasElevenController(AdicionarMassivaNoEllevenService adicionarMassivaNoEllevenService, AdicionarMassivaNoEllevenApiService adicionarMassivaNoEllevenApiService,
+    public MassiveElevenController(AdicionarMassivaNoEllevenService adicionarMassivaNoEllevenService, AdicionarMassivaNoEllevenApiService adicionarMassivaNoEllevenApiService,
                                     EnviarListaDeAfetadosParaNativeService enviarListaDeAfetadosParaNativeService,
                                     GetAllMassivesService getAllMassivesService, RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService, FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService) {
         this.adicionarMassivaNoEllevenService = adicionarMassivaNoEllevenService;
@@ -45,83 +45,83 @@ public class MassivasElevenController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<CriacaoDeMassivaOutputDTO>> criarMassivaComDadosDoFlutter(
+    public ResponseEntity<ApiResponse<CriacaoDeMassivaOutputDTO>> createMassiveIncidentWithFlutterData(
             @Valid @RequestBody CriacaoDeMassivaInputDTO input) {
 
-        log.info("Iniciando criação de massiva no ERP. [Solicitante: {}]", input.getAssignmentDescription());
+        log.info("Starting massive incident creation in ERP. [Requester: {}]", input.getAssignmentDescription());
 
         try {
             CriacaoDeMassivaOutputDTO output = adicionarMassivaNoEllevenService.salvarNoBancoERP(input);
 
-            log.info("Massiva criada com sucesso no ERP. [ID Massiva: {}]", output.getId());
+            log.info("Massive incident successfully created in ERP. [Massive ID: {}]", output.getId());
 
             ApiResponse<CriacaoDeMassivaOutputDTO> response = ApiResponse.<CriacaoDeMassivaOutputDTO>builder()
                     .success(true)
-                    .message("Massiva criada com sucesso no ERP.")
+                    .message("Massive incident successfully created in ERP.")
                     .data(output)
                     .build();
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
-            log.error("Erro ao criar massiva no ERP para o solicitante {}: {}", input.getAssignmentDescription(), e.getMessage());
+            log.error("Error creating massive incident in ERP for requester {}: {}", input.getAssignmentDescription(), e.getMessage());
             throw e;
         }
     }
 
     @GetMapping("/getAllMassives")
-    public ResponseEntity<ApiResponse<EllevenApiResponseDTO>> recuperarTodasAsMassivas() {
+    public ResponseEntity<ApiResponse<EllevenApiResponseDTO>> retrieveAllMassiveIncidents() {
 
-        log.debug("Solicitando recuperação de todas as massivas do sistema Elleven.");
+        log.debug("Requesting retrieval of all massive incidents from Elleven system.");
 
         EllevenApiResponseDTO output = getAllMassivesService.getAllSolicitations();
 
-        int totalRecuperado = (output.getResponse() != null) ? output.getResponse().getTotalRecords() : 0;
-        log.info("Recuperação de massivas finalizada. [Total encontrado: {}]", totalRecuperado);
+        int totalRetrieved = (output.getResponse() != null) ? output.getResponse().getTotalRecords() : 0;
+        log.info("Massive incident retrieval finished. [Total found: {}]", totalRetrieved);
 
         ApiResponse<EllevenApiResponseDTO> response = ApiResponse.<EllevenApiResponseDTO>builder()
                 .success(true)
-                .message("Massivas recuperadas com sucesso")
+                .message("Massive incidents successfully retrieved")
                 .data(output)
                 .build();
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    @GetMapping("/recuperar-pelo-banco")
-    public ResponseEntity<ApiResponse<List<MassivasBFFOutputDTO>>> recuperarTodasAsMassivasPeloBanco() {
+    @GetMapping({"/recover-via-database", "/recuperar-pelo-banco"})
+    public ResponseEntity<ApiResponse<List<MassivasBFFOutputDTO>>> retrieveAllMassiveIncidentsViaDatabase() {
         try {
             List<MassivasBFFOutputDTO> output = recuperarTodasAsMassivasPeloBancoService.executar();
 
-            log.info("Massivas recuperadas com sucesso no banco ERP.");
+            log.info("Massive incidents successfully retrieved from ERP database.");
 
             ApiResponse<List<MassivasBFFOutputDTO>> response = ApiResponse.<List<MassivasBFFOutputDTO>>builder()
                     .success(true)
-                    .message("Massivas recuperadas com sucesso.")
+                    .message("Massive incidents successfully retrieved.")
                     .data(output)
                     .build();
 
             return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (Exception e) {
-            log.error("Erro ao recuperar massivas no banco ERP. {}", e.getMessage());
+            log.error("Error retrieving massive incidents from ERP database. {}", e.getMessage());
             throw e;
         }
     }
 
-    @PostMapping("/salvar-massiva-via-api")
-    public ResponseEntity<ApiResponse<AberturaRegistroMassivoOutputDTO>> criarMassivaComDadosDoFlutter(
+    @PostMapping("/save-massive-via-api")
+    public ResponseEntity<ApiResponse<AberturaRegistroMassivoOutputDTO>> createMassiveIncidentViaApi(
             @Valid @RequestBody AberturaRegistroMassivoInputDTO input) {
 
-        log.info("Iniciando criação de massiva no ERP via API. [Solicitante: {}]", input.getPersonId());
+        log.info("Starting massive incident creation in ERP via API. [Requester: {}]", input.getPersonId());
 
         try {
             AberturaRegistroMassivoOutputDTO output = adicionarMassivaNoEllevenApiService.executar(input);
 
             if(!output.isSuccess()) {
-                ApiResponse<AberturaRegistroMassivoOutputDTO> apiResponse = ApiResponse.<AberturaRegistroMassivoOutputDTO>builder().success(false).message("Falha ao criar massiva no ERP. ERRO do lado Elleven").data(output).build();
+                ApiResponse<AberturaRegistroMassivoOutputDTO> apiResponse = ApiResponse.<AberturaRegistroMassivoOutputDTO>builder().success(false).message("Failed to create massive incident in ERP. Elleven side ERROR").data(output).build();
                 return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(apiResponse);
             }
 
-            log.info("Massiva criada com sucesso no ERP. [ID PROTOCOLO: {}, ID ASSIGNMENT: {}, MESSAGE: {}]",
+            log.info("Massive incident successfully created in ERP. [PROTOCOL ID: {}, ASSIGNMENT ID: {}, MESSAGE: {}]",
                     output.getResponse().getProtocol(),
                     output.getResponse().getAssignmentId(),
                     output.getResponse().getMessage());
@@ -129,42 +129,42 @@ public class MassivasElevenController {
 
             ApiResponse<AberturaRegistroMassivoOutputDTO> response = ApiResponse.<AberturaRegistroMassivoOutputDTO>builder()
                     .success(true)
-                    .message("Massiva criada com sucesso no ERP.")
+                    .message("Massive incident successfully created in ERP.")
                     .data(output)
                     .build();
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
-            log.error("Erro ao criar massiva no ERP para o solicitante {}:\n {}", input.getPersonId(), e.getMessage());
+            log.error("Error creating massive incident in ERP for requester {}:\n {}", input.getPersonId(), e.getMessage());
             throw e;
         }
     }
 
-    @DeleteMapping("/finalizar-chamado-via-api")
-    public ResponseEntity<FinalizarRegistroMassivoOutputDTO> finalizaRegistroMassivoViaApi(
+    @DeleteMapping("/finalize-ticket-via-api")
+    public ResponseEntity<FinalizarRegistroMassivoOutputDTO> finalizeMassiveIncidentViaApi(
             @Valid @RequestBody FinalizaRegistroMassivoInputDTO input) {
 
-        log.info("Iniciando finalização de massiva no ERP via API.");
+        log.info("Starting massive incident finalization in ERP via API.");
 
         try {
             FinalizarRegistroMassivoOutputDTO finalizarRegistroMassivoOutputDTO = finalizarMassivaNoEllevenApiService.executar(input);
 
             if(finalizarRegistroMassivoOutputDTO.isSuccess()) {
-                log.info("Massiva finalizada com sucesso no ERP. [ID ASSIGNMENT: {}, MESSAGE: {}]",
+                log.info("Massive incident successfully finalized in ERP. [ASSIGNMENT ID: {}, MESSAGE: {}]",
                         input.getAssignmentId(),
                         input.getDescription());
 
                 return ResponseEntity.ok(finalizarRegistroMassivoOutputDTO);
 
             } else {
-                log.error("Erro ao finalizar massiva no ERP. [ID ASSIGNMENT: {}, MESSAGE: {}]",
+                log.error("Error finalizing massive incident in ERP. [ASSIGNMENT ID: {}, MESSAGE: {}]",
                         input.getAssignmentId(),
                         input.getDescription());
 
                 return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(finalizarRegistroMassivoOutputDTO);
             }
         } catch (Exception e) {
-            log.error("Erro ao finalizar massiva SERVER ERROR.  ASSIGNMENT: {}:\n {}", input.getAssignmentId(), e.getMessage());
+            log.error("Error finalizing massive incident SERVER ERROR. ASSIGNMENT: {}:\n {}", input.getAssignmentId(), e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -172,7 +172,7 @@ public class MassivasElevenController {
     @CacheEvict("token-de-integracao")
     @PostMapping("/invalidate-token")
     public void tokenCacheEvict() {
-        log.info("token de integração removido do cache");
+        log.info("Integration token removed from cache");
     }
 
 

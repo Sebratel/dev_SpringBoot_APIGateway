@@ -10,17 +10,17 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/patrimonios")
-public class PatrimonioPendenteController {
+@RequestMapping({"/api/v1/assets", "/api/v1/patrimonio-pendente", "/api/v1/patrimonios"})
+public class PendingAssetController {
 
     private final PatrimonioPendenteService service;
 
-    public PatrimonioPendenteController(PatrimonioPendenteService service) {
+    public PendingAssetController(PatrimonioPendenteService service) {
         this.service = service;
     }
 
-    @GetMapping("/pendentes")
-    public ResponseEntity<List<PatrimonioPendenteDTO>> getPendentes() {
+    @GetMapping({"/pending", "/pendentes"})
+    public ResponseEntity<List<PatrimonioPendenteDTO>> getPendingAssets() {
         return ResponseEntity.ok(service.listarPatrimoniosPendentes());
     }
 }

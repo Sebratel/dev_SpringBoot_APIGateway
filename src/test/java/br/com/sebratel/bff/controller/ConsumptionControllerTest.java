@@ -23,9 +23,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(ConsumoController.class)
+@WebMvcTest(ConsumptionController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class ConsumoControllerTest extends BaseTest {
+class ConsumptionControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -34,28 +34,28 @@ class ConsumoControllerTest extends BaseTest {
     private ConsumoService consumoService;
 
     @Test
-    @DisplayName("Deve retornar 200 ao listar consumo alto")
-    void getConsumoAlto_Sucesso() throws Exception {
+    @DisplayName("Should return 200 when listing high consumption")
+    void getHighConsumption_Success() throws Exception {
         ConsumoDTO dto = new ConsumoDTO("String", "String", "String", "String", 2.0, 3.0, 4.0);
-        List<ConsumoDTO> lista = List.of(dto);
+        List<ConsumoDTO> list = List.of(dto);
 
-        when(consumoService.listarConsumoAlto()).thenReturn(lista);
+        when(consumoService.listarConsumoAlto()).thenReturn(list);
 
-        mockMvc.perform(get("/api/v1/consumo-alto")
+        mockMvc.perform(get("/api/v1/high-consumption")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
 
     @Test
-    @DisplayName("Deve retornar 200 ao listar consumo alto paginado")
-    void getConsumoAltoPaginado_Sucesso() throws Exception {
+    @DisplayName("Should return 200 when listing paged high consumption")
+    void getHighConsumptionPaged_Success() throws Exception {
         ConsumoDTO dto = new ConsumoDTO("String", "String", "String", "String", 2.0, 3.0, 4.0);
         Page<ConsumoDTO> page = new PageImpl<>(List.of(dto), PageRequest.of(0, 20), 1);
 
         when(consumoService.listarConsumoAltoPaginado(anyInt(), anyInt())).thenReturn(page);
 
-        mockMvc.perform(get("/api/v1/consumo-alto-paginado")
+        mockMvc.perform(get("/api/v1/high-consumption-paged")
                         .param("page", "0")
                         .param("size", "20")
                         .contentType(MediaType.APPLICATION_JSON))

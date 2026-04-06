@@ -16,28 +16,28 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1")
-public class ConsumoController {
+public class ConsumptionController {
 
     private final ConsumoService service;
 
-    public ConsumoController(ConsumoService service) {
+    public ConsumptionController(ConsumoService service) {
         this.service = service;
     }
 
     @Operation(
-            summary = "Listar clientes com alto consumo (>1TB)",
-            description = "Retorna o consumo proporcional ao mês corrente. " +
-                    "Sessões que iniciaram no mês anterior são fatiadas matematicamente " +
-                    "para refletir apenas o tráfego gerado no período atual."
+            summary = "List high consumption clients (>1TB)",
+            description = "Returns the consumption proportional to the current month. " +
+                    "Sessions that started in the previous month are mathematically sliced " +
+                    "to reflect only the traffic generated in the current period."
     )
-    @ApiResponse(responseCode = "200", description = "Lista consolidada com sucesso")
-    @GetMapping("/consumo-alto")
-    public ResponseEntity<List<ConsumoDTO>> getConsumoAlto() {
+    @ApiResponse(responseCode = "200", description = "Consolidated list successfully retrieved")
+    @GetMapping({"/high-consumption", "/consumo", "/consumo-alto"})
+    public ResponseEntity<List<ConsumoDTO>> getHighConsumption() {
         return ResponseEntity.ok(service.listarConsumoAlto());
     }
 
-    @GetMapping("/consumo-alto-paginado")
-    public ResponseEntity<Page<ConsumoDTO>> getConsumoAltoListado(
+    @GetMapping({"/high-consumption-paged", "/consumo-alto-paginado"})
+    public ResponseEntity<Page<ConsumoDTO>> getHighConsumptionPaged(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(service.listarConsumoAltoPaginado(page, size));

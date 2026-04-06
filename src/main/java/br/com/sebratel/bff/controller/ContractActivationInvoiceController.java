@@ -10,17 +10,17 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/contratos")
-public class ContratoAtivacaoFaturaController {
+@RequestMapping({"/api/v1/contracts", "/api/v1/contrato-ativacao-fatura", "/api/v1/contratos"})
+public class ContractActivationInvoiceController {
 
     private final ContratoAtivacaoFaturaService service;
 
-    public ContratoAtivacaoFaturaController(ContratoAtivacaoFaturaService service) {
+    public ContractActivationInvoiceController(ContratoAtivacaoFaturaService service) {
         this.service = service;
     }
 
-    @GetMapping("/ativacao-pendente-fatura")
-    public ResponseEntity<List<ContratoAtivacaoFaturaDTO>> getContratos() {
+    @GetMapping({"/pending-activation-invoice", "/ativacao-pendente-fatura"})
+    public ResponseEntity<List<ContratoAtivacaoFaturaDTO>> getContracts() {
         return ResponseEntity.ok(service.listarContratosRelacionados());
     }
 }

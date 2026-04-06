@@ -11,19 +11,19 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/relatorios")
-public class PrimeiroPaganteMensalController {
+@RequestMapping({"/api/v1/reports", "/api/v1/primeiro-pagante-mensal", "/api/v1/relatorios"})
+public class FirstMonthlyPayerController {
 
 
     private final PrimeiroPaganteMensalService primeiroPaganteMensalService;
 
     @Autowired
-    private PrimeiroPaganteMensalController(PrimeiroPaganteMensalService primeiroPaganteMensalService) {
+    private FirstMonthlyPayerController(PrimeiroPaganteMensalService primeiroPaganteMensalService) {
         this.primeiroPaganteMensalService = primeiroPaganteMensalService;
     }
 
-    @GetMapping("/primeiro-pagante-mensal")
-    public ResponseEntity<List<RelatorioPorVendedorDTO>> executar() {
+    @GetMapping({"/first-monthly-payer", "/primeiro-pagante-mensal"})
+    public ResponseEntity<List<RelatorioPorVendedorDTO>> execute() {
         List<RelatorioPorVendedorDTO> response = primeiroPaganteMensalService.filtroELoop();
         return ResponseEntity.ok(response);
     }

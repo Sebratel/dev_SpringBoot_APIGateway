@@ -1,8 +1,8 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
-import br.com.sebratel.bff.dto.ContratoBloqueadoDTO;
-import br.com.sebratel.bff.service.ContratoBloqueadoService;
+import br.com.sebratel.bff.dto.RelatorioClienteNomeDuplicadoDTO;
+import br.com.sebratel.bff.service.RelatorioClienteNomeDuplicadoService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +12,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDate;
 import java.util.List;
 
 import static org.mockito.Mockito.when;
@@ -20,25 +19,25 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(ContratoBloqueadoController.class)
+@WebMvcTest(DuplicateClientNameReportController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class ContratoBloqueadoControllerTest extends BaseTest {
+class DuplicateClientNameReportControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private ContratoBloqueadoService contratoBloqueadoService;
+    private RelatorioClienteNomeDuplicadoService relatorioClienteNomeDuplicadoService;
 
     @Test
-    @DisplayName("Deve retornar 200 ao listar contratos bloqueados")
-    void getContratosBloqueados_Sucesso() throws Exception {
-        ContratoBloqueadoDTO dto = new ContratoBloqueadoDTO("","","","","","","","","", "", "", LocalDate.now(), 1);
-        List<ContratoBloqueadoDTO> lista = List.of(dto);
+    @DisplayName("Should return 200 when listing clients with duplicate names")
+    void getDuplicateClientNames_Success() throws Exception {
+        RelatorioClienteNomeDuplicadoDTO dto = new RelatorioClienteNomeDuplicadoDTO("", "", "");
+        List<RelatorioClienteNomeDuplicadoDTO> list = List.of(dto);
 
-        when(contratoBloqueadoService.listarContratosBloqueados()).thenReturn(lista);
+        when(relatorioClienteNomeDuplicadoService.listarClientesNomesDuplicados()).thenReturn(list);
 
-        mockMvc.perform(get("/api/v1/contratos/bloqueados")
+        mockMvc.perform(get("/api/v1/reports/duplicate-client-names")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())

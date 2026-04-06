@@ -10,17 +10,17 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/aquisicoes")
-public class AquisicaoController {
+@RequestMapping({"/api/v1/acquisitions", "/api/v1/aquisicoes"})
+public class AcquisitionController {
 
     private final AquisicaoService service;
 
-    public AquisicaoController(AquisicaoService service) {
+    public AcquisitionController(AquisicaoService service) {
         this.service = service;
     }
 
-    @GetMapping("/recuperar-pedidos-de-aquisicao")
-    public ResponseEntity<List<AquisicaoDTO>> getAquisicoes() {
+    @GetMapping({"/recover-acquisition-orders", "/recuperar-pedidos-de-aquisicao"})
+    public ResponseEntity<List<AquisicaoDTO>> getAcquisitions() {
         return ResponseEntity.ok(service.listarAquisicoes());
     }
 }

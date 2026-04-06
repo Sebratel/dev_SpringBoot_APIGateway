@@ -1,8 +1,8 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
-import br.com.sebratel.bff.dto.UltimaConexaoDTO;
-import br.com.sebratel.bff.service.UltimaConexaoService;
+import br.com.sebratel.bff.dto.comercial.RelatorioPorVendedorDTO;
+import br.com.sebratel.bff.service.comercial.PrimeiroPaganteMensalService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +12,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.Mockito.when;
@@ -20,25 +19,25 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(UltimaConexaoController.class)
+@WebMvcTest(FirstMonthlyPayerController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class UltimaConexaoControllerTest extends BaseTest {
+class FirstMonthlyPayerControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private UltimaConexaoService ultimaConexaoService;
+    private PrimeiroPaganteMensalService primeiroPaganteMensalService;
 
     @Test
-    @DisplayName("Deve retornar 200 ao listar últimas conexões dos contratos")
-    void getUltimasConexoes_Sucesso() throws Exception {
-        UltimaConexaoDTO dto = new UltimaConexaoDTO("", LocalDateTime.now(), LocalDateTime.now(), LocalDateTime.now(), 2L, 2L, "");
-        List<UltimaConexaoDTO> lista = List.of(dto);
+    @DisplayName("Should return 200 when executing first monthly payer report")
+    void execute_Success() throws Exception {
+        RelatorioPorVendedorDTO dto = new RelatorioPorVendedorDTO();
+        List<RelatorioPorVendedorDTO> response = List.of(dto);
 
-        when(ultimaConexaoService.listarUltimasConexoes()).thenReturn(lista);
+        when(primeiroPaganteMensalService.filtroELoop()).thenReturn(response);
 
-        mockMvc.perform(get("/api/v1/contratos/ultimas-conexoes")
+        mockMvc.perform(get("/api/v1/reports/first-monthly-payer")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())

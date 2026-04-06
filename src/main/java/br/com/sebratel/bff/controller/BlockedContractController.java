@@ -10,17 +10,17 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/contratos")
-public class ContratoBloqueadoController {
+@RequestMapping({"/api/v1/contracts", "/api/v1/contrato-bloqueado", "/api/v1/contratos"})
+public class BlockedContractController {
 
     private final ContratoBloqueadoService service;
 
-    public ContratoBloqueadoController(ContratoBloqueadoService service) {
+    public BlockedContractController(ContratoBloqueadoService service) {
         this.service = service;
     }
 
-    @GetMapping("/bloqueados")
-    public ResponseEntity<List<ContratoBloqueadoDTO>> getContratosBloqueados() {
+    @GetMapping({"/blocked", "/bloqueados"})
+    public ResponseEntity<List<ContratoBloqueadoDTO>> getBlockedContracts() {
         return ResponseEntity.ok(service.listarContratosBloqueados());
     }
 }

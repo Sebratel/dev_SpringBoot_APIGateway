@@ -1,8 +1,8 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
-import br.com.sebratel.bff.dto.PatrimonioPendenteDTO;
-import br.com.sebratel.bff.service.PatrimonioPendenteService;
+import br.com.sebratel.bff.dto.ContratoSemFaturaDTO;
+import br.com.sebratel.bff.service.ContratoSemFaturaService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,25 +19,25 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(PatrimonioPendenteController.class)
+@WebMvcTest(ContractWithoutInvoiceController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class PatrimonioPendenteControllerTest extends BaseTest {
+class ContractWithoutInvoiceControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private PatrimonioPendenteService patrimonioPendenteService;
+    private ContratoSemFaturaService contratoSemFaturaService;
 
     @Test
-    @DisplayName("Deve retornar 200 ao listar patrimônios pendentes")
-    void getPendentes_Sucesso() throws Exception {
-        PatrimonioPendenteDTO dto = new PatrimonioPendenteDTO("", "", "", 2.0);
-        List<PatrimonioPendenteDTO> lista = List.of(dto);
+    @DisplayName("Should return 200 when listing contracts without invoice")
+    void getContractsWithoutInvoice_Success() throws Exception {
+        ContratoSemFaturaDTO dto = new ContratoSemFaturaDTO("", "", 1L);
+        List<ContratoSemFaturaDTO> list = List.of(dto);
 
-        when(patrimonioPendenteService.listarPatrimoniosPendentes()).thenReturn(lista);
+        when(contratoSemFaturaService.listarContratosSemFatura()).thenReturn(list);
 
-        mockMvc.perform(get("/api/v1/patrimonios/pendentes")
+        mockMvc.perform(get("/api/v1/contracts/without-invoice")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
