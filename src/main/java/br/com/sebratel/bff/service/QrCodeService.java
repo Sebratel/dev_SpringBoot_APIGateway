@@ -29,8 +29,21 @@ public class QrCodeService {
 
     private static final Logger logger = LoggerFactory.getLogger(QrCodeService.class);
 
+    private final String publicKeyPath;
+    private final String privateKeyPath;
+
+    public QrCodeService() {
+        this.publicKeyPath = "id_rsa_public.pem";
+        this.privateKeyPath = "id_rsa_private.pem";
+    }
+
+    public QrCodeService(String publicKeyPath, String privateKeyPath) {
+        this.publicKeyPath = publicKeyPath;
+        this.privateKeyPath = privateKeyPath;
+    }
+
     public QrCodeOutputDTO gerarQrCodeParaFuncionario(QrCodeInputDTO jsonFuncionario) throws Exception {
-        ClassPathResource resource = new ClassPathResource("id_rsa_public.pem");
+        ClassPathResource resource = new ClassPathResource(publicKeyPath);
 
         if(!resource.exists()) {
           throw new RuntimeException("Chave publica nao encontrada");
@@ -86,7 +99,7 @@ public class QrCodeService {
 
     public String decryptarQrCode(String encryptedData) throws Exception {
         try {
-            ClassPathResource resource = new ClassPathResource("id_rsa_private.pem");
+            ClassPathResource resource = new ClassPathResource(privateKeyPath);
 
             if (!resource.exists()) {
                 throw new RuntimeException("Chave privada não encontrada nos resources!");

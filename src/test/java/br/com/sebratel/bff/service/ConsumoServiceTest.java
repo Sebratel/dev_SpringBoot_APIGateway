@@ -116,6 +116,26 @@ class ConsumoServiceTest {
     }
 
     @Test
+    void deveListarConsumoAltoPaginadoComNDQuandoPlanoNaoEncontrado() {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("downloadTb").descending());
+
+        ConsumoProjection c1 = mock(ConsumoProjection.class);
+        when(c1.getUsername()).thenReturn("user.desconhecido");
+
+        Page<ConsumoProjection> paginaMock = new PageImpl<>(List.of(c1), pageable, 1);
+
+        when(radiusRepository.findConsumoExcedentePaginado(pageable)).thenReturn(paginaMock);
+        when(erpRepository.findPlanosPorUsernames(List.of("user.desconhecido"))).thenReturn(Collections.emptyList());
+
+        Page<ConsumoDTO> resultado = service.listarConsumoAltoPaginado(0, 10);
+
+        assertNotNull(resultado);
+        assertEquals("N/D", resultado.getContent().get(0).cliente());
+        assertEquals("N/D", resultado.getContent().get(0).contrato());
+        assertEquals("N/D", resultado.getContent().get(0).plano());
+    }
+
+    @Test
     void deveTratarDuplicidadeDeUsernamesNoMapaDePlanos() {
         // GIVEN
         ConsumoProjection c1 = mock(ConsumoProjection.class);
@@ -139,5 +159,28 @@ class ConsumoServiceTest {
         // THEN
         assertEquals(1, resultado.size());
         assertEquals("Primeiro", resultado.get(0).cliente()); // Garante que pegou o primeiro
+    }
+
+    @Test
+    void deveTratarDuplicidadeNoPaginado() {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("downloadTb").descending());
+        ConsumoProjection c1 = mock(ConsumoProjection.class);
+        when(c1.getUsername()).thenReturn("repetido");
+        Page<ConsumoProjection> paginaMock = new PageImpl<>(List.of(c1), pageable, 1);
+        when(radiusRepository.findConsumoExcedentePaginado(pageable)).thenReturn(paginaMock);
+
+        PlanoProjection p1 = mock(PlanoProjection.class);
+        when(p1.getUsername()).thenReturn("repetido");
+        when(p1.getCliente()).thenReturn("Primeiro");
+
+        PlanoProjection p2 = mock(PlanoProjection.class);
+        when(p2.getUsername()).thenReturn("repetido");
+
+        when(erpRepository.findPlanosPorUsernames(anyList())).thenReturn(List.of(p1, p2));
+
+        Page<ConsumoDTO> resultado = service.listarConsumoAltoPaginado(0, 10);
+
+        assertEquals(1, resultado.getTotalElements());
+        assertEquals("Primeiro", resultado.getContent().get(0).cliente());
     }
 }

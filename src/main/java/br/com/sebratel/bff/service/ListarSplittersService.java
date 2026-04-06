@@ -90,11 +90,24 @@ public class ListarSplittersService {
         return new EllevenSplitterResponseDTO<List<NetworkComponentDTO>>(
                 true,
                 null,
-                null,
-                null,
+                List.of(new NetworkComponentDTO(
+                        splitterId,
+                        null,
+                        null,
+                        true,
+                        null,
+                        null,
+                        0,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                )),
+                "NetworkComponentDTO",
                 null
         );
-
     }
 
 
