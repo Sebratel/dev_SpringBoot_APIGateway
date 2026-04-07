@@ -1,8 +1,8 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
+import br.com.sebratel.bff.dto.CreateImpactedUsersInputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
-import br.com.sebratel.bff.model.entity.UsuarioAfetadoEntity;
 import br.com.sebratel.bff.service.UsuarioAfetadoService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -20,9 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -90,11 +88,15 @@ class AffectedUserControllerTest extends BaseTest {
                 .impactedUsers(new ArrayList<>())
                 .build();
 
+        CreateImpactedUsersInputDTO inputDTO = new CreateImpactedUsersInputDTO();
+        inputDTO.setUsuarioAfetadoEntities(new ArrayList<>());
+        inputDTO.setAssignmentId(1L);
+
         when(usuarioAfetadoService.createImpactedUsersDTO(any())).thenReturn(dto);
 
         mockMvc.perform(post("/api/v1/impacted-users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(List.of(new UsuarioAfetadoEntity()))))
+                        .content(objectMapper.writeValueAsString(inputDTO)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Impacted user successfully created."));
@@ -103,11 +105,15 @@ class AffectedUserControllerTest extends BaseTest {
     @Test
     @DisplayName("Should return 500 when error occurs in createImpactedUser")
     void createImpactedUser_Error() throws Exception {
+        CreateImpactedUsersInputDTO inputDTO = new CreateImpactedUsersInputDTO();
+        inputDTO.setUsuarioAfetadoEntities(new ArrayList<>());
+        inputDTO.setAssignmentId(1L);
+
         when(usuarioAfetadoService.createImpactedUsersDTO(any())).thenThrow(new RuntimeException("Error"));
 
         mockMvc.perform(post("/api/v1/impacted-users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(List.of(new UsuarioAfetadoEntity()))))
+                        .content(objectMapper.writeValueAsString(inputDTO)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.success").value(false));
     }
