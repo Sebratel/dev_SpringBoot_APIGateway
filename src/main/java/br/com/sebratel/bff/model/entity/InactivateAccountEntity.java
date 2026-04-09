@@ -20,9 +20,6 @@ public class InactivateAccountEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "account_id")
-    private Long accountId;
-
     private String name;
     private String cpf;
 

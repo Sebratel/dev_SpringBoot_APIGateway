@@ -15,7 +15,8 @@ public class InactivateAccountProducer {
     private static final String TOPIC = "inactivate-account-topic";
 
     public void sendInactivationEvent(InactivateAccountDTO event) {
-        log.info("Sending inactivation event for account: {}", event.getAccountId());
-        kafkaTemplate.send(TOPIC, event.getAccountId(), event);
+        String userInfo = event.getUserInfo() != null ? event.getUserInfo().getName() + " - " + event.getUserInfo().getCpf() : "unknown";
+        log.info("Sending inactivation event for: {}", userInfo);
+        kafkaTemplate.send(TOPIC, userInfo, event);
     }
 }

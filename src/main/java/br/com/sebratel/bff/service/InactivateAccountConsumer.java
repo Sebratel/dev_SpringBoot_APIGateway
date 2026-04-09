@@ -38,7 +38,6 @@ public class InactivateAccountConsumer {
         }
 
         InactivateAccountEntity entity = InactivateAccountEntity.builder()
-                .accountId(event.getAccountId() != null && !event.getAccountId().isEmpty() ? Long.parseLong(event.getAccountId()) : null)
                 .name(event.getUserInfo().getName())
                 .cpf(event.getUserInfo().getCpf())
                 .statusChangedDate(event.getStatusChangedDate())
@@ -47,7 +46,7 @@ public class InactivateAccountConsumer {
                 .build();
 
         repository.save(entity);
-        log.info("Inactivation record saved for account: {}", event.getAccountId());
+        log.info("Inactivation record saved for: [{} | {}]", event.getUserInfo().getName(), event.getUserInfo().getCpf());
     }
 
     private boolean setStatusToRemoved(InactivateAccountDTO event) {

@@ -1,6 +1,5 @@
 package br.com.sebratel.bff.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,8 +12,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class InactivateAccountDTO {
-    @Nullable
-    private String accountId;
     private LocalDateTime statusChangedDate;
     private LocalDateTime inactivationDate;
     @JsonProperty("userinfo")
