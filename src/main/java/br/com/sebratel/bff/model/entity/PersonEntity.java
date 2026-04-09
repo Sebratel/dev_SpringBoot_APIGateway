@@ -23,4 +23,7 @@ public class PersonEntity {
 
     @Column(name = "tx_id")
     String txId;
+
+    @Column(name = "name")
+    String name;
 }

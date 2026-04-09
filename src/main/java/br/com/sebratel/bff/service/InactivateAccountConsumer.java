@@ -20,25 +20,23 @@ public class InactivateAccountConsumer {
 
     @KafkaListener(topics = "inactivate-account-topic", groupId = "bff-group")
     public void consume(InactivateAccountDTO event) {
-        log.info("Received inactivation event for account: {}", event.getAccountId());
+        log.info("Received inactivation event for account: [{} | {}", event.getUserInfo().getCpf(), event.getUserInfo().getCpf());
 
-        LocalDateTime statusChangedDate = event.getStatusChangedDate();
-
-        if (statusChangedDate == null) {
-            if (setStatusToRemoved(event)) {
-                statusChangedDate = LocalDateTime.now();
-            } else {
-                log.error("Failed to run script remove_status.py");
-                return;
-            }
+        if (event.getStatusChangedDate() != null) {
+           return;
         }
+
+        // TODO: use employee service to find tx_id and name
+        //  it should recover only one register
+        //  if its present then should continue
+        //  then get people id
+        event.setAccountId("1234");
+
 
         InactivateAccountEntity entity = InactivateAccountEntity.builder()
                 .accountId(event.getAccountId() != null ? Long.parseLong(event.getAccountId()) : null)
                 .name(event.getUserInfo() != null ? event.getUserInfo().getName() : null)
                 .cpf(event.getUserInfo() != null ? event.getUserInfo().getCpf() : null)
-                .statusChangedDate(statusChangedDate)
-                .inactivationDate(event.getInactivationDate())
                 .created(LocalDateTime.now())
                 .build();
 
