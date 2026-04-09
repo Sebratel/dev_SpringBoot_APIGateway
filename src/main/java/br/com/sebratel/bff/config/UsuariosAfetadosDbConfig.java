@@ -46,6 +46,7 @@ public class UsuariosAfetadosDbConfig {
             EntityManagerFactoryBuilder builder, @Qualifier("afetadosDataSource") DataSource dataSource) {
         Map<String, Object> properties = new HashMap<>();
         properties.put("hibernate.dialect", "org.hibernate.dialect.MariaDBDialect");
+        properties.put("hibernate.hbm2ddl.auto", "update");
         return builder
                 .dataSource(dataSource)
                 .packages("br.com.sebratel.bff.model.entity")
