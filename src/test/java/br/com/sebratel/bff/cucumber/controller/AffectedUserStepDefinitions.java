@@ -4,7 +4,7 @@ import br.com.sebratel.bff.cucumber.CommonStepDefinitions;
 
 import br.com.sebratel.bff.dto.massivas.ImpactDetailsOutputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
-import br.com.sebratel.bff.service.UsuarioAfetadoService;
+import br.com.sebratel.bff.service.AffectedUserService;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -25,18 +25,18 @@ public class AffectedUserStepDefinitions {
     private MockMvc mockMvc;
 
     @Autowired
-    private UsuarioAfetadoService usuarioAfetadoService;
+    private AffectedUserService affectedUSerService;
 
     @Given("the affected user service is ready with users")
     public void the_affected_user_service_is_ready_with_users() {
         ImpactDetailsOutputDTO details = ImpactDetailsOutputDTO.builder().reason("R").estimateTimeOfRestoration(1L).build();
         ImpactedUsersOutputDTO output = ImpactedUsersOutputDTO.builder().impactedUsers(List.of(Map.of(1L, details))).build();
-        when(usuarioAfetadoService.getAll()).thenReturn(output);
+        when(affectedUSerService.getAll()).thenReturn(output);
     }
 
     @Given("the affected user service has no users")
     public void the_affected_user_service_has_no_users() {
-        when(usuarioAfetadoService.getAll()).thenReturn(ImpactedUsersOutputDTO.builder().impactedUsers(List.of()).build());
+        when(affectedUSerService.getAll()).thenReturn(ImpactedUsersOutputDTO.builder().impactedUsers(List.of()).build());
     }
 
     @When("I request to get all impacted users")

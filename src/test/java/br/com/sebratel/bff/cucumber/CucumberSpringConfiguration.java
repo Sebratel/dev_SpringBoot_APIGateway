@@ -49,7 +49,7 @@ public class CucumberSpringConfiguration {
     private VendedoresAtivosService vendedoresAtivosService;
 
     @MockitoBean
-    private UsuarioAfetadoService usuarioAfetadoService;
+    private AffectedUserService affectedUSerService;
 
     @MockitoBean
     private AuthenticationSitesService authenticationSitesService;

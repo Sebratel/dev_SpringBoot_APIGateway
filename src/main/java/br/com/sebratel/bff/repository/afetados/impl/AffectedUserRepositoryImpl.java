@@ -1,7 +1,7 @@
 package br.com.sebratel.bff.repository.afetados.impl;
 
-import br.com.sebratel.bff.model.entity.UsuarioAfetadoEntity;
-import br.com.sebratel.bff.repository.afetados.UsuarioAfetadoRepository;
+import br.com.sebratel.bff.model.entity.AffectedUsersEntity;
+import br.com.sebratel.bff.repository.afetados.AffectedUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -10,27 +10,27 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public class UsuarioAfetadoRepositoryImpl implements UsuarioAfetadoRepository {
+public class AffectedUserRepositoryImpl implements AffectedUserRepository {
 
     private final UsuarioAfetadoJPARepository jpaRepository;
 
     @Autowired
-    public UsuarioAfetadoRepositoryImpl(UsuarioAfetadoJPARepository jpaRepository) {
+    public AffectedUserRepositoryImpl(UsuarioAfetadoJPARepository jpaRepository) {
         this.jpaRepository = jpaRepository;
     }
 
     @Override
-    public List<UsuarioAfetadoEntity> saveAll(List<UsuarioAfetadoEntity> usuarioAfetadoEntity) {
-        return jpaRepository.saveAll(usuarioAfetadoEntity);
+    public List<AffectedUsersEntity> saveAll(List<AffectedUsersEntity> affectedUsersEntity) {
+        return jpaRepository.saveAll(affectedUsersEntity);
     }
 
     @Override
-    public Optional<UsuarioAfetadoEntity> findByPppoe(String pppoe) {
+    public Optional<AffectedUsersEntity> findByPppoe(String pppoe) {
         return jpaRepository.findByPppoe(pppoe);
     }
 
     @Override
-    public List<UsuarioAfetadoEntity> findByProtocol(Long protocol) {
+    public List<AffectedUsersEntity> findByProtocol(Long protocol) {
         return jpaRepository.findByProtocol(protocol);
     }
 
@@ -40,7 +40,7 @@ public class UsuarioAfetadoRepositoryImpl implements UsuarioAfetadoRepository {
     }
 
     @Override
-    public List<UsuarioAfetadoEntity> findAll() {
+    public List<AffectedUsersEntity> findAll() {
         return jpaRepository.findAll();
     }
 
@@ -50,7 +50,7 @@ public class UsuarioAfetadoRepositoryImpl implements UsuarioAfetadoRepository {
     }
 
     @Override
-    public Optional<UsuarioAfetadoEntity> findByContractId(Long contractId) {
+    public Optional<AffectedUsersEntity> findByContractId(Long contractId) {
         return jpaRepository.findByContractId(contractId);
     }
 }

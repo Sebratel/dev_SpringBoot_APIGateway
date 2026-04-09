@@ -1,9 +1,9 @@
 package br.com.sebratel.bff.model.entity;
 
 import br.com.sebratel.bff.enums.ClientType;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,21 +16,23 @@ import java.time.LocalDateTime;
 @Table(name = "assignment_clients")
 @NoArgsConstructor
 @AllArgsConstructor
-public class UsuarioAfetadoEntity {
+public class AffectedUsersEntity {
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
     @Column(name = "user_pppoe")
+    @Nullable
     String pppoe;
     @NotNull(message = "O ID do protocolo é obrigatório (protocol)")
     @Column(name = "protocol_id", nullable = false)
     Long protocol;
     @Column(name = "motive")
     String reason;
-    @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.ORDINAL)
     @Column(name="corporate_client")
-    ClientType ClientType;
+    @NotNull(message = "O cliente deve ter um tipo")
+    ClientType clientType;
     @NotNull(message = "O ID do contrato é obrigatório (contractId)")
     @Column(name = "contract_id", nullable = false)
     Long contractId;

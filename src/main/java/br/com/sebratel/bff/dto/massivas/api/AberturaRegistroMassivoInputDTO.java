@@ -1,6 +1,6 @@
 package br.com.sebratel.bff.dto.massivas.api;
 
-import br.com.sebratel.bff.model.entity.UsuarioAfetadoEntity;
+import br.com.sebratel.bff.model.entity.AffectedUsersEntity;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -35,5 +35,5 @@ public class AberturaRegistroMassivoInputDTO {
     private AberturaRegistroMassivoAssignmentDTO assignment;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private int affectedUsersQuantity;
-    private List<UsuarioAfetadoEntity> affectedUsers;
+    private List<AffectedUsersEntity> affectedUsers;
 }

@@ -1,9 +1,10 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
+import br.com.sebratel.bff.dto.AffectedUserRequestDTO;
 import br.com.sebratel.bff.dto.CreateImpactedUsersInputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
-import br.com.sebratel.bff.service.UsuarioAfetadoService;
+import br.com.sebratel.bff.service.AffectedUserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,7 +39,7 @@ class AffectedUserControllerTest extends BaseTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
-    private UsuarioAfetadoService usuarioAfetadoService;
+    private AffectedUserService affectedUSerService;
 
     @Test
     @DisplayName("Should return 200 when impacted users are found")
@@ -47,7 +48,7 @@ class AffectedUserControllerTest extends BaseTest {
                 .impactedUsers(List.of(Collections.emptyMap()))
                 .build();
 
-        when(usuarioAfetadoService.getAll()).thenReturn(dto);
+        when(affectedUSerService.getAll()).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/impacted-users"))
                 .andExpect(status().isOk())
@@ -62,7 +63,7 @@ class AffectedUserControllerTest extends BaseTest {
                 .impactedUsers(new ArrayList<>())
                 .build();
 
-        when(usuarioAfetadoService.getAll()).thenReturn(dto);
+        when(affectedUSerService.getAll()).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/impacted-users"))
                 .andExpect(status().isNotFound())
@@ -73,7 +74,7 @@ class AffectedUserControllerTest extends BaseTest {
     @Test
     @DisplayName("Should return 500 when error occurs in getAllImpactedUsers")
     void getAllImpactedUsers_Error() throws Exception {
-        when(usuarioAfetadoService.getAll()).thenThrow(new RuntimeException("Database error"));
+        when(affectedUSerService.getAll()).thenThrow(new RuntimeException("Database error"));
 
         mockMvc.perform(get("/api/v1/impacted-users"))
                 .andExpect(status().isInternalServerError())
@@ -88,11 +89,17 @@ class AffectedUserControllerTest extends BaseTest {
                 .impactedUsers(new ArrayList<>())
                 .build();
 
+        AffectedUserRequestDTO userDTO = AffectedUserRequestDTO.builder()
+                .contractId(1L)
+                .protocol(123L)
+                .finishDate(LocalDateTime.now().plusHours(5))
+                .build();
+
         CreateImpactedUsersInputDTO inputDTO = new CreateImpactedUsersInputDTO();
-        inputDTO.setUsuarioAfetadoEntities(new ArrayList<>());
+        inputDTO.setUsuarioAfetadoEntities(List.of(userDTO));
         inputDTO.setAssignmentId(1L);
 
-        when(usuarioAfetadoService.createImpactedUsersDTO(any())).thenReturn(dto);
+        when(affectedUSerService.createImpactedUsersDTO(any())).thenReturn(dto);
 
         mockMvc.perform(post("/api/v1/impacted-users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -105,11 +112,17 @@ class AffectedUserControllerTest extends BaseTest {
     @Test
     @DisplayName("Should return 500 when error occurs in createImpactedUser")
     void createImpactedUser_Error() throws Exception {
+        AffectedUserRequestDTO userDTO = AffectedUserRequestDTO.builder()
+                .contractId(1L)
+                .protocol(123L)
+                .finishDate(LocalDateTime.now().plusHours(5))
+                .build();
+
         CreateImpactedUsersInputDTO inputDTO = new CreateImpactedUsersInputDTO();
-        inputDTO.setUsuarioAfetadoEntities(new ArrayList<>());
+        inputDTO.setUsuarioAfetadoEntities(List.of(userDTO));
         inputDTO.setAssignmentId(1L);
 
-        when(usuarioAfetadoService.createImpactedUsersDTO(any())).thenThrow(new RuntimeException("Error"));
+        when(affectedUSerService.createImpactedUsersDTO(any())).thenThrow(new RuntimeException("Error"));
 
         mockMvc.perform(post("/api/v1/impacted-users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -125,7 +138,7 @@ class AffectedUserControllerTest extends BaseTest {
                 .impactedUsers(new ArrayList<>())
                 .build();
 
-        when(usuarioAfetadoService.getUsuariosAfetadosByPppoe(anyString())).thenReturn(dto);
+        when(affectedUSerService.getUsuariosAfetadosByPppoe(anyString())).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/impacted-users/pppoe/test"))
                 .andExpect(status().isOk())
@@ -139,7 +152,7 @@ class AffectedUserControllerTest extends BaseTest {
                 .impactedUsers(List.of(Collections.emptyMap()))
                 .build();
 
-        when(usuarioAfetadoService.getUsuariosAfetadosByPppoe(anyString())).thenReturn(dto);
+        when(affectedUSerService.getUsuariosAfetadosByPppoe(anyString())).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/impacted-users/pppoe/test"))
                 .andExpect(status().isOk())
@@ -149,7 +162,7 @@ class AffectedUserControllerTest extends BaseTest {
     @Test
     @DisplayName("Should return 500 when error occurs in getImpactedUsersByPppoe")
     void getImpactedUsersByPppoe_Error() throws Exception {
-        when(usuarioAfetadoService.getUsuariosAfetadosByPppoe(anyString())).thenThrow(new RuntimeException("Error"));
+        when(affectedUSerService.getUsuariosAfetadosByPppoe(anyString())).thenThrow(new RuntimeException("Error"));
 
         mockMvc.perform(get("/api/v1/impacted-users/pppoe/test"))
                 .andExpect(status().isInternalServerError())
@@ -163,7 +176,7 @@ class AffectedUserControllerTest extends BaseTest {
                 .impactedUsers(new ArrayList<>())
                 .build();
 
-        when(usuarioAfetadoService.getUsuariosAfetadosByContractId(anyLong())).thenReturn(dto);
+        when(affectedUSerService.getUsuariosAfetadosByContractId(anyLong())).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/impacted-users/contract/123"))
                 .andExpect(status().isOk())
@@ -177,7 +190,7 @@ class AffectedUserControllerTest extends BaseTest {
                 .impactedUsers(List.of(Collections.emptyMap()))
                 .build();
 
-        when(usuarioAfetadoService.getUsuariosAfetadosByContractId(anyLong())).thenReturn(dto);
+        when(affectedUSerService.getUsuariosAfetadosByContractId(anyLong())).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/impacted-users/contract/123"))
                 .andExpect(status().isOk())
@@ -187,7 +200,7 @@ class AffectedUserControllerTest extends BaseTest {
     @Test
     @DisplayName("Should return 500 when error occurs in getImpactedUsersByContractId")
     void getImpactedUsersByContractId_Error() throws Exception {
-        when(usuarioAfetadoService.getUsuariosAfetadosByContractId(anyLong())).thenThrow(new RuntimeException("Error"));
+        when(affectedUSerService.getUsuariosAfetadosByContractId(anyLong())).thenThrow(new RuntimeException("Error"));
 
         mockMvc.perform(get("/api/v1/impacted-users/contract/123"))
                 .andExpect(status().isInternalServerError())
@@ -201,7 +214,7 @@ class AffectedUserControllerTest extends BaseTest {
                 .impactedUsers(List.of(Collections.emptyMap()))
                 .build();
 
-        when(usuarioAfetadoService.getUsuariosByProtocol(anyLong())).thenReturn(dto);
+        when(affectedUSerService.getUsuariosByProtocol(anyLong())).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/impacted-users/protocol/123"))
                 .andExpect(status().isOk())
@@ -215,7 +228,7 @@ class AffectedUserControllerTest extends BaseTest {
                 .impactedUsers(new ArrayList<>())
                 .build();
 
-        when(usuarioAfetadoService.getUsuariosByProtocol(anyLong())).thenReturn(dto);
+        when(affectedUSerService.getUsuariosByProtocol(anyLong())).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/impacted-users/protocol/123"))
                 .andExpect(status().isNotFound())
@@ -225,7 +238,7 @@ class AffectedUserControllerTest extends BaseTest {
     @Test
     @DisplayName("Should return 500 when error occurs in getImpactedUsersByProtocol")
     void getImpactedUsersByProtocol_Error() throws Exception {
-        when(usuarioAfetadoService.getUsuariosByProtocol(anyLong())).thenThrow(new RuntimeException("Error"));
+        when(affectedUSerService.getUsuariosByProtocol(anyLong())).thenThrow(new RuntimeException("Error"));
 
         mockMvc.perform(get("/api/v1/impacted-users/protocol/123"))
                 .andExpect(status().isInternalServerError())
@@ -243,7 +256,7 @@ class AffectedUserControllerTest extends BaseTest {
     @Test
     @DisplayName("Should return 500 when error occurs in removeUsersByProtocol")
     void removeUsersByProtocol_Error() throws Exception {
-        doThrow(new RuntimeException("Error")).when(usuarioAfetadoService).removeUsersByProtocol(anyLong());
+        doThrow(new RuntimeException("Error")).when(affectedUSerService).removeUsersByProtocol(anyLong());
 
         mockMvc.perform(delete("/api/v1/impacted-users/protocol/123"))
                 .andExpect(status().isInternalServerError())
@@ -262,7 +275,7 @@ class AffectedUserControllerTest extends BaseTest {
     @Test
     @DisplayName("Should return 500 when error occurs in updateFinishDateByProtocol")
     void updateFinishDateByProtocol_Error() throws Exception {
-        doThrow(new RuntimeException("Error")).when(usuarioAfetadoService).alterarDataEstimadaParaFinalizacao(anyLong(), any());
+        doThrow(new RuntimeException("Error")).when(affectedUSerService).changeEstimationTime(anyLong(), any());
 
         mockMvc.perform(patch("/api/v1/impacted-users/protocol/123")
                         .param("finishDate", LocalDateTime.now().toString()))
