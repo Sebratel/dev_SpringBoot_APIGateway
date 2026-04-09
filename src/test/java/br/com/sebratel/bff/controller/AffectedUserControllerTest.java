@@ -4,7 +4,7 @@ import br.com.sebratel.bff.BaseTest;
 import br.com.sebratel.bff.dto.AffectedUserRequestDTO;
 import br.com.sebratel.bff.dto.CreateImpactedUsersInputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
-import br.com.sebratel.bff.service.AffectedUSerService;
+import br.com.sebratel.bff.service.AffectedUserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ class AffectedUserControllerTest extends BaseTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
-    private AffectedUSerService affectedUSerService;
+    private AffectedUserService affectedUSerService;
 
     @Test
     @DisplayName("Should return 200 when impacted users are found")

@@ -3,12 +3,16 @@ package br.com.sebratel.bff.service;
 import br.com.sebratel.bff.dto.AffectedUserRequestDTO;
 import br.com.sebratel.bff.dto.CreateImpactedUsersInputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
+import br.com.sebratel.bff.dto.massivas.api.FinalizaRegistroMassivoInputDTO;
+import br.com.sebratel.bff.enums.ClientType;
+import br.com.sebratel.bff.exceptions.DomainException;
 import br.com.sebratel.bff.exceptions.ResourceNotFoundException;
 import br.com.sebratel.bff.model.entity.AffectedUsersEntity;
 import br.com.sebratel.bff.repository.afetados.AffectedUserRepository;
 import br.com.sebratel.bff.service.massivas.FinalizarMassivaNoEllevenApiService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -21,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class AffectedUSerServiceTest {
+class AffectedUserServiceTest {
 
     @Mock
     private AffectedUserRepository repository;
@@ -33,7 +37,7 @@ class AffectedUSerServiceTest {
     private EmployeeService employeeService;
 
     @InjectMocks
-    private AffectedUSerService service;
+    private AffectedUserService service;
 
     @Test
     void getAll_ShouldReturnMappedDTO() {
@@ -86,6 +90,94 @@ class AffectedUSerServiceTest {
         // Assert
         assertNotNull(result);
         verify(repository).saveAll(anyList());
+        verify(employeeService).hasB2BinInput(anyList());
+    }
+
+    @Test
+    void createImpactedUsersDTO_ShouldSetCorporateClientType_WhenEmployeeServiceReturnsTrue() {
+        // Arrange
+        AffectedUserRequestDTO userDTO = AffectedUserRequestDTO.builder()
+                .contractId(1L)
+                .protocol(123L)
+                .finishDate(LocalDateTime.now().plusHours(5))
+                .build();
+        CreateImpactedUsersInputDTO input = new CreateImpactedUsersInputDTO();
+        input.setUsuarioAfetadoEntities(List.of(userDTO));
+        input.setAssignmentId(150L);
+
+        when(employeeService.hasB2BinInput(anyList())).thenReturn(true);
+        when(repository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        service.createImpactedUsersDTO(input);
+
+        // Assert
+        ArgumentCaptor<List<AffectedUsersEntity>> captor = ArgumentCaptor.forClass(List.class);
+        verify(repository).saveAll(captor.capture());
+        assertEquals(ClientType.CORPORATE, captor.getValue().get(0).getClientType());
+    }
+
+    @Test
+    void createImpactedUsersDTO_ShouldSetNormalClientType_WhenEmployeeServiceReturnsFalse() {
+        // Arrange
+        AffectedUserRequestDTO userDTO = AffectedUserRequestDTO.builder()
+                .contractId(1L)
+                .protocol(123L)
+                .finishDate(LocalDateTime.now().plusHours(5))
+                .build();
+        CreateImpactedUsersInputDTO input = new CreateImpactedUsersInputDTO();
+        input.setUsuarioAfetadoEntities(List.of(userDTO));
+        input.setAssignmentId(150L);
+
+        when(employeeService.hasB2BinInput(anyList())).thenReturn(false);
+        when(repository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        service.createImpactedUsersDTO(input);
+
+        // Assert
+        ArgumentCaptor<List<AffectedUsersEntity>> captor = ArgumentCaptor.forClass(List.class);
+        verify(repository).saveAll(captor.capture());
+        assertEquals(ClientType.NORMAL, captor.getValue().get(0).getClientType());
+    }
+
+    @Test
+    void createImpactedUsersDTO_ShouldThrowDomainException_WhenSavedListIsEmpty() {
+        // Arrange
+        AffectedUserRequestDTO userDTO = AffectedUserRequestDTO.builder()
+                .contractId(1L)
+                .protocol(123L)
+                .finishDate(LocalDateTime.now().plusHours(5))
+                .build();
+        CreateImpactedUsersInputDTO input = new CreateImpactedUsersInputDTO();
+        input.setUsuarioAfetadoEntities(List.of(userDTO));
+        input.setAssignmentId(150L);
+
+        when(employeeService.hasB2BinInput(anyList())).thenReturn(false);
+        when(repository.saveAll(anyList())).thenReturn(List.of());
+
+        // Act & Assert
+        assertThrows(DomainException.class, () -> service.createImpactedUsersDTO(input));
+    }
+
+    @Test
+    void createImpactedUsersDTO_ShouldCallFinalizeService_WhenExceptionOccurs() {
+        // Arrange
+        AffectedUserRequestDTO userDTO = AffectedUserRequestDTO.builder()
+                .contractId(1L)
+                .protocol(123L)
+                .finishDate(LocalDateTime.now().plusHours(5))
+                .build();
+        CreateImpactedUsersInputDTO input = new CreateImpactedUsersInputDTO();
+        input.setUsuarioAfetadoEntities(List.of(userDTO));
+        input.setAssignmentId(150L);
+
+        when(employeeService.hasB2BinInput(anyList())).thenReturn(false);
+        when(repository.saveAll(anyList())).thenThrow(new RuntimeException("DB Error"));
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> service.createImpactedUsersDTO(input));
+        verify(finalizarMassivaNoEllevenApiService).executar(any(FinalizaRegistroMassivoInputDTO.class));
     }
 
     @Test
