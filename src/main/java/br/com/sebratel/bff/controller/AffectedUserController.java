@@ -3,7 +3,8 @@ package br.com.sebratel.bff.controller;
 import br.com.sebratel.bff.dto.ApiResponse;
 import br.com.sebratel.bff.dto.CreateImpactedUsersInputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
-import br.com.sebratel.bff.service.UsuarioAfetadoService;
+import br.com.sebratel.bff.service.AffectedUserService;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,18 +18,18 @@ import java.time.LocalDateTime;
 @RequestMapping({"/api/v1/impacted-users", "/api/v1/usuario-afetado", "/api/v1/afetados"})
 public class AffectedUserController {
 
-    private final UsuarioAfetadoService usuarioAfetadoService;
+    private final AffectedUserService affectedUSerService;
 
     @Autowired
-    public AffectedUserController(UsuarioAfetadoService usuarioAfetadoService) {
-        this.usuarioAfetadoService = usuarioAfetadoService;
+    public AffectedUserController(AffectedUserService affectedUSerService) {
+        this.affectedUSerService = affectedUSerService;
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> getAllImpactedUsers() {
         log.info("Starting search for impacted users");
         try {
-            ImpactedUsersOutputDTO impactedUsers = usuarioAfetadoService.getAll();
+            ImpactedUsersOutputDTO impactedUsers = affectedUSerService.getAll();
 
             if (impactedUsers.getImpactedUsers().isEmpty()) {
                 log.warn("No impacted users found.");
@@ -59,10 +60,10 @@ public class AffectedUserController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> createImpactedUser(@RequestBody CreateImpactedUsersInputDTO input) {
+    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> createImpactedUser(@Valid @RequestBody CreateImpactedUsersInputDTO input) {
         log.info("Starting creation process of impacted user for protocol");
         try {
-            ImpactedUsersOutputDTO savedUser = usuarioAfetadoService.createImpactedUsersDTO(input);
+            ImpactedUsersOutputDTO savedUser = affectedUSerService.createImpactedUsersDTO(input);
             log.info("Impacted users for protocol successfully created.");
 
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
@@ -85,7 +86,7 @@ public class AffectedUserController {
     public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> getImpactedUsersByPppoe(@PathVariable String pppoe) {
         log.info("Starting search for impacted users by PPPoE: {}", pppoe);
         try {
-            ImpactedUsersOutputDTO impactedUsers = usuarioAfetadoService.getUsuariosAfetadosByPppoe(pppoe);
+            ImpactedUsersOutputDTO impactedUsers = affectedUSerService.getUsuariosAfetadosByPppoe(pppoe);
 
             if (impactedUsers.getImpactedUsers().isEmpty()) {
                 log.warn("No impacted user found for PPPoE: {}", pppoe);
@@ -113,7 +114,7 @@ public class AffectedUserController {
     public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> getImpactedUsersByContractId(@PathVariable Long contractId) {
         log.info("Starting search for impacted users by contractId: {}", contractId);
         try {
-            ImpactedUsersOutputDTO impactedUsers = usuarioAfetadoService.getUsuariosAfetadosByContractId(contractId);
+            ImpactedUsersOutputDTO impactedUsers = affectedUSerService.getUsuariosAfetadosByContractId(contractId);
 
             if (impactedUsers.getImpactedUsers().isEmpty()) {
                 log.warn("No impacted user found for contractId: {}", contractId);
@@ -142,7 +143,7 @@ public class AffectedUserController {
     public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> getImpactedUsersByProtocol(@PathVariable Long protocol) {
         log.info("Starting search for impacted users by protocol: {}", protocol);
         try {
-            ImpactedUsersOutputDTO impactedUsers = usuarioAfetadoService.getUsuariosByProtocol(protocol);
+            ImpactedUsersOutputDTO impactedUsers = affectedUSerService.getUsuariosByProtocol(protocol);
 
             if (impactedUsers.getImpactedUsers().isEmpty()) {
                 log.warn("No impacted user found for protocol: {}", protocol);
@@ -176,7 +177,7 @@ public class AffectedUserController {
     public ResponseEntity<ApiResponse<String>> removeUsersByProtocol(@PathVariable Long protocol) {
         log.info("Starting removal of impacted users by protocol: {}", protocol);
         try {
-            usuarioAfetadoService.removeUsersByProtocol(protocol);
+            affectedUSerService.removeUsersByProtocol(protocol);
 
             log.info("Users for protocol {} successfully removed.", protocol);
 
@@ -201,7 +202,7 @@ public class AffectedUserController {
     {
         log.info("Starting update of finish date for protocol: {}", protocol);
         try {
-            usuarioAfetadoService.alterarDataEstimadaParaFinalizacao(protocol, finishDate);
+            affectedUSerService.changeEstimationTime(protocol, finishDate);
             log.info("Finish date updated to {} for users of protocol {}", finishDate, protocol);
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(true)

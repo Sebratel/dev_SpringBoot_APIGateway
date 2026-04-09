@@ -1,9 +1,9 @@
 package br.com.sebratel.bff.service;
 
 import br.com.sebratel.bff.dto.MatrixMassiveOutputDTO;
+import br.com.sebratel.bff.model.entity.AffectedUsersEntity;
 import br.com.sebratel.bff.model.entity.PersonEntity;
-import br.com.sebratel.bff.model.entity.UsuarioAfetadoEntity;
-import br.com.sebratel.bff.repository.afetados.UsuarioAfetadoRepository;
+import br.com.sebratel.bff.repository.afetados.AffectedUserRepository;
 import br.com.sebratel.bff.repository.erp.PersonRepository;
 import br.com.sebratel.bff.repository.erp.projections.ContractProjection;
 import org.junit.jupiter.api.Test;
@@ -25,7 +25,7 @@ class MatrixServiceTest {
     private PersonRepository personRepository;
 
     @Mock
-    private UsuarioAfetadoRepository usuarioAfetadoRepository;
+    private AffectedUserRepository affectedUserRepository;
 
     @InjectMocks
     private MatrixService service;
@@ -40,12 +40,12 @@ class MatrixServiceTest {
         ContractProjection contract = mock(ContractProjection.class);
         when(contract.getContractId()).thenReturn(100L);
         
-        UsuarioAfetadoEntity affected = new UsuarioAfetadoEntity();
+        AffectedUsersEntity affected = new AffectedUsersEntity();
         affected.setFinishDate(LocalDateTime.now().plusHours(5));
 
         when(personRepository.findByTxId(cpf)).thenReturn(Optional.of(person));
         when(personRepository.findContractByCPF(cpf)).thenReturn(Optional.of(contract));
-        when(usuarioAfetadoRepository.findByContractId(100L)).thenReturn(Optional.of(affected));
+        when(affectedUserRepository.findByContractId(100L)).thenReturn(Optional.of(affected));
 
         // Act
         MatrixMassiveOutputDTO result = service.getContractInfoByCPF(cpf);
@@ -96,7 +96,7 @@ class MatrixServiceTest {
 
         when(personRepository.findByTxId(cpf)).thenReturn(Optional.of(person));
         when(personRepository.findContractByCPF(cpf)).thenReturn(Optional.of(contract));
-        when(usuarioAfetadoRepository.findByContractId(100L)).thenReturn(Optional.empty());
+        when(affectedUserRepository.findByContractId(100L)).thenReturn(Optional.empty());
 
         // Act
         MatrixMassiveOutputDTO result = service.getContractInfoByCPF(cpf);
@@ -127,12 +127,12 @@ class MatrixServiceTest {
         ContractProjection contract = mock(ContractProjection.class);
         when(contract.getContractId()).thenReturn(100L);
 
-        UsuarioAfetadoEntity affected = new UsuarioAfetadoEntity();
+        AffectedUsersEntity affected = new AffectedUsersEntity();
         affected.setFinishDate(LocalDateTime.now().minusHours(2)); // Branch: hoursBetween <= 0
 
         when(personRepository.findByTxId(cpf)).thenReturn(Optional.of(person));
         when(personRepository.findContractByCPF(cpf)).thenReturn(Optional.of(contract));
-        when(usuarioAfetadoRepository.findByContractId(100L)).thenReturn(Optional.of(affected));
+        when(affectedUserRepository.findByContractId(100L)).thenReturn(Optional.of(affected));
 
         // Act
         MatrixMassiveOutputDTO result = service.getContractInfoByCPF(cpf);

@@ -1,11 +1,12 @@
 package br.com.sebratel.bff.service;
 
+import br.com.sebratel.bff.dto.AffectedUserRequestDTO;
 import br.com.sebratel.bff.dto.CreateImpactedUsersInputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
 import br.com.sebratel.bff.exceptions.ResourceNotFoundException;
-import br.com.sebratel.bff.model.entity.UsuarioAfetadoEntity;
-import br.com.sebratel.bff.repository.afetados.UsuarioAfetadoRepository;
-import org.junit.jupiter.api.Disabled;
+import br.com.sebratel.bff.model.entity.AffectedUsersEntity;
+import br.com.sebratel.bff.repository.afetados.AffectedUserRepository;
+import br.com.sebratel.bff.service.massivas.FinalizarMassivaNoEllevenApiService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,23 +21,29 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class UsuarioAfetadoServiceTest {
+class AffectedUSerServiceTest {
 
     @Mock
-    private UsuarioAfetadoRepository repository;
+    private AffectedUserRepository repository;
+
+    @Mock
+    private FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService;
+
+    @Mock
+    private EmployeeService employeeService;
 
     @InjectMocks
-    private UsuarioAfetadoService service;
+    private AffectedUSerService service;
 
     @Test
     void getAll_ShouldReturnMappedDTO() {
         // Arrange
-        UsuarioAfetadoEntity user1 = new UsuarioAfetadoEntity();
+        AffectedUsersEntity user1 = new AffectedUsersEntity();
         user1.setContractId(1L);
         user1.setFinishDate(LocalDateTime.now().plusHours(3));
         user1.setReason("Maintenance");
 
-        UsuarioAfetadoEntity user2 = new UsuarioAfetadoEntity();
+        AffectedUsersEntity user2 = new AffectedUsersEntity();
         user2.setContractId(2L);
         user2.setFinishDate(LocalDateTime.now().minusHours(1)); // hoursRemaining <= 0
         user2.setReason("Outage");
@@ -53,31 +60,39 @@ class UsuarioAfetadoServiceTest {
         assertEquals(2L, result.getImpactedUsers().get(1).get(2L).getEstimateTimeOfRestoration()); // Should be 2 because estimateTimeOfRestoration <= 0
     }
 
-    @Disabled
     @Test
     void createImpactedUsersDTO_ShouldSaveAndReturnDTO() {
         // Arrange
-        UsuarioAfetadoEntity user = new UsuarioAfetadoEntity();
-        user.setContractId(1L);
-        user.setFinishDate(LocalDateTime.now().plusHours(5));
-        List<UsuarioAfetadoEntity> input = List.of(user);
+        AffectedUserRequestDTO userDTO = AffectedUserRequestDTO.builder()
+                .contractId(1L)
+                .protocol(123L)
+                .finishDate(LocalDateTime.now().plusHours(5))
+                .build();
+        List<AffectedUserRequestDTO> inputList = List.of(userDTO);
         CreateImpactedUsersInputDTO createImpactedUsersInputDTO = new CreateImpactedUsersInputDTO();
-        createImpactedUsersInputDTO.setUsuarioAfetadoEntities(input);
-        when(repository.saveAll(input)).thenReturn(input);
+        createImpactedUsersInputDTO.setUsuarioAfetadoEntities(inputList);
+        createImpactedUsersInputDTO.setAssignmentId(150L);
+
+        AffectedUsersEntity userEntity = new AffectedUsersEntity();
+        userEntity.setContractId(1L);
+        userEntity.setFinishDate(userDTO.getFinishDate());
+        
+        when(employeeService.hasB2BinInput(anyList())).thenReturn(false);
+        when(repository.saveAll(anyList())).thenReturn(List.of(userEntity));
 
         // Act
         ImpactedUsersOutputDTO result = service.createImpactedUsersDTO(createImpactedUsersInputDTO);
 
         // Assert
         assertNotNull(result);
-        verify(repository).saveAll(input);
+        verify(repository).saveAll(anyList());
     }
 
     @Test
     void getUsuariosAfetadosByContractId_ShouldReturnUser_WhenExists() {
         // Arrange
         Long contractId = 1L;
-        UsuarioAfetadoEntity user = new UsuarioAfetadoEntity();
+        AffectedUsersEntity user = new AffectedUsersEntity();
         user.setContractId(contractId);
         user.setFinishDate(LocalDateTime.now().plusHours(3));
         when(repository.findByContractId(contractId)).thenReturn(Optional.of(user));
@@ -100,15 +115,15 @@ class UsuarioAfetadoServiceTest {
     }
 
     @Test
-    void alterarDataEstimadaParaFinalizacao_ShouldLogWarn_WhenNoRowsAffected() {
+    void changeEstimationTime_ShouldLogWarn_WhenNoRowsAffected() {
         // Arrange
         Long protocol = 123L;
         LocalDateTime finish = LocalDateTime.now().plusDays(1);
-        when(repository.findByProtocol(protocol)).thenReturn(List.of(new UsuarioAfetadoEntity()));
+        when(repository.findByProtocol(protocol)).thenReturn(List.of(new AffectedUsersEntity()));
         when(repository.updateUsersByProtocol(protocol, finish)).thenReturn(0);
 
         // Act
-        service.alterarDataEstimadaParaFinalizacao(protocol, finish);
+        service.changeEstimationTime(protocol, finish);
 
         // Assert
         verify(repository).updateUsersByProtocol(protocol, finish);
@@ -118,7 +133,7 @@ class UsuarioAfetadoServiceTest {
     void getUsuariosByProtocol_ShouldReturnFilteredData() {
         // Arrange
         Long protocol = 123L;
-        UsuarioAfetadoEntity user = new UsuarioAfetadoEntity();
+        AffectedUsersEntity user = new AffectedUsersEntity();
         user.setContractId(1L);
         user.setFinishDate(LocalDateTime.now().plusHours(3));
         
@@ -135,7 +150,7 @@ class UsuarioAfetadoServiceTest {
     void getUsuariosAfetadosByPppoe_ShouldReturnUser_WhenExists() {
         // Arrange
         String pppoe = "user@test";
-        UsuarioAfetadoEntity user = new UsuarioAfetadoEntity();
+        AffectedUsersEntity user = new AffectedUsersEntity();
         user.setContractId(1L);
         user.setFinishDate(LocalDateTime.now().plusHours(3));
         
@@ -172,27 +187,27 @@ class UsuarioAfetadoServiceTest {
     }
 
     @Test
-    void alterarDataEstimadaParaFinalizacao_ShouldUpdate_WhenUsersExist() {
+    void changeEstimationTime_ShouldUpdate_WhenUsersExist() {
         // Arrange
         Long protocol = 123L;
         LocalDateTime finish = LocalDateTime.now().plusDays(1);
-        when(repository.findByProtocol(protocol)).thenReturn(List.of(new UsuarioAfetadoEntity()));
+        when(repository.findByProtocol(protocol)).thenReturn(List.of(new AffectedUsersEntity()));
         when(repository.updateUsersByProtocol(protocol, finish)).thenReturn(1);
 
         // Act
-        service.alterarDataEstimadaParaFinalizacao(protocol, finish);
+        service.changeEstimationTime(protocol, finish);
 
         // Assert
         verify(repository).updateUsersByProtocol(protocol, finish);
     }
 
     @Test
-    void alterarDataEstimadaParaFinalizacao_ShouldThrowException_WhenNoUsers() {
+    void changeEstimationTime_ShouldThrowException_WhenNoUsers() {
         // Arrange
         Long protocol = 123L;
         when(repository.findByProtocol(protocol)).thenReturn(List.of());
 
         // Act & Assert
-        assertThrows(ResourceNotFoundException.class, () -> service.alterarDataEstimadaParaFinalizacao(protocol, LocalDateTime.now()));
+        assertThrows(ResourceNotFoundException.class, () -> service.changeEstimationTime(protocol, LocalDateTime.now()));
     }
 }

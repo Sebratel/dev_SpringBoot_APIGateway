@@ -2,8 +2,8 @@ package br.com.sebratel.bff.service;
 
 import br.com.sebratel.bff.dto.MatrixMassiveOutputDTO;
 import br.com.sebratel.bff.model.entity.PersonEntity;
-import br.com.sebratel.bff.model.entity.UsuarioAfetadoEntity;
-import br.com.sebratel.bff.repository.afetados.UsuarioAfetadoRepository;
+import br.com.sebratel.bff.model.entity.AffectedUsersEntity;
+import br.com.sebratel.bff.repository.afetados.AffectedUserRepository;
 import br.com.sebratel.bff.repository.erp.PersonRepository;
 import br.com.sebratel.bff.repository.erp.projections.ContractProjection;
 import lombok.extern.slf4j.Slf4j;
@@ -19,11 +19,11 @@ import java.util.Optional;
 public class MatrixService {
 
     final PersonRepository personRepository;
-    final UsuarioAfetadoRepository usuarioAfetadoRepository;
+    final AffectedUserRepository affectedUserRepository;
 
-    public MatrixService(PersonRepository personRepository, UsuarioAfetadoRepository usuarioAfetadoRepository) {
+    public MatrixService(PersonRepository personRepository, AffectedUserRepository affectedUserRepository) {
         this.personRepository = personRepository;
-        this.usuarioAfetadoRepository = usuarioAfetadoRepository;
+        this.affectedUserRepository = affectedUserRepository;
     }
 
     public MatrixMassiveOutputDTO getContractInfoByCPF(String cpf) {
@@ -58,7 +58,7 @@ public class MatrixService {
             }
 
             ContractProjection contract = contractProjection.get();
-            Optional<UsuarioAfetadoEntity> usuarioAfetadoEntity = usuarioAfetadoRepository
+            Optional<AffectedUsersEntity> usuarioAfetadoEntity = affectedUserRepository
                     .findByContractId(contract.getContractId());
 
             if (usuarioAfetadoEntity.isEmpty()) {
@@ -73,7 +73,7 @@ public class MatrixService {
             }
 
             LocalDateTime now = LocalDateTime.now();
-            UsuarioAfetadoEntity usuarioAfetado = usuarioAfetadoEntity.get();
+            AffectedUsersEntity usuarioAfetado = usuarioAfetadoEntity.get();
             long hoursBetween = ChronoUnit.HOURS.between(now, usuarioAfetado.getFinishDate());
             Integer numberOfHours = (hoursBetween <= 0) ? 1 : (int) hoursBetween;
 

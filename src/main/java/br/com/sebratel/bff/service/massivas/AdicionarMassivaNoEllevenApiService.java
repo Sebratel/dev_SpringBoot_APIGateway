@@ -3,7 +3,7 @@ package br.com.sebratel.bff.service.massivas;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoInputDTO;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoOutputDTO;
 import br.com.sebratel.bff.model.Employee;
-import br.com.sebratel.bff.model.entity.UsuarioAfetadoEntity;
+import br.com.sebratel.bff.model.entity.AffectedUsersEntity;
 import br.com.sebratel.bff.service.EmployeeService;
 import br.com.sebratel.bff.service.RecuperarTokenDoUsuarioIntegradorEllevenService;
 import br.com.sebratel.bff.utils.JwtInformation;
@@ -106,7 +106,7 @@ public class AdicionarMassivaNoEllevenApiService {
     private AberturaRegistroMassivoInputDTO decideForIncidentOrMassiveEvent(AberturaRegistroMassivoInputDTO input) {
 
         log.debug("[MASSIVA] Analisando contratos para identificar presença de B2B...");
-        boolean hasB2B = employeeService.hasB2BinInput(input.getAffectedUsers().stream().map(UsuarioAfetadoEntity::getContractId).toList());
+        boolean hasB2B = employeeService.hasB2BinInput(input.getAffectedUsers().stream().map(AffectedUsersEntity::getContractId).toList());
         boolean isMassiveEvent = hasB2B || input.getAffectedUsersQuantity() > 15;
         if(isMassiveEvent){
             log.debug("Critérios atendidos para Evento Massivo (TITLE: {})", input.getAssignment().getTitle());

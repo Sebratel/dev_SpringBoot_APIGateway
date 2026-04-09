@@ -1,6 +1,8 @@
 package br.com.sebratel.bff.dto;
 
-import br.com.sebratel.bff.model.entity.UsuarioAfetadoEntity;
+import br.com.sebratel.bff.enums.ClientType;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,8 +14,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateImpactedUsersInputDTO {
-    @NotNull(message = "Usuários devem ser adicionados")
-    List<UsuarioAfetadoEntity> usuarioAfetadoEntities;
-    @NotNull(message = "AssignmentId é Obrigatório")
+    @NotEmpty(message = "A lista de usuários afetados não pode estar vazia")
+    @Valid
+    List<AffectedUserRequestDTO> usuarioAfetadoEntities;
+    @NotNull(message = "O ID do assignment (assignmentId) é obrigatório")
     Long assignmentId;
 }
