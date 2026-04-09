@@ -20,23 +20,29 @@ public class InactivateAccountConsumer {
 
     @KafkaListener(topics = "inactivate-account-topic", groupId = "bff-group")
     public void consume(InactivateAccountDTO event) {
-        log.info("Received inactivation event for account: [{} | {}", event.getUserInfo().getCpf(), event.getUserInfo().getCpf());
+        if (event == null || event.getUserInfo() == null) {
+            log.warn("Received null or incomplete inactivation event");
+            return;
+        }
+        
+        log.info("Received inactivation event for account: [{} | {}]", 
+                event.getUserInfo().getName(), event.getUserInfo().getCpf());
 
-        if (event.getStatusChangedDate() != null) {
-           return;
+        if (event.getStatusChangedDate() == null) {
+            if (setStatusToRemoved(event)) {
+                event.setStatusChangedDate(LocalDateTime.now());
+            } else {
+                log.error("Failed to run script remove_status.py");
+                return;
+            }
         }
 
-        // TODO: use employee service to find tx_id and name
-        //  it should recover only one register
-        //  if its present then should continue
-        //  then get people id
-        event.setAccountId("1234");
-
-
         InactivateAccountEntity entity = InactivateAccountEntity.builder()
-                .accountId(event.getAccountId() != null ? Long.parseLong(event.getAccountId()) : null)
-                .name(event.getUserInfo() != null ? event.getUserInfo().getName() : null)
-                .cpf(event.getUserInfo() != null ? event.getUserInfo().getCpf() : null)
+                .accountId(event.getAccountId() != null && !event.getAccountId().isEmpty() ? Long.parseLong(event.getAccountId()) : null)
+                .name(event.getUserInfo().getName())
+                .cpf(event.getUserInfo().getCpf())
+                .statusChangedDate(event.getStatusChangedDate())
+                .inactivationDate(event.getInactivationDate())
                 .created(LocalDateTime.now())
                 .build();
 

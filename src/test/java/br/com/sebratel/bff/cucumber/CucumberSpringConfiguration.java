@@ -28,6 +28,7 @@ import br.com.sebratel.bff.controller.*;
     EmployeeController.class,
     FirstAuthenticationController.class,
     FirstMonthlyPayerController.class,
+    InactivateAccountController.class,
     InventoryController.class,
     InventoryMovesController.class,
     LastConnectionController.class,
@@ -146,4 +147,7 @@ public class CucumberSpringConfiguration {
 
     @MockitoBean
     private FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService;
+
+    @MockitoBean
+    private InactivateAccountProducer inactivateAccountProducer;
 }

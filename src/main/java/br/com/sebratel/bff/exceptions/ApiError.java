@@ -16,5 +16,7 @@ public class ApiError {
     private String error;
     private String message;
     private String path;
+    @Builder.Default
+    private boolean success = false;
     private List<String> details;
 }
