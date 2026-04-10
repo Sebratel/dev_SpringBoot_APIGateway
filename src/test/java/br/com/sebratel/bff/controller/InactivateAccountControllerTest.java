@@ -13,10 +13,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(InactivateAccountController.class)
@@ -48,8 +51,26 @@ class InactivateAccountControllerTest extends BaseTest {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isAccepted());
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("Inactivation process successfully queued."));
 
         verify(producer).sendInactivationEvent(any(InactivateAccountDTO.class));
+    }
+
+    @Test
+    @DisplayName("Should return 500 when inactivation event fails to send")
+    void inactivateAccount_Error() throws Exception {
+        InactivateAccountDTO request = InactivateAccountDTO.builder().build();
+
+        doThrow(new RuntimeException("Could not add to the queue: Kafka down")).when(producer).sendInactivationEvent(any());
+
+        mockMvc.perform(post("/api/v1/inactivate-account")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value(containsString("Error: Could not add to the queue: Kafka down")));
     }
 }
