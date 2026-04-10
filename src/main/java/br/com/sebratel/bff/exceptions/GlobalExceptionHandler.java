@@ -128,6 +128,7 @@ public class GlobalExceptionHandler {
                 .message(message)
                 .path(request.getRequestURI())
                 .details(details)
+                .success(false)
                 .build();
         return new ResponseEntity<>(error, status);
     }

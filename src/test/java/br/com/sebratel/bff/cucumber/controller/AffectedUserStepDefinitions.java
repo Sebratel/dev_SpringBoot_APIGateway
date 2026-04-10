@@ -25,18 +25,18 @@ public class AffectedUserStepDefinitions {
     private MockMvc mockMvc;
 
     @Autowired
-    private AffectedUserService affectedUSerService;
+    private AffectedUserService affectedUserService;
 
     @Given("the affected user service is ready with users")
     public void the_affected_user_service_is_ready_with_users() {
         ImpactDetailsOutputDTO details = ImpactDetailsOutputDTO.builder().reason("R").estimateTimeOfRestoration(1L).build();
         ImpactedUsersOutputDTO output = ImpactedUsersOutputDTO.builder().impactedUsers(List.of(Map.of(1L, details))).build();
-        when(affectedUSerService.getAll()).thenReturn(output);
+        when(affectedUserService.getAll()).thenReturn(output);
     }
 
     @Given("the affected user service has no users")
     public void the_affected_user_service_has_no_users() {
-        when(affectedUSerService.getAll()).thenReturn(ImpactedUsersOutputDTO.builder().impactedUsers(List.of()).build());
+        when(affectedUserService.getAll()).thenReturn(ImpactedUsersOutputDTO.builder().impactedUsers(List.of()).build());
     }
 
     @When("I request to get all impacted users")
