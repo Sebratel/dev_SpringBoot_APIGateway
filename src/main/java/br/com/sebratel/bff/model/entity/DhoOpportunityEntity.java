@@ -14,7 +14,7 @@ import java.time.LocalDate;
 
 @Data
 @Entity
-@Table(name = "dho_opportunities")
+@Table(name = "DHO_opportunities", catalog = "DHO_Application")
 @NoArgsConstructor
 @AllArgsConstructor
 public class DhoOpportunityEntity {
