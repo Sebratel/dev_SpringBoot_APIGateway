@@ -19,16 +19,16 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/dho-opportunities")
 @RequiredArgsConstructor
-@Tag(name = "DHO Opportunities", description = "Endpoints for managing active collaborators (DHO)")
+@Tag(name = "DHO Opportunities", description = "Endpoints for managing DHO opportunities")
 public class DhoOpportunityController {
 
     private final DhoOpportunityService service;
 
     @GetMapping
-    @Operation(summary = "List all active collaborators with optional status filter")
+    @Operation(summary = "List all DHO opportunities with optional status filter")
     public ResponseEntity<ApiResponse<List<DhoOpportunityDTO>>> findAll(
             @RequestParam(required = false) String status) {
-        log.info("Received request to list active collaborators. Status filter: {}", status);
+        log.info("Received request to list DHO opportunities. Status filter: {}", status);
         try {
             List<DhoOpportunityDTO> opportunities;
             if (status != null && !status.isEmpty()) {
@@ -39,15 +39,15 @@ public class DhoOpportunityController {
 
             ApiResponse<List<DhoOpportunityDTO>> response = ApiResponse.<List<DhoOpportunityDTO>>builder()
                     .success(true)
-                    .message("Collaborators successfully found.")
+                    .message("Opportunities successfully found.")
                     .data(opportunities)
                     .build();
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("Error searching for collaborators: {}", e.getMessage(), e);
+            log.error("Error searching for DHO opportunities: {}", e.getMessage(), e);
             ApiResponse<List<DhoOpportunityDTO>> response = ApiResponse.<List<DhoOpportunityDTO>>builder()
                     .success(false)
-                    .message("Error searching for collaborators: " + e.getMessage())
+                    .message("Error searching for opportunities: " + e.getMessage())
                     .build();
             return ResponseEntity.internalServerError().body(response);
         }

@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 public class InactivateAccountDTO {
     private LocalDateTime statusChangedDate;
     private LocalDateTime inactivationDate;
-    @JsonProperty("userinfo")
     private InactivateAccountUserInfo userInfo;
 
     @Data

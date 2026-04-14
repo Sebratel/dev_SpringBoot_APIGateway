@@ -1,6 +1,8 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.dto.ApiResponse;
+import br.com.sebratel.bff.utils.DatabaseErrorParser;
+
 import br.com.sebratel.bff.dto.massivas.*;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoInputDTO;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoOutputDTO;

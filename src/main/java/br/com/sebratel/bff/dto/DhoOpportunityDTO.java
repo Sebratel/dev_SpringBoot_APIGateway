@@ -1,17 +1,25 @@
 package br.com.sebratel.bff.dto;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 public record DhoOpportunityDTO(
-    Long id,
-    Integer registration,
-    String email,
-    LocalDateTime admissionDate,
+    Integer id,
+    LocalDate dataAbertura,
+    String cargo,
+    String motivo,
+    String nomeSubstituido,
+    String time,
+    String area,
+    String local,
     String status,
-    String operationalBase,
-    String team,
-    String position,
-    String supervisorName,
-    String managerName,
-    String coordinatorName
+    Integer prazo,
+    LocalDate dataTerminoSla,
+    LocalDate dataAceite,
+    String situacaoPrazo,
+    String recrutador,
+    LocalDate dataAdmissao,
+    String nome,
+    String posicao,
+    String gestor,
+    String observacao
 ) {}

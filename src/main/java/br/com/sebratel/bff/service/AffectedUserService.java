@@ -47,6 +47,7 @@ public class AffectedUserService {
             entity.setContractId(dto.getContractId());
             entity.setFinishDate(dto.getFinishDate());
             entity.setCreated(dto.getCreated());
+            entity.setCreatedBy(dto.getCreatedBy());
 
             List<Long> affectedUserContractList = List.of(dto.getContractId());
             entity.setClientType(employeeService.hasB2BinInput(affectedUserContractList) ? ClientType.CORPORATE : ClientType.NORMAL);

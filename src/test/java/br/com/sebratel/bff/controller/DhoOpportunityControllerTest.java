@@ -11,9 +11,10 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -30,12 +31,13 @@ class DhoOpportunityControllerTest extends BaseTest {
     private DhoOpportunityService service;
 
     @Test
-    @DisplayName("Should return 200 and list of collaborators")
+    @DisplayName("Should return 200 and list of opportunities")
     void findAll_Success() throws Exception {
         DhoOpportunityDTO dto = new DhoOpportunityDTO(
-                1L, 123, "test@test.com", LocalDateTime.now(), "ACTIVE",
-                "Florianópolis", "Tech", "Developer", "Supervisor",
-                "Manager", "Coordinator"
+                1, LocalDate.now(), "Developer", "New", "None",
+                "Squad", "Tech", "Florianópolis", "OPEN", 15,
+                LocalDate.now().plusDays(15), null, "On time",
+                "Recruiter", null, null, null, "Manager", "Obs"
         );
 
         when(service.findAll()).thenReturn(List.of(dto));
@@ -43,24 +45,25 @@ class DhoOpportunityControllerTest extends BaseTest {
         mockMvc.perform(get("/api/v1/dho-opportunities"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data[0].email").value("test@test.com"));
+                .andExpect(jsonPath("$.data[0].cargo").value("Developer"));
     }
 
     @Test
     @DisplayName("Should return 200 and filtered list when status is provided")
     void findAll_WithStatus_Success() throws Exception {
         DhoOpportunityDTO dto = new DhoOpportunityDTO(
-                1L, 123, "test@test.com", LocalDateTime.now(), "ACTIVE",
-                "Florianópolis", "Tech", "Developer", "Supervisor",
-                "Manager", "Coordinator"
+                1, LocalDate.now(), "Developer", "New", "None",
+                "Squad", "Tech", "Florianópolis", "OPEN", 15,
+                LocalDate.now().plusDays(15), null, "On time",
+                "Recruiter", null, null, null, "Manager", "Obs"
         );
 
-        when(service.findByStatus("ACTIVE")).thenReturn(List.of(dto));
+        when(service.findByStatus("OPEN")).thenReturn(List.of(dto));
 
-        mockMvc.perform(get("/api/v1/dho-opportunities").param("status", "ACTIVE"))
+        mockMvc.perform(get("/api/v1/dho-opportunities").param("status", "OPEN"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data[0].status").value("ACTIVE"));
+                .andExpect(jsonPath("$.data[0].status").value("OPEN"));
     }
 
     @Test
@@ -71,6 +74,6 @@ class DhoOpportunityControllerTest extends BaseTest {
         mockMvc.perform(get("/api/v1/dho-opportunities"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.message").value("Error searching for collaborators: Database error"));
+                .andExpect(jsonPath("$.message").value("Error searching for opportunities: Database error"));
     }
 }

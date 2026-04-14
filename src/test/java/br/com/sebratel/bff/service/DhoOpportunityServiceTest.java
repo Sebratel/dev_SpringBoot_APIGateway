@@ -1,8 +1,8 @@
 package br.com.sebratel.bff.service;
 
 import br.com.sebratel.bff.dto.DhoOpportunityDTO;
-import br.com.sebratel.bff.model.entity.EmployeeEntity;
-import br.com.sebratel.bff.repository.afetados.EmployeeRepository;
+import br.com.sebratel.bff.model.entity.DhoOpportunityEntity;
+import br.com.sebratel.bff.repository.afetados.DhoOpportunityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,7 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -20,21 +20,22 @@ import static org.mockito.Mockito.when;
 class DhoOpportunityServiceTest {
 
     @Mock
-    private EmployeeRepository repository;
+    private DhoOpportunityRepository repository;
 
     @InjectMocks
     private DhoOpportunityService service;
 
-    private EmployeeEntity entity;
+    private DhoOpportunityEntity entity;
 
     @BeforeEach
     void setUp() {
-        entity = new EmployeeEntity();
-        entity.setId(1L);
-        entity.setRegistration(123);
-        entity.setAdmissionDate(LocalDateTime.now());
-        entity.setEmail("test@test.com");
-        entity.setStatus("ACTIVE");
+        entity = new DhoOpportunityEntity();
+        entity.setId(1);
+        entity.setDataAbertura(LocalDate.now());
+        entity.setCargo("Developer");
+        entity.setStatus("OPEN");
+        entity.setArea("Tech");
+        entity.setLocal("Florianópolis");
     }
 
     @Test
@@ -44,20 +45,20 @@ class DhoOpportunityServiceTest {
         List<DhoOpportunityDTO> result = service.findAll();
 
         assertEquals(1, result.size());
-        assertEquals("test@test.com", result.get(0).email());
+        assertEquals("Developer", result.get(0).cargo());
     }
 
     @Test
     void findByStatus_ShouldReturnFilteredList() {
-        EmployeeEntity entity2 = new EmployeeEntity();
-        entity2.setStatus("INACTIVE");
+        DhoOpportunityEntity entity2 = new DhoOpportunityEntity();
+        entity2.setStatus("CLOSED");
 
         when(repository.findAll()).thenReturn(List.of(entity, entity2));
 
-        List<DhoOpportunityDTO> result = service.findByStatus("ACTIVE");
+        List<DhoOpportunityDTO> result = service.findByStatus("OPEN");
 
         assertEquals(1, result.size());
-        assertEquals("ACTIVE", result.get(0).status());
+        assertEquals("OPEN", result.get(0).status());
     }
 
     @Test

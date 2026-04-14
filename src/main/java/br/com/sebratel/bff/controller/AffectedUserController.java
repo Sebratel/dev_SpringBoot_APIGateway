@@ -4,6 +4,7 @@ import br.com.sebratel.bff.dto.ApiResponse;
 import br.com.sebratel.bff.dto.CreateImpactedUsersInputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
 import br.com.sebratel.bff.service.AffectedUserService;
+import br.com.sebratel.bff.exceptions.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import br.com.sebratel.bff.utils.DatabaseErrorParser;
+
 
 @Slf4j
 @RestController
@@ -77,8 +80,9 @@ public class AffectedUserController {
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(false)
                     .message("Error creating impacted user: " + e.getMessage())
+                    .errors(DatabaseErrorParser.parse(e.getMessage()))
                     .build();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
 
@@ -211,14 +215,22 @@ public class AffectedUserController {
                     .build();
             return ResponseEntity.ok(response);
 
+        } catch (ResourceNotFoundException e) {
+            log.error("Protocol not found: {}", protocol);
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(false)
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         } catch (Exception e) {
             log.error("Error updating finish date for protocol {}: {}", protocol, e.getMessage(), e);
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(false)
                     .data(null)
                     .message("Error updating finish date for protocol: " + protocol)
+                    .errors(DatabaseErrorParser.parse(e.getMessage()))
                     .build();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
 }
