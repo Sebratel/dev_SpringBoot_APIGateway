@@ -24,4 +24,5 @@ public class AffectedUserRequestDTO {
     @NotNull(message = "A data de finalização (finishDate) é obrigatória")
     private LocalDateTime finishDate;
     private LocalDateTime created;
+    private String createdBy;
 }
