@@ -17,26 +17,26 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import br.com.sebratel.bff.dto.ApiResponse;
+import br.com.sebratel.bff.utils.DatabaseErrorParser;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
-    // 1. Tratamento específico para o "To Be Implemented" (501)
     @ExceptionHandler(FeatureNotImplementedException.class)
     public ResponseEntity<ApiError> handleNotImplemented(FeatureNotImplementedException ex, HttpServletRequest request) {
         log.warn("Feature not implemented: {}", ex.getMessage());
         return buildResponse(HttpStatus.NOT_IMPLEMENTED, ex.getMessage(), request, null);
     }
 
-    // 2. Tratamento para Recursos Não Encontrados (404)
-    @ExceptionHandler(ResourceNotFoundException.class) // Supondo que você tenha essa exception
+    @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiError> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
         log.warn("Resource not found: {}", ex.getMessage());
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request, null);
     }
 
-    // 3. Tratamento Genérico para Erros Internos (500)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGenericException(Exception ex, HttpServletRequest request) {
         log.error("Internal server error: {}", ex.getMessage(), ex);
@@ -60,7 +60,20 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, "Erro de validação nos dados enviados.", request, errors);
     }
 
-    // 1. Trata quando o corpo da requisição está faltando ou é inválido (Erro 400)
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleDataIntegrityViolation(DataIntegrityViolationException ex, HttpServletRequest request) {
+        String rootMsg = ex.getRootCause() != null ? ex.getRootCause().getMessage() : ex.getMessage();
+        log.error("Database integrity violation: {}", rootMsg);
+        
+        ApiResponse<Object> response = ApiResponse.builder()
+                .success(false)
+                .message("Erro de integridade no banco de dados.")
+                .errors(DatabaseErrorParser.parse(rootMsg))
+                .build();
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiError> handleMessageNotReadable(
             HttpMessageNotReadableException ex,
@@ -96,7 +109,6 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, message, request, List.of(detail));
     }
 
-    // 2. Trata quando o método HTTP está errado (ex: GET em vez de POST) (Erro 405)
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ApiError> handleMethodNotSupported(
             org.springframework.web.HttpRequestMethodNotSupportedException ex,
@@ -113,7 +125,6 @@ public class GlobalExceptionHandler {
         log.warn("Missing servlet request parameter: {}", message);
         return buildResponse(HttpStatus.BAD_REQUEST, message, request, null);
     }
-
 
     private ResponseEntity<ApiError> buildResponse(
             HttpStatus status,

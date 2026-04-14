@@ -11,57 +11,43 @@ services:
       - kafka
     ports:
       - "8082:8085"
+    networks:
+      - proxy
     environment:
-      # Aplicação
       - APP_NAME=bff
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-default}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
-
-      # Segurança
       - SECURITY_USER=${SECURITY_USER}
       - SECURITY_PASS=${SECURITY_PASS}
-
-      # Banco ERP (PostgreSQL)
       - ERP_DB_URL=${ERP_DB_URL}
       - ERP_DB_USER=${ERP_DB_USER}
       - ERP_DB_PASS=${ERP_DB_PASS}
-
-      # Banco Radius (PostgreSQL)
       - RADIUS_DB_URL=${RADIUS_DB_URL}
       - RADIUS_DB_USER=${RADIUS_DB_USER}
       - RADIUS_DB_PASS=${RADIUS_DB_PASS}
-
-      # Redis
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-
-      # Logs
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - LOG_FILE_PATH=${LOG_FILE_PATH:-logs/bff.log}
-
-      # MariaDB
       - AFETADOS_DB_URL=${AFETADOS_DB_URL}
       - AFETADOS_DB_USER=${AFETADOS_DB_USER}
       - AFETADOS_DB_PASS=${AFETADOS_DB_PASS}
-
-      # Usuario Integrador Elleven
       - ELLEVEN_CLIENT_ID=${ELLEVEN_CLIENT_ID}
       - ELLEVEN_CLIENT_SECRET=${ELLEVEN_CLIENT_SECRET}
       - ELLEVEN_CLIENT_SYNDATA=${ELLEVEN_CLIENT_SYNDATA}
       - ELLEVEN_CLIENT_GRANT_TYPE=${ELLEVEN_CLIENT_GRANT_TYPE}
       - ELLEVEN_CLIENT_SCOPE=${ELLEVEN_CLIENT_SCOPE}
-
-      # Google
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_CLIENT_SCOPE=${GOOGLE_CLIENT_SCOPE}
-
     volumes:
       - bff-logs:/app/logs
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
+    networks:
+      - proxy
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -72,6 +58,8 @@ services:
     image: confluentinc/cp-kafka:7.4.0
     depends_on:
       - zookeeper
+    networks:
+      - proxy
     ports:
       - "9092:9092"
       - "29092:29092"
@@ -86,3 +74,7 @@ services:
 volumes:
   bff-logs:
     driver: local
+
+networks:
+  proxy:
+    external: true
