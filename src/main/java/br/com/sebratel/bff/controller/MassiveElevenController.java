@@ -140,7 +140,7 @@ public class MassiveElevenController {
         }
     }
 
-    @DeleteMapping("/finalize-ticket-via-api")
+    @DeleteMapping({"/finalize-ticket-via-api", "finalizar-chamado-via-api"})
     public ResponseEntity<FinalizarRegistroMassivoOutputDTO> finalizeMassiveIncidentViaApi(
             @Valid @RequestBody FinalizaRegistroMassivoInputDTO input) {
 
