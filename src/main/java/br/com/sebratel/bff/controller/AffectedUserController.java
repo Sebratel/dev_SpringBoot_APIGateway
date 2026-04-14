@@ -4,6 +4,7 @@ import br.com.sebratel.bff.dto.ApiResponse;
 import br.com.sebratel.bff.dto.CreateImpactedUsersInputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
 import br.com.sebratel.bff.service.AffectedUserService;
+import br.com.sebratel.bff.exceptions.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -214,6 +215,13 @@ public class AffectedUserController {
                     .build();
             return ResponseEntity.ok(response);
 
+        } catch (ResourceNotFoundException e) {
+            log.error("Protocol not found: {}", protocol);
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(false)
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         } catch (Exception e) {
             log.error("Error updating finish date for protocol {}: {}", protocol, e.getMessage(), e);
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()

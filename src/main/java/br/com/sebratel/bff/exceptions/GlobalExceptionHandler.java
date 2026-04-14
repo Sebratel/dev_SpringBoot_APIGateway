@@ -102,8 +102,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
-        String message = String.format("O parâmetro '' recebeu um valor inválido.", ex.getName());
-        String detail = String.format("O valor '' não pôde ser convertido para o tipo .", 
+        String message = String.format("O parâmetro '%s' recebeu um valor inválido.", ex.getName());
+        String detail = String.format("O valor '%s' não pôde ser convertido para o tipo %s.", 
                 ex.getValue(), ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "desconhecido");
         log.warn("Type mismatch error: {}", message);
         return buildResponse(HttpStatus.BAD_REQUEST, message, request, List.of(detail));
@@ -114,14 +114,14 @@ public class GlobalExceptionHandler {
             org.springframework.web.HttpRequestMethodNotSupportedException ex,
             HttpServletRequest request) {
 
-        String message = String.format("O método  não é suportado para este endpoint.", ex.getMethod());
+        String message = String.format("O método %s não é suportado para este endpoint.", ex.getMethod());
         log.warn("HTTP method not supported: {}", message);
         return buildResponse(HttpStatus.METHOD_NOT_ALLOWED, message, request, null);
     }
     
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ApiError> handleMissingParams(MissingServletRequestParameterException ex, HttpServletRequest request) {
-        String message = String.format("O parâmetro obrigatório '' está ausente.", ex.getParameterName());
+        String message = String.format("O parâmetro obrigatório '%s' está ausente.", ex.getParameterName());
         log.warn("Missing servlet request parameter: {}", message);
         return buildResponse(HttpStatus.BAD_REQUEST, message, request, null);
     }
