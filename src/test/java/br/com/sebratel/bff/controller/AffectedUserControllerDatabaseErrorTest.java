@@ -1,5 +1,6 @@
 package br.com.sebratel.bff.controller;
 
+import br.com.sebratel.bff.dto.ApiResponse;
 import br.com.sebratel.bff.dto.CreateImpactedUsersInputDTO;
 import br.com.sebratel.bff.service.AffectedUserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
