@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import br.com.sebratel.bff.utils.DatabaseErrorParser;
+
 
 @Slf4j
 @RestController
@@ -77,8 +79,9 @@ public class AffectedUserController {
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(false)
                     .message("Error creating impacted user: " + e.getMessage())
+                    .errors(DatabaseErrorParser.parse(e.getMessage()))
                     .build();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
 
@@ -217,8 +220,9 @@ public class AffectedUserController {
                     .success(false)
                     .data(null)
                     .message("Error updating finish date for protocol: " + protocol)
+                    .errors(DatabaseErrorParser.parse(e.getMessage()))
                     .build();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
 }
