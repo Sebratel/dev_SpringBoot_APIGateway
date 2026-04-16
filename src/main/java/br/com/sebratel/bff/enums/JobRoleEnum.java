@@ -2,6 +2,7 @@ package br.com.sebratel.bff.enums;
 
 import lombok.Getter;
 
+@Getter
 public enum JobRoleEnum {
     AGENTE_DE_VENDAS_EXT_JR_N1("AGENTE DE VENDAS EXT JR N1"),
     AGENTE_DE_VENDAS_INT_JR_N1("AGENTE DE VENDAS INT JR N1"),
