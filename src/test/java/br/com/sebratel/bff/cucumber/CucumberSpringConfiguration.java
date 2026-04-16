@@ -22,6 +22,7 @@ import br.com.sebratel.bff.controller.*;
     ContractActivationInvoiceController.class,
     ContractPaymentController.class,
     ContractWithoutInvoiceController.class,
+    DhoOpportunityController.class,
     DuplicateCallingStationController.class,
     DuplicateClientNameReportController.class,
     DuplicatePrefixController.class,
@@ -50,13 +51,17 @@ public class CucumberSpringConfiguration {
     private VendedoresAtivosService vendedoresAtivosService;
 
     @MockitoBean
-    private AffectedUserService affectedUSerService;
+    private AffectedUserService affectedUserService;
 
     @MockitoBean
     private AuthenticationSitesService authenticationSitesService;
 
     @MockitoBean
     private ContratoBloqueadoService contratoBloqueadoService;
+    @MockitoBean
+    private DhoOpportunityService dhoOpportunityService;
+
+
 
     @MockitoBean
     private ConsumoService consumoService;
