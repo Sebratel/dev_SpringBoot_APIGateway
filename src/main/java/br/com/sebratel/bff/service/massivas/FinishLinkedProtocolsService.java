@@ -34,13 +34,7 @@ public class FinishLinkedProtocolsService {
     public void executar(FinalizaRegistroMassivoInputDTO mainInput) {
         log.info("Checking for linked protocols to finalize. Main Assignment ID: {}", mainInput.getAssignmentId());
 
-        String protocol = repository.findProtocolByAssignmentId(mainInput.getAssignmentId());
-        if (protocol == null) {
-            log.warn("Protocol not found for assignment ID: {}", mainInput.getAssignmentId());
-            return;
-        }
-
-        List<FinishLinkedProtocolsProjection> linkedProtocols = repository.findLinkedProtocols(protocol);
+        List<FinishLinkedProtocolsProjection> linkedProtocols = repository.findLinkedProtocols(mainInput.getAssignmentId());
         log.info("Found {} linked protocols to finalize.", linkedProtocols.size());
 
         String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
