@@ -34,18 +34,16 @@ public class FinishLinkedProtocolsService {
     public void executar(FinalizaRegistroMassivoInputDTO mainInput) {
         log.info("Checking for linked protocols to finalize. Main Assignment ID: {}", mainInput.getAssignmentId());
 
-        String protocol = repository.findProtocolByAssignmentId(mainInput.getAssignmentId());
-        if (protocol == null) {
-            log.warn("Protocol not found for assignment ID: {}", mainInput.getAssignmentId());
-            return;
-        }
-
-        List<FinishLinkedProtocolsProjection> linkedProtocols = repository.findLinkedProtocols(protocol);
+        List<FinishLinkedProtocolsProjection> linkedProtocols = repository.findLinkedProtocols(mainInput.getAssignmentId());
         log.info("Found {} linked protocols to finalize.", linkedProtocols.size());
 
         String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
 
         for (FinishLinkedProtocolsProjection linked : linkedProtocols) {
+            // linked.getASSIGNMENT_LINKADO() could be null if it's a LEFT JOIN and no link exists,
+            // but the query logic should generally return valid links.
+            if (linked.getASSIGNMENT_LINKADO() == null) continue;
+
             log.info("Finalizing linked protocol: {} (Assignment ID: {})", linked.getPROTOLOCO_LINKADO(), linked.getASSIGNMENT_LINKADO());
 
             FinalizaRegistroMassivoInputDTO linkedInput = FinalizaRegistroMassivoInputDTO.builder()
@@ -73,7 +71,10 @@ public class FinishLinkedProtocolsService {
                         .block();
 
                 if (response == null || !response.isSuccess()) {
-                    String errorMessage = (response != null && response.getResponse() != null) ? response.getResponse().getMessage() : "Unknown error";
+                    String errorMessage = "Unknown error";
+                    if (response != null && response.getMessages() != null && !response.getMessages().isEmpty()) {
+                        errorMessage = response.getMessages().get(0).getMessage();
+                    }
                     log.error("Failed to finalize linked protocol {}. Error: {}", linked.getPROTOLOCO_LINKADO(), errorMessage);
                     throw new RuntimeException("Failed to finalize linked protocol: " + linked.getPROTOLOCO_LINKADO() + ". " + errorMessage);
                 }

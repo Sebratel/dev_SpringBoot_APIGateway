@@ -13,15 +13,19 @@ import java.util.List;
 public interface FinishLinkedProtocolsRepository extends JpaRepository<ErpContract, Long> {
 
     @Query(value = """
-            SELECT a.id 'ASSIGNMENT_LINKADO', ai.protocol 'PROTOCOLO_DA_MASSIVA', ai2.protocol 'PROTOLOCO_LINKADO', a.title 'TITULO_DA_SOLICITACAO'
+            SELECT
+                ai2.assignment_id AS "ASSIGNMENT_LINKADO",
+                ai.protocol AS "PROTOCOLO_DA_MASSIVA",
+                ai2.protocol AS "PROTOLOCO_LINKADO",
+                a.title AS "TITULO_DA_SOLICITACAO"
             FROM assignment_links al
             INNER JOIN assignment_incidents ai ON ai.assignment_id = al.assignment_id
-            LEFT JOIN assignment_incidents ai2 ON ai2.assignment_id = al.assignment_linked_id
+            INNER JOIN assignment_incidents ai2 ON ai2.assignment_id = al.assignment_linked_id
             INNER JOIN assignments a ON a.id = ai2.assignment_id
-            WHERE ai.protocol = :protocol
+            INNER JOIN incident_status s ON s.id = ai2.incident_status_id
+            WHERE ai.assignment_id = CAST(:assignmentId AS bigint)
+              AND ai2.assignment_id <> CAST(:assignmentId AS bigint)
+              AND s.title NOT IN ('Encerrado', 'Cancelado')
             """, nativeQuery = true)
-    List<FinishLinkedProtocolsProjection> findLinkedProtocols(@Param("protocol") String protocol);
-
-    @Query(value = "SELECT protocol FROM assignment_incidents WHERE assignment_id = :assignmentId", nativeQuery = true)
-    String findProtocolByAssignmentId(@Param("assignmentId") String assignmentId);
+    List<FinishLinkedProtocolsProjection> findLinkedProtocols(@Param("assignmentId") String assignmentId);
 }

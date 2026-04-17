@@ -35,6 +35,10 @@ class FinalizarMassivaNoEllevenApiServiceTest {
     @Mock
     private RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenService;
 
+    @Mock
+    private FinishLinkedProtocolsService finishLinkedProtocolsService;
+
+
     @InjectMocks
     private FinalizarMassivaNoEllevenApiService service;
 
@@ -94,6 +98,8 @@ class FinalizarMassivaNoEllevenApiServiceTest {
 
         // Act
         FinalizarRegistroMassivoOutputDTO result = service.executar(input);
+        verify(finishLinkedProtocolsService).executar(any());
+
 
         // Assert
         assertEquals(expectedOutput, result);
