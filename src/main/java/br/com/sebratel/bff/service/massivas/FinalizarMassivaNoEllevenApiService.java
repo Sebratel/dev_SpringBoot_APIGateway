@@ -18,15 +18,24 @@ public class FinalizarMassivaNoEllevenApiService {
 
     private final WebClient webClient;
     private final RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService;
+    private final FinishLinkedProtocolsService finishLinkedProtocolsService;
 
     @Autowired
-    public FinalizarMassivaNoEllevenApiService(WebClient webClient, RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService) {
+    public FinalizarMassivaNoEllevenApiService(WebClient webClient,
+                                               RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService,
+                                               FinishLinkedProtocolsService finishLinkedProtocolsService) {
         this.webClient = webClient;
         this.recuperarTokenDoUsuarioIntegradorEllevenService = recuperarTokenDoUsuarioIntegradorEllevenService;
+        this.finishLinkedProtocolsService = finishLinkedProtocolsService;
     }
 
     public FinalizarRegistroMassivoOutputDTO executar(FinalizaRegistroMassivoInputDTO input) {
-        log.info("Iniciando finalização de massiva no ERP via API {}", this.getClass());
+        log.info("Iniciando processo de finalização de massiva. Verificando protocolos vinculados...");
+
+        // Step 1: Execute FinishLinkedProtocolsService before main finalization
+        this.finishLinkedProtocolsService.executar(input);
+
+        log.info("Iniciando finalização de massiva principal no ERP via API {}", this.getClass());
         String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
         log.info(token);
 
