@@ -154,5 +154,9 @@ public class CucumberSpringConfiguration {
     private FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService;
 
     @MockitoBean
+    private FinishLinkedProtocolsService finishLinkedProtocolsService;
+
+
+    @MockitoBean
     private InactivateAccountProducer inactivateAccountProducer;
 }
