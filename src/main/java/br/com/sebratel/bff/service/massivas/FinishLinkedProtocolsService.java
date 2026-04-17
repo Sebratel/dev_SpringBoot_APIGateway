@@ -73,7 +73,7 @@ public class FinishLinkedProtocolsService {
                         .block();
 
                 if (response == null || !response.isSuccess()) {
-                    String errorMessage = (response != null && response.getResponse() != null) ? response.getResponse().getMessage() : "Unknown error";
+                    String errorMessage = (response != null && response.getResponse() != null) ? response.getResponse().toString() : "Unknown error";
                     log.error("Failed to finalize linked protocol {}. Error: {}", linked.getPROTOLOCO_LINKADO(), errorMessage);
                     throw new RuntimeException("Failed to finalize linked protocol: " + linked.getPROTOLOCO_LINKADO() + ". " + errorMessage);
                 }
