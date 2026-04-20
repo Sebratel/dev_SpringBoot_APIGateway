@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Entity
-@Table(name = "position", schema = "DHO_Application")
+@Table(name = "position")
 @NoArgsConstructor
 @AllArgsConstructor
 public class DhoPosition {
