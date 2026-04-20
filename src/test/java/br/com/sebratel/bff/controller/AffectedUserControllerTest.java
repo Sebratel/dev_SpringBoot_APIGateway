@@ -110,7 +110,7 @@ class AffectedUserControllerTest extends BaseTest {
     }
 
     @Test
-    @DisplayName("Should return 500 when error occurs in createImpactedUser")
+    @DisplayName("Should return 400 when error occurs in createImpactedUser")
     void createImpactedUser_Error() throws Exception {
         AffectedUserRequestDTO userDTO = AffectedUserRequestDTO.builder()
                 .contractId(1L)
@@ -127,7 +127,7 @@ class AffectedUserControllerTest extends BaseTest {
         mockMvc.perform(post("/api/v1/impacted-users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inputDTO)))
-                .andExpect(status().isInternalServerError())
+                .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false));
     }
 
@@ -273,13 +273,13 @@ class AffectedUserControllerTest extends BaseTest {
     }
 
     @Test
-    @DisplayName("Should return 500 when error occurs in updateFinishDateByProtocol")
+    @DisplayName("Should return 400 when error occurs in updateFinishDateByProtocol")
     void updateFinishDateByProtocol_Error() throws Exception {
         doThrow(new RuntimeException("Error")).when(affectedUSerService).changeEstimationTime(anyLong(), any());
 
         mockMvc.perform(patch("/api/v1/impacted-users/protocol/123")
                         .param("finishDate", LocalDateTime.now().toString()))
-                .andExpect(status().isInternalServerError())
+                .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false));
     }
 }

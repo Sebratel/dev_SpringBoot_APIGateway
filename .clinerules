@@ -1,0 +1,47 @@
+# Cline Instructions - People Management Dashboard
+
+This project is a People Management Dashboard built with React, Vite, and Tailwind CSS. It is designed for managing employee data and job vacancies at Sebratel.
+
+## Project Context
+- **Framework**: React (Vite)
+- **Styling**: Tailwind CSS v4 (using `@theme` in CSS)
+- **Icons**: Lucide-React
+- **Key Components**:
+    - `Sidebar.jsx`: Category filtering by Job Roles.
+    - `EmployeeTable.jsx`: Large data table displaying 21 columns of employee info.
+    - `mockData.js`: Centralized data store for development.
+
+## Standard Coding Instructions
+
+### 1. Component Development
+- **Consistency**: Follow the "Glassmorphism" UI pattern established in `index.css` (use `.glass` and `.glass-hover` classes).
+- **Icons**: Always use `lucide-react` for iconography.
+- **Modularity**: Keep components small. If a table cell logic becomes complex, extract it into a sub-component.
+
+### 2. Styling (Tailwind v4)
+- **Directives**: Use `@apply` sparingly; prefer utility classes in the JSX.
+- **Colors**: Use the custom theme variables:
+    - `primary`: `#E50914` (Red/Brand)
+    - `secondary`: `#FF9800` (Orange)
+    - `accent`: `#FFFFFF`
+- **Responsiveness**: Always wrap horizontal data structures (like the Employee Table) in `overflow-x-auto`.
+
+### 3. Data Handling
+- **Mocking**: When adding new features, update `src/lib/mockData.js` first to ensure the UI can be tested immediately.
+- **Column Integrity**: The `EmployeeTable` must always support the core 21 columns unless specifically instructed otherwise.
+
+### 4. Git Workflow
+- **Base**: You should always start by "git checkout main", "git fetch", "git pull"
+- **Branching**: Always work in feature branches (e.g., `feat/your-feature`).
+- **Commits**: Use conventional commits (e.g., `feat:`, `fix:`, `chore:`).
+- **Atomic Commits**: Make small, frequent commits for logical chunks of work.
+- **Run tests**: Before commiting always run tests and all must pass
+- **Push Origin**: NEVER EVER PUSH INTO MAIN, If all tests worked then push the new branch to origin and notify me
+
+## Project-Specific Rules
+- **Language**: The UI labels and data headers should remain in Portuguese (PT-BR) as per client requirements (e.g., "MATRÍCULA", "GESTOR").
+- **Table Layout**: Due to the 21-column requirement, do not attempt to force all columns into a single view without scrolling; maintain the `min-w-max` or similar strategy to keep data readable.
+
+## Execution
+- **Port**: The project should preferably run on port `3000`.
+- **Host**: Use `--host 0.0.0.0` when starting the dev server in this environment to ensure accessibility.

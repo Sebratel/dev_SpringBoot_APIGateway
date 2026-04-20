@@ -1,6 +1,9 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.dto.ApiResponse;
+import br.com.sebratel.bff.dto.massivas.api.EllevenCompleteTaskResponseDTO;
+import br.com.sebratel.bff.utils.DatabaseErrorParser;
+
 import br.com.sebratel.bff.dto.massivas.*;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoInputDTO;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoOutputDTO;
@@ -140,32 +143,47 @@ public class MassiveElevenController {
         }
     }
 
-    @DeleteMapping("/finalize-ticket-via-api")
+    @DeleteMapping({"/finalize-ticket-via-api", "finalizar-chamado-via-api"})
     public ResponseEntity<FinalizarRegistroMassivoOutputDTO> finalizeMassiveIncidentViaApi(
             @Valid @RequestBody FinalizaRegistroMassivoInputDTO input) {
 
         log.info("Starting massive incident finalization in ERP via API.");
 
         try {
-            FinalizarRegistroMassivoOutputDTO finalizarRegistroMassivoOutputDTO = finalizarMassivaNoEllevenApiService.executar(input);
+            FinalizarRegistroMassivoOutputDTO output = finalizarMassivaNoEllevenApiService.executar(input);
 
-            if(finalizarRegistroMassivoOutputDTO.isSuccess()) {
+            if (output.isSuccess()) {
                 log.info("Massive incident successfully finalized in ERP. [ASSIGNMENT ID: {}, MESSAGE: {}]",
                         input.getAssignmentId(),
                         input.getDescription());
 
-                return ResponseEntity.ok(finalizarRegistroMassivoOutputDTO);
+                return ResponseEntity.ok(output);
 
             } else {
                 log.error("Error finalizing massive incident in ERP. [ASSIGNMENT ID: {}, MESSAGE: {}]",
                         input.getAssignmentId(),
                         input.getDescription());
 
-                return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(finalizarRegistroMassivoOutputDTO);
+                return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(output);
             }
         } catch (Exception e) {
             log.error("Error finalizing massive incident SERVER ERROR. ASSIGNMENT: {}:\n {}", input.getAssignmentId(), e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+
+            FinalizarRegistroMassivoOutputDTO errorOutput = FinalizarRegistroMassivoOutputDTO.builder()
+                    .success(false)
+                    .messages(List.of(EllevenCompleteTaskResponseDTO.builder()
+                            .message("Internal server error while finalizing massive incident: " + e.getMessage())
+                            .type("Error")
+                            .build()))
+                    .build();
+
+            // If it's a RuntimeException thrown by our service due to external API failure, it should be 502
+            String msg = e.getMessage();
+            if (msg != null && (msg.contains("Failed to finalize linked protocol") || msg.contains("Error finalizing linked protocol"))) {
+                return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(errorOutput);
+            }
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorOutput);
         }
     }
 

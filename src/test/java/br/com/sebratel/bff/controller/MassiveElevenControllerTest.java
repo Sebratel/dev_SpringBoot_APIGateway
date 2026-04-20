@@ -271,7 +271,24 @@ class MassiveElevenControllerTest extends BaseTest {
         mockMvc.perform(delete("/api/v1/massive-incidents/finalize-ticket-via-api")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(input)))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.messages[0].message").value("Internal server error while finalizing massive incident: Error"));
+    }
+
+    @Test
+    @DisplayName("Should return 502 when finalization fails due to linked protocol error")
+    void finalizeMassiveIncidentViaApi_LinkedProtocolError() throws Exception {
+        FinalizaRegistroMassivoInputDTO input = new FinalizaRegistroMassivoInputDTO();
+
+        when(finalizarMassivaNoEllevenApiService.executar(any())).thenThrow(new RuntimeException("Failed to finalize linked protocol: 123"));
+
+        mockMvc.perform(delete("/api/v1/massive-incidents/finalize-ticket-via-api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(input)))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.messages[0].message").value("Internal server error while finalizing massive incident: Failed to finalize linked protocol: 123"));
     }
 
     @Test

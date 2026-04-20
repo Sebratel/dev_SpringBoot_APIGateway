@@ -1,14 +1,16 @@
 package br.com.sebratel.bff.cucumber;
 
+import br.com.sebratel.bff.controller.*;
+import br.com.sebratel.bff.controller.dho.*;
 import br.com.sebratel.bff.service.*;
 import br.com.sebratel.bff.service.comercial.PrimeiroPaganteMensalService;
+import br.com.sebratel.bff.service.dho.*;
 import br.com.sebratel.bff.service.massivas.*;
 import io.cucumber.spring.CucumberContextConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import br.com.sebratel.bff.controller.*;
 
 @CucumberContextConfiguration
 @WebMvcTest({
@@ -22,6 +24,9 @@ import br.com.sebratel.bff.controller.*;
     ContractActivationInvoiceController.class,
     ContractPaymentController.class,
     ContractWithoutInvoiceController.class,
+    DhoOpportunitiesController.class,
+    DhoPeopleController.class,
+    DhoSettingsController.class,
     DuplicateCallingStationController.class,
     DuplicateClientNameReportController.class,
     DuplicatePrefixController.class,
@@ -50,13 +55,22 @@ public class CucumberSpringConfiguration {
     private VendedoresAtivosService vendedoresAtivosService;
 
     @MockitoBean
-    private AffectedUserService affectedUSerService;
+    private AffectedUserService affectedUserService;
 
     @MockitoBean
     private AuthenticationSitesService authenticationSitesService;
 
     @MockitoBean
     private ContratoBloqueadoService contratoBloqueadoService;
+
+    @MockitoBean
+    private DhoOpportunitiesService dhoOpportunitiesService;
+
+    @MockitoBean
+    private DhoPeopleService dhoPeopleService;
+
+    @MockitoBean
+    private DhoSettingsService dhoSettingsService;
 
     @MockitoBean
     private ConsumoService consumoService;
@@ -147,6 +161,9 @@ public class CucumberSpringConfiguration {
 
     @MockitoBean
     private FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService;
+
+    @MockitoBean
+    private FinishLinkedProtocolsService finishLinkedProtocolsService;
 
     @MockitoBean
     private InactivateAccountProducer inactivateAccountProducer;
