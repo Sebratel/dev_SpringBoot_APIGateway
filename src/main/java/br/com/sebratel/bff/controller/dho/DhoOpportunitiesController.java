@@ -1,7 +1,7 @@
 package br.com.sebratel.bff.controller.dho;
 
 import br.com.sebratel.bff.dto.ApiResponse;
-import br.com.sebratel.bff.model.entity.dho.DhoOpportunities;
+import br.com.sebratel.bff.dto.DhoOpportunitiesDTO;
 import br.com.sebratel.bff.service.dho.DhoOpportunitiesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,9 +19,9 @@ public class DhoOpportunitiesController {
 
     @GetMapping
     @Operation(summary = "List all opportunities from DHO_Application")
-    public ResponseEntity<ApiResponse<List<DhoOpportunities>>> findAll() {
-        List<DhoOpportunities> opportunities = service.findAll();
-        ApiResponse<List<DhoOpportunities>> response = ApiResponse.<List<DhoOpportunities>>builder()
+    public ResponseEntity<ApiResponse<List<DhoOpportunitiesDTO>>> findAll() {
+        List<DhoOpportunitiesDTO> opportunities = service.findAllDTOs();
+        ApiResponse<List<DhoOpportunitiesDTO>> response = ApiResponse.<List<DhoOpportunitiesDTO>>builder()
                 .success(true)
                 .message("Opportunities successfully retrieved.")
                 .data(opportunities)
