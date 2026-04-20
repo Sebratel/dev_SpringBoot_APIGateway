@@ -1,5 +1,8 @@
 package br.com.sebratel.bff.config;
 
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+
 import jakarta.persistence.EntityManagerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -21,7 +24,8 @@ import java.util.Map;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(
-        basePackages = "br.com.sebratel.bff.repository.afetados",
+        basePackages = {"br.com.sebratel.bff.repository.afetados"},
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASPECTJ, pattern = "br.com.sebratel.bff.repository.afetados.dho.*"),
         entityManagerFactoryRef = "afetadosEntityManagerFactory",
         transactionManagerRef = "afetadosTransactionManager"
 )
