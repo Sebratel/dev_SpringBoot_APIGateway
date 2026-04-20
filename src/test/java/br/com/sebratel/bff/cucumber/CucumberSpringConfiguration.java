@@ -9,6 +9,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import br.com.sebratel.bff.controller.*;
+import br.com.sebratel.bff.controller.dho.*;
+import br.com.sebratel.bff.service.dho.*;
 
 @CucumberContextConfiguration
 @WebMvcTest({
@@ -22,7 +24,9 @@ import br.com.sebratel.bff.controller.*;
     ContractActivationInvoiceController.class,
     ContractPaymentController.class,
     ContractWithoutInvoiceController.class,
-    DhoOpportunityController.class,
+    DhoOpportunitiesController.class,
+    DhoPeopleController.class,
+    DhoSettingsController.class,
     DuplicateCallingStationController.class,
     DuplicateClientNameReportController.class,
     DuplicatePrefixController.class,
@@ -59,7 +63,13 @@ public class CucumberSpringConfiguration {
     @MockitoBean
     private ContratoBloqueadoService contratoBloqueadoService;
     @MockitoBean
-    private DhoOpportunityService dhoOpportunityService;
+    private DhoOpportunitiesService dhoOpportunitiesService;
+
+    @MockitoBean
+    private DhoPeopleService dhoPeopleService;
+
+    @MockitoBean
+    private DhoSettingsService dhoSettingsService;
 
 
 
