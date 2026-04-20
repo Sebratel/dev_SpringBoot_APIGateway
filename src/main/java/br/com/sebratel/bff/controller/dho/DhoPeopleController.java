@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.controller.dho;
 
-import br.com.sebratel.bff.model.entity.dho.DhoPeople;
+import br.com.sebratel.bff.dto.ApiResponse;
+import br.com.sebratel.bff.dto.DhoPeopleDTO;
 import br.com.sebratel.bff.service.dho.DhoPeopleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,7 +19,13 @@ public class DhoPeopleController {
 
     @GetMapping
     @Operation(summary = "List all people from DHO_Application")
-    public ResponseEntity<List<DhoPeople>> findAll() {
-        return ResponseEntity.ok(service.findAll());
+    public ResponseEntity<ApiResponse<List<DhoPeopleDTO>>> findAll() {
+        List<DhoPeopleDTO> people = service.findAllDTOs();
+        ApiResponse<List<DhoPeopleDTO>> response = ApiResponse.<List<DhoPeopleDTO>>builder()
+                .success(true)
+                .message("People successfully retrieved.")
+                .data(people)
+                .build();
+        return ResponseEntity.ok(response);
     }
 }

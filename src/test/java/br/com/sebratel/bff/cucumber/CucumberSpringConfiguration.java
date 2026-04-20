@@ -1,6 +1,11 @@
 package br.com.sebratel.bff.cucumber;
 
-import br.com.sebratel.bff.service.*;
+import br.com.sebratel.bff.controller.dho.DhoOpportunitiesController;
+import br.com.sebratel.bff.controller.dho.DhoPeopleController;
+import br.com.sebratel.bff.controller.dho.DhoSettingsController;
+import br.com.sebratel.bff.service.dho.DhoOpportunitiesService;
+import br.com.sebratel.bff.service.dho.DhoPeopleService;
+import br.com.sebratel.bff.service.dho.DhoSettingsService;
 import br.com.sebratel.bff.service.comercial.PrimeiroPaganteMensalService;
 import br.com.sebratel.bff.service.massivas.*;
 import io.cucumber.spring.CucumberContextConfiguration;
@@ -22,7 +27,9 @@ import br.com.sebratel.bff.controller.*;
     ContractActivationInvoiceController.class,
     ContractPaymentController.class,
     ContractWithoutInvoiceController.class,
-    DhoOpportunityController.class,
+    DhoOpportunitiesController.class,
+    DhoPeopleController.class,
+    DhoSettingsController.class,
     DuplicateCallingStationController.class,
     DuplicateClientNameReportController.class,
     DuplicatePrefixController.class,
@@ -59,7 +66,13 @@ public class CucumberSpringConfiguration {
     @MockitoBean
     private ContratoBloqueadoService contratoBloqueadoService;
     @MockitoBean
-    private DhoOpportunityService dhoOpportunityService;
+    private DhoPeopleService dhoPeopleService;
+
+    @MockitoBean
+    private DhoOpportunitiesService dhoOpportunitiesService;
+
+    @MockitoBean
+    private DhoSettingsService dhoSettingsService;
 
 
 
