@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "people", schema = "DHO_Application")
+@Table(name = "people")
 @NoArgsConstructor
 @AllArgsConstructor
 public class DhoPeople {
@@ -64,26 +64,6 @@ public class DhoPeople {
 
     @Column(name = "cis_link")
     private String cisLink;
-
-    @ManyToOne
-    @JoinColumn(name = "id_opportunity")
-    private DhoOpportunities opportunity;
-
-    @ManyToOne
-    @JoinColumn(name = "id_position")
-    private DhoPosition position;
-
-    @ManyToOne
-    @JoinColumn(name = "id_team")
-    private DhoTeam team;
-
-    @ManyToOne
-    @JoinColumn(name = "id_departament")
-    private DhoDepartament departament;
-
-    @ManyToOne
-    @JoinColumn(name = "id_base_origin")
-    private DhoBaseOrigin baseOrigin;
 
     @ManyToOne
     @JoinColumn(name = "id_resignation_motivation")

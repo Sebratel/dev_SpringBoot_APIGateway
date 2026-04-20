@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "opportunities", schema = "DHO_Application")
+@Table(name = "opportunities")
 @NoArgsConstructor
 @AllArgsConstructor
 public class DhoOpportunities {
@@ -20,16 +20,24 @@ public class DhoOpportunities {
     private LocalDateTime openOpportunityDate;
 
     @ManyToOne
-    @JoinColumn(name = "id_position")
+    @JoinColumn(name = "people_id")
+    private DhoPeople candidate;
+
+    @ManyToOne
+    @JoinColumn(name = "position_id")
     private DhoPosition position;
 
     @ManyToOne
-    @JoinColumn(name = "id_team")
+    @JoinColumn(name = "team_id")
     private DhoTeam team;
 
     @ManyToOne
     @JoinColumn(name = "departament_id")
     private DhoDepartament departament;
+
+    @ManyToOne
+    @JoinColumn(name = "base_origin_id")
+    private DhoBaseOrigin baseOrigin;
 
     @ManyToOne
     @JoinColumn(name = "opportunity_motive_id")
@@ -38,10 +46,6 @@ public class DhoOpportunities {
     @ManyToOne
     @JoinColumn(name = "replaced_person_id")
     private DhoPeople replacedPerson;
-
-    @ManyToOne
-    @JoinColumn(name = "base_origin_id")
-    private DhoBaseOrigin baseOrigin;
 
     @ManyToOne
     @JoinColumn(name = "opportunity_status_id")
