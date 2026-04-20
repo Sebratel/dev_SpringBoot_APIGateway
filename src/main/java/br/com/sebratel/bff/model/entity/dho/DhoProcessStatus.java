@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Entity
-@Table(name = "process_status", schema = "DHO_Application")
+@Table(name = "process_status")
 @NoArgsConstructor
 @AllArgsConstructor
 public class DhoProcessStatus {
