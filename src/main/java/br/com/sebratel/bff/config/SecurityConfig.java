@@ -50,7 +50,7 @@ public class SecurityConfig {
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.decoder(jwtDecoder()))
                         .authenticationEntryPoint((request, response, authException) -> {
-                            log.warn("Acesso negada: {}", authException.getMessage());
+                            log.warn("Acesso negado: {}", authException.getMessage());
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.setCharacterEncoding("UTF-8");
                             response.getWriter().write("Acesso restrito: Token inválido ou não fornecido.");
