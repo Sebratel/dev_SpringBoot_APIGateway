@@ -25,7 +25,6 @@ import java.util.Map;
 @EnableTransactionManagement
 @EnableJpaRepositories(
         basePackages = {"br.com.sebratel.bff.repository.afetados"},
-        excludeFilters = @ComponentScan.Filter(type = FilterType.ASPECTJ, pattern = "br.com.sebratel.bff.repository.afetados.dho.*"),
         entityManagerFactoryRef = "afetadosEntityManagerFactory",
         transactionManagerRef = "afetadosTransactionManager"
 )

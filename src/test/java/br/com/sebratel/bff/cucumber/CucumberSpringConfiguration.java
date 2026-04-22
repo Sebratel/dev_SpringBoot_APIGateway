@@ -1,10 +1,13 @@
 package br.com.sebratel.bff.cucumber;
 
 import br.com.sebratel.bff.controller.*;
-import br.com.sebratel.bff.controller.dho.*;
+import br.com.sebratel.bff.dho.adapter.in.web.OpportunityController;
+import br.com.sebratel.bff.dho.adapter.in.web.PersonController;
+import br.com.sebratel.bff.dho.domain.port.in.OpportunityUseCase;
+import br.com.sebratel.bff.dho.domain.port.in.PersonUseCase;
 import br.com.sebratel.bff.service.*;
 import br.com.sebratel.bff.service.comercial.PrimeiroPaganteMensalService;
-import br.com.sebratel.bff.service.dho.*;
+import br.com.sebratel.bff.service.dho.DhoSettingsService;
 import br.com.sebratel.bff.service.massivas.*;
 import io.cucumber.spring.CucumberContextConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -24,9 +27,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
     ContractActivationInvoiceController.class,
     ContractPaymentController.class,
     ContractWithoutInvoiceController.class,
-    DhoOpportunitiesController.class,
-    DhoPeopleController.class,
-    DhoSettingsController.class,
+    OpportunityController.class,
+    PersonController.class,
     DuplicateCallingStationController.class,
     DuplicateClientNameReportController.class,
     DuplicatePrefixController.class,
@@ -64,10 +66,10 @@ public class CucumberSpringConfiguration {
     private ContratoBloqueadoService contratoBloqueadoService;
 
     @MockitoBean
-    private DhoOpportunitiesService dhoOpportunitiesService;
+    private OpportunityUseCase opportunityUseCase;
 
     @MockitoBean
-    private DhoPeopleService dhoPeopleService;
+    private PersonUseCase personUseCase;
 
     @MockitoBean
     private DhoSettingsService dhoSettingsService;
