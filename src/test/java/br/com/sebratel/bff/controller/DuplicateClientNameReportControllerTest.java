@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
+import br.com.sebratel.bff.controller.scripts.DuplicateClientNameReportController;
 import br.com.sebratel.bff.dto.RelatorioClienteNomeDuplicadoDTO;
 import br.com.sebratel.bff.service.RelatorioClienteNomeDuplicadoService;
 import org.junit.jupiter.api.DisplayName;

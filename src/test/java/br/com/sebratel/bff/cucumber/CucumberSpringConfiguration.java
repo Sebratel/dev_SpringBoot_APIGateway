@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.cucumber;
 
 import br.com.sebratel.bff.controller.*;
+import br.com.sebratel.bff.controller.scripts.*;
 import br.com.sebratel.bff.service.*;
 import br.com.sebratel.bff.service.comercial.PrimeiroPaganteMensalService;
 import br.com.sebratel.bff.service.massivas.*;

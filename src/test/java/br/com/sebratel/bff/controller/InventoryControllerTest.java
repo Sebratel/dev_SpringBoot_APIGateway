@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
+import br.com.sebratel.bff.controller.scripts.InventoryController;
 import br.com.sebratel.bff.dto.InventoryRequestDTO;
 import br.com.sebratel.bff.dto.TechnicianInventoryDTO;
 import br.com.sebratel.bff.service.InventoryService;

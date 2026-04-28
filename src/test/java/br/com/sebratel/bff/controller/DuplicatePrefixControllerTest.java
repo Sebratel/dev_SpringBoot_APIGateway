@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
+import br.com.sebratel.bff.controller.scripts.DuplicatePrefixController;
 import br.com.sebratel.bff.dto.DuplicatePrefixDTO;
 import br.com.sebratel.bff.service.DuplicatePrefixService;
 import org.junit.jupiter.api.DisplayName;

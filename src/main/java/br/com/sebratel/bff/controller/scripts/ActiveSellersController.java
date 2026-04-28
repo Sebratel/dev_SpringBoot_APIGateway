@@ -1,4 +1,4 @@
-package br.com.sebratel.bff.controller;
+package br.com.sebratel.bff.controller.scripts;
 
 import br.com.sebratel.bff.dto.VendedoresAtivosDTO;
 import br.com.sebratel.bff.service.VendedoresAtivosService;

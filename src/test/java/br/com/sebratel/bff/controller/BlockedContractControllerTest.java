@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
+import br.com.sebratel.bff.controller.scripts.BlockedContractController;
 import br.com.sebratel.bff.dto.ContratoBloqueadoDTO;
 import br.com.sebratel.bff.service.ContratoBloqueadoService;
 import org.junit.jupiter.api.DisplayName;
