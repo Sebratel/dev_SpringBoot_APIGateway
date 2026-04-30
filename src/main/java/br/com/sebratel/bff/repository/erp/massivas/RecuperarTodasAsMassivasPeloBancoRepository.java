@@ -36,7 +36,7 @@ public interface RecuperarTodasAsMassivasPeloBancoRepository extends JpaReposito
                 left join catalog_services cs on cs.id = ai.catalog_service_id
                 left join authentication_access_points aap on aap.id = ai.authentication_access_point_id
             where it.id in (1176, 302, 1257, 1265)
-                and t2.title not in ('Encerrado', 'Cancelado')
+                and t2.title not in ('Cancelado')
             order by id desc
             """, nativeQuery = true)
     List<RecuperarTodasAsMassivasProjection> findActiveAssignments();
