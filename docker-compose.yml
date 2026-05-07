@@ -7,6 +7,9 @@ services:
       - "8082:8085"
     depends_on:
       - kafka
+    networks:
+      - proxy
+      - default
     environment:
       # Aplicação
       - APP_NAME=bff
@@ -42,7 +45,6 @@ services:
       - AFETADOS_DB_PASS=${AFETADOS_DB_PASS}
 
       # Usuario Integrador Elleven
-
       - ELLEVEN_CLIENT_ID=${ELLEVEN_CLIENT_ID}
       - ELLEVEN_CLIENT_SECRET=${ELLEVEN_CLIENT_SECRET}
       - ELLEVEN_CLIENT_SYNDATA=${ELLEVEN_CLIENT_SYNDATA}
@@ -52,7 +54,6 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_CLIENT_SCOPE=${GOOGLE_CLIENT_SCOPE}
-
 
     volumes:
       - bff-logs:/app/logs
@@ -64,6 +65,8 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
+    networks:
+      - default
 
   kafka:
     image: confluentinc/cp-kafka:7.4.0
@@ -79,8 +82,16 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-
+    networks:
+      - default
 
 volumes:
   bff-logs:
     driver: local
+
+# Declaração das redes
+networks:
+  proxy:
+    external: true
+  default:
+    driver: bridge

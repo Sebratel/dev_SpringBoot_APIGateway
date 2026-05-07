@@ -187,7 +187,7 @@ class AffectedUserServiceTest {
         AffectedUsersEntity user = new AffectedUsersEntity();
         user.setContractId(contractId);
         user.setFinishDate(LocalDateTime.now().plusHours(3));
-        when(repository.findByContractId(contractId)).thenReturn(Optional.of(user));
+        when(repository.findFirstByContractId(contractId)).thenReturn(Optional.of(user));
 
         // Act
         ImpactedUsersOutputDTO result = service.getUsuariosAfetadosByContractId(contractId);
@@ -200,7 +200,7 @@ class AffectedUserServiceTest {
     void getUsuariosAfetadosByContractId_ShouldThrowException_WhenNotFound() {
         // Arrange
         Long contractId = 999L;
-        when(repository.findByContractId(contractId)).thenReturn(Optional.empty());
+        when(repository.findFirstByContractId(contractId)).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> service.getUsuariosAfetadosByContractId(contractId));

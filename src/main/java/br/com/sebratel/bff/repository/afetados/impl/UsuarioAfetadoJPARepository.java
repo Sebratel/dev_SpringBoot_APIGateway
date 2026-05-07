@@ -28,4 +28,6 @@ public interface UsuarioAfetadoJPARepository extends JpaRepository<AffectedUsers
     Integer updateUsersByProtocol(@Param("protocol") Long protocol, @Param("finishDate") LocalDateTime finishDate);
 
     Optional<AffectedUsersEntity> findByContractId(Long contractId);
+
+    Optional<AffectedUsersEntity> findFirstByContractId(Long contractId);
 }

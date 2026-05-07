@@ -43,7 +43,7 @@ public class MatrixService {
                         .build();
             }
 
-            System.out.println(personEntity.get().getId());
+            log.info("Encontrado personId {}, iniciando procura de contrato pelo CPF", personEntity.get().getId());
 
             Optional<ContractProjection> contractProjection = personRepository.findContractByCPF(cpf);
 
@@ -59,9 +59,10 @@ public class MatrixService {
             }
 
             ContractProjection contract = contractProjection.get();
+            log.info("Encontrado contrato {}", contract.getContractId());
             Optional<AffectedUsersEntity> usuarioAfetadoEntity = affectedUserRepository
-                    .findByContractId(contract.getContractId());
-
+                    .findFirstByContractId(contract.getContractId());
+            log.info("Realizada pesquisa de usuario afetado para contrato {} com cpf {}", contract.getContractId(), cpf);
             if (usuarioAfetadoEntity.isEmpty()) {
                 log.error("NÃO FOI ENCONTRADO CLIENTE DE CONTRACT ID {}", contract.getContractId());
                 return MatrixMassiveOutputDTO
