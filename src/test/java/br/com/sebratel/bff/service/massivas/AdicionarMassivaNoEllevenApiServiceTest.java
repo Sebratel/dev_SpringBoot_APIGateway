@@ -318,4 +318,44 @@ class AdicionarMassivaNoEllevenApiServiceTest {
         // Act & Assert
         assertThrows(RuntimeException.class, () -> service.executar(input));
     }
+    @Test
+    void executarComAffectedUsersNullDeveTratarComoListaVazia() {
+        // Arrange
+        AberturaRegistroMassivoInputDTO input = new AberturaRegistroMassivoInputDTO();
+        AberturaRegistroMassivoAssignmentDTO assignment = new AberturaRegistroMassivoAssignmentDTO();
+        assignment.setTitle("Test Title");
+        assignment.setDescription("Test Description");
+        input.setAssignment(assignment);
+        input.setAffectedUsers(null); // Forçando nulo
+        input.setAffectedUsersQuantity(0);
+
+        RecuperarTokenEllevenOutputDTO tokenOutput = new RecuperarTokenEllevenOutputDTO("fake-token", 3600, "Bearer", "all");
+        when(recuperarTokenService.executar()).thenReturn(tokenOutput);
+
+        when(employeeService.hasB2BinInput(any())).thenReturn(false);
+
+        WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+        WebClient.RequestBodySpec requestBodySpec = mock(WebClient.RequestBodySpec.class);
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.header(eq(HttpHeaders.AUTHORIZATION), anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
+        when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+
+        AberturaRegistroMassivoOutputDTO expectedOutput = new AberturaRegistroMassivoOutputDTO();
+        when(responseSpec.bodyToMono(AberturaRegistroMassivoOutputDTO.class)).thenReturn(Mono.just(expectedOutput));
+
+        // Act
+        AberturaRegistroMassivoOutputDTO result = service.executar(input);
+
+        // Assert
+        assertEquals(expectedOutput, result);
+        assertEquals(AdicionarMassivaNoEllevenApiService.NORMAL_EVENT_INCIDENT_TYPE_ID, input.getIncidentTypeId());
+        verify(employeeService).hasB2BinInput(argThat(list -> list != null && list.isEmpty()));
+    }
+
 }

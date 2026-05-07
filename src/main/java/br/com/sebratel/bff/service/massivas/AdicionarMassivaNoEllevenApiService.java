@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -106,7 +108,12 @@ public class AdicionarMassivaNoEllevenApiService {
     private AberturaRegistroMassivoInputDTO decideForIncidentOrMassiveEvent(AberturaRegistroMassivoInputDTO input) {
 
         log.debug("[MASSIVA] Analisando contratos para identificar presença de B2B...");
-        boolean hasB2B = employeeService.hasB2BinInput(input.getAffectedUsers().stream().map(AffectedUsersEntity::getContractId).toList());
+
+        List<AffectedUsersEntity> affectedUsers = input.getAffectedUsers() != null
+                ? input.getAffectedUsers()
+                : Collections.emptyList();
+
+        boolean hasB2B = employeeService.hasB2BinInput(affectedUsers.stream().map(AffectedUsersEntity::getContractId).toList());
         boolean isMassiveEvent = hasB2B || input.getAffectedUsersQuantity() > 15;
         if(isMassiveEvent){
             log.debug("Critérios atendidos para Evento Massivo (TITLE: {})", input.getAssignment().getTitle());

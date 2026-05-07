@@ -35,5 +35,5 @@ public class AberturaRegistroMassivoInputDTO {
     private AberturaRegistroMassivoAssignmentDTO assignment;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private int affectedUsersQuantity;
-    private List<AffectedUsersEntity> affectedUsers;
+    private List<AffectedUsersEntity> affectedUsers = new java.util.ArrayList<>();
 }
