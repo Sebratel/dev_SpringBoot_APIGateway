@@ -45,7 +45,7 @@ class MatrixServiceTest {
 
         when(personRepository.findByTxId(cpf)).thenReturn(Optional.of(person));
         when(personRepository.findContractByCPF(cpf)).thenReturn(Optional.of(contract));
-        when(affectedUserRepository.findByContractId(100L)).thenReturn(Optional.of(affected));
+        when(affectedUserRepository.findFirstByContractId(100L)).thenReturn(Optional.of(affected));
 
         // Act
         MatrixMassiveOutputDTO result = service.getContractInfoByCPF(cpf);
@@ -96,7 +96,7 @@ class MatrixServiceTest {
 
         when(personRepository.findByTxId(cpf)).thenReturn(Optional.of(person));
         when(personRepository.findContractByCPF(cpf)).thenReturn(Optional.of(contract));
-        when(affectedUserRepository.findByContractId(100L)).thenReturn(Optional.empty());
+        when(affectedUserRepository.findFirstByContractId(100L)).thenReturn(Optional.empty());
 
         // Act
         MatrixMassiveOutputDTO result = service.getContractInfoByCPF(cpf);
@@ -132,7 +132,7 @@ class MatrixServiceTest {
 
         when(personRepository.findByTxId(cpf)).thenReturn(Optional.of(person));
         when(personRepository.findContractByCPF(cpf)).thenReturn(Optional.of(contract));
-        when(affectedUserRepository.findByContractId(100L)).thenReturn(Optional.of(affected));
+        when(affectedUserRepository.findFirstByContractId(100L)).thenReturn(Optional.of(affected));
 
         // Act
         MatrixMassiveOutputDTO result = service.getContractInfoByCPF(cpf);
