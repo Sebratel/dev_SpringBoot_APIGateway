@@ -1,4 +1,4 @@
-package br.com.sebratel.bff.cucumber.controller;
+package br.com.sebratel.bff.cucumber.controller.scripts;
 
 import br.com.sebratel.bff.cucumber.CommonStepDefinitions;
 
