@@ -33,6 +33,7 @@ public class MatrixService {
             Optional<PersonEntity> personEntity = personRepository.findByTxId(cpf);
 
             if (personEntity.isEmpty()) {
+                log.warn("Nenhum person encontrado: {}", cpf);
                 return MatrixMassiveOutputDTO
                         .builder()
                         .status("not_found_client")
