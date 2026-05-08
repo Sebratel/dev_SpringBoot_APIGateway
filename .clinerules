@@ -3,7 +3,7 @@
 Este arquivo contém as regras e diretrizes para o desenvolvimento deste projeto. O Cline deve seguir estas instruções rigorosamente.
 
 ## 🚀 Instrução Mandatária
-**ANTES DE INICIAR QUALQUER TAREFA, leia as especificações em `specs/TEMPLATE.md`.** 
+**ANTES DE INICIAR QUALQUER TAREFA, leia as especificações em `specs/TEMPLATE.md`.**
 **ANTES DE INICIAR QUALQUER TAREFA, leia obrigatoriamente:**
 1. `specs/TEMPLATE.md` (Arquitetura Geral)
 2. `specs/MASSIVAS.md` (Se a tarefa envolver Incidentes Massivos)
