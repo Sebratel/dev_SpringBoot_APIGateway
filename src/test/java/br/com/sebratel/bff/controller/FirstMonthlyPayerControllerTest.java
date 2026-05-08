@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
+import br.com.sebratel.bff.controller.scripts.FirstMonthlyPayerController;
 import br.com.sebratel.bff.dto.comercial.RelatorioPorVendedorDTO;
 import br.com.sebratel.bff.service.comercial.PrimeiroPaganteMensalService;
 import org.junit.jupiter.api.DisplayName;

@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
+import br.com.sebratel.bff.controller.scripts.ContractWithoutInvoiceController;
 import br.com.sebratel.bff.dto.ContratoSemFaturaDTO;
 import br.com.sebratel.bff.service.ContratoSemFaturaService;
 import org.junit.jupiter.api.DisplayName;

@@ -1,0 +1,47 @@
+# Cline Rules - Sebratel BFF
+
+Este arquivo contém as regras e diretrizes para o desenvolvimento deste projeto. O Cline deve seguir estas instruções rigorosamente.
+
+## 🚀 Instrução Mandatária
+**ANTES DE INICIAR QUALQUER TAREFA, leia as especificações em `specs/TEMPLATE.md`.**
+**ANTES DE INICIAR QUALQUER TAREFA, leia obrigatoriamente:**
+1. `specs/TEMPLATE.md` (Arquitetura Geral)
+2. `specs/MASSIVAS.md` (Se a tarefa envolver Incidentes Massivos)
+3. `specs/USUARIOS_AFETADOS.md` (Se a tarefa envolver Usuários Impactados)
+
+Este arquivo contém a arquitetura, padrões de código e contexto técnico essencial para garantir que a implementação esteja alinhada com o projeto.
+
+## 🛠 Padrões de Desenvolvimento
+
+### 1. Spring Boot & Java
+- Use Java 21 e padrões modernos do Spring Boot 3.
+- Injeção de dependência deve ser feita preferencialmente via construtor (Lombok `@RequiredArgsConstructor` é permitido).
+- Use DTOs para todas as entradas e saídas da API.
+
+### 2. Banco de Dados e Repositories
+- O projeto usa múltiplas fontes de dados (PostgreSQL e MariaDB). Certifique-se de usar o repositório no pacote correto (`repository.erp`, `repository.radius`, ou `repository.afetados`).
+- Utilize JPA Projections para consultas de leitura para melhorar a performance.
+
+### 3. Git Workflow
+- **Branching:** Trabalhe sempre em branches de funcionalidade (ex: `feat/nome-da-feature`).
+- **Commits:** Use Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`, `test:`).
+- **Processo:**
+    1. `git checkout main`
+    2. `git fetch && git pull`
+    3. Criar nova branch.
+    4. Implementar e Testar.
+    5. Commitar e notificar.
+
+### 4. Testes e Qualidade
+- **Obrigatório:** Novas funcionalidades devem vir acompanhadas de testes unitários.
+- **Relatórios:** O projeto usa Allure. Certifique-se de que os testes passam executando `mvn test`.
+- **Cobertura:** Verifique se as novas classes não baixam a cobertura de testes do JaCoCo.
+
+### 5. Idioma e Nomenclatura
+- Código (Classes, Métodos, Variáveis) deve ser em **Inglês**.
+- Termos de domínio de negócio específicos (ex: `Massiva`, `Afetados`) podem permanecer em **Português** se alinhados com o banco de dados legatário.
+
+## 📦 Execução e Comandos Úteis
+- **Build:** `./mvnw clean install`
+- **Testes:** `./mvnw test`
+- **Execução:** `./mvnw spring-boot:run`

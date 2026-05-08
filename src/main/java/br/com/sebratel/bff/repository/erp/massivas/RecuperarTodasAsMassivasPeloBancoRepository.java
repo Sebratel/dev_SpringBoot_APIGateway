@@ -12,31 +12,36 @@ import java.util.List;
 public interface RecuperarTodasAsMassivasPeloBancoRepository extends JpaRepository<ErpContract, Long> {
 
     @Query(value = """
-            SELECT
-                a.id as ID,
-                a.created as CRIACAO,
-                a.final_date as SLA,
-                a.conclusion_date as FINALIZADO,
-                ai.protocol as PROTOCOLO,
-                t.title as EQUIPE,
-                t2.title as STATUS,
-                it.title as TIPO_SOLICITACAO,
-                v.name as SOLICITANTE, -- CREATED
-                p2.name as RESPONSAVEL, -- REQUESTOR
-                cs.title as CATALOGO,
-                aap.title as PONTODEACESSO
-            from assignments a
-                left join assignment_incidents ai on ai.assignment_id = a.id
-                left join teams t on t.id = ai.team_id
-                left join incident_status t2 on t2.id = ai.incident_status_id
-                left join incident_types it on it.id = ai.incident_type_id
-                left join v_users v on v.id = a.created_by
-                left join people p2 on p2.id = a.requestor_id
-                left join catalog_services cs on cs.id = ai.catalog_service_id
-                left join authentication_access_points aap on aap.id = ai.authentication_access_point_id
-            where it.id in (1176, 302, 1257, 1265)
-                and t2.title not in ('Encerrado', 'Cancelado')
-            order by id desc
+                SELECT
+                    a.id AS ID,
+                    a.created AS CRIACAO,
+                    a.final_date AS SLA,
+                    a.conclusion_date AS FINALIZADO,
+                    ai.protocol AS PROTOCOLO,
+                    a.description AS DESCRICAO,
+                    t.title AS EQUIPE,
+                    t2.title AS STATUS,
+                    it.title AS TIPO_SOLICITACAO,
+                    v.name AS SOLICITANTE,
+                    p2.name AS RESPONSAVEL,
+                    cs.title AS CATALOGO,
+                    aap.title AS PONTODEACESSO
+                FROM assignments a
+                    INNER JOIN assignment_incidents ai ON ai.assignment_id = a.id
+                    LEFT JOIN teams t ON t.id = ai.team_id
+                    LEFT JOIN incident_status t2 ON t2.id = ai.incident_status_id
+                    LEFT JOIN incident_types it ON it.id = ai.incident_type_id
+                    LEFT JOIN v_users v ON v.id = a.created_by
+                    LEFT JOIN people p2 ON p2.id = a.requestor_id
+                    LEFT JOIN catalog_services cs ON cs.id = ai.catalog_service_id
+                    LEFT JOIN authentication_access_points aap ON aap.id = ai.authentication_access_point_id
+                WHERE it.id IN (1176, 302, 1257, 1265)
+                  AND (
+                        t2.title NOT IN ('Encerrado', 'Cancelado')
+                        OR
+                        (t2.title = 'Encerrado' AND a.created >= CURRENT_DATE - INTERVAL '1 month')
+                      )
+                ORDER BY a.id DESC
             """, nativeQuery = true)
     List<RecuperarTodasAsMassivasProjection> findActiveAssignments();
 }

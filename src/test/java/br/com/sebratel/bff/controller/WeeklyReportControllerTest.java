@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
+import br.com.sebratel.bff.controller.scripts.WeeklyReportController;
 import br.com.sebratel.bff.dto.RelatorioFinalDTO;
 import br.com.sebratel.bff.dto.ActiveSellersInputDTO;
 import br.com.sebratel.bff.service.WeeklyReportService;

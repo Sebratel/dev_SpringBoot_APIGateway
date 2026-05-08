@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
+import br.com.sebratel.bff.controller.scripts.InventoryMovesController;
 import br.com.sebratel.bff.dto.InventoryMovesDTO;
 import br.com.sebratel.bff.service.InventoryMovesService;
 import org.junit.jupiter.api.DisplayName;
