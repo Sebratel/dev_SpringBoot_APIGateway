@@ -35,7 +35,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(request -> {
                     var corsConfiguration = new CorsConfiguration();
                     corsConfiguration.setAllowedOrigins(List.of("*"));
-                    corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
                     corsConfiguration.setAllowedHeaders(List.of("*"));
                     return corsConfiguration;
                 }))
@@ -50,7 +50,7 @@ public class SecurityConfig {
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.decoder(jwtDecoder()))
                         .authenticationEntryPoint((request, response, authException) -> {
-                            log.warn("Acesso negada: {}", authException.getMessage());
+                            log.warn("Acesso negado: {}", authException.getMessage());
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.setCharacterEncoding("UTF-8");
                             response.getWriter().write("Acesso restrito: Token inválido ou não fornecido.");
