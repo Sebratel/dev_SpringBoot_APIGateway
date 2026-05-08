@@ -14,5 +14,5 @@ public interface AffectedUserRepository {
     Integer deleteByProtocol(Long protocol);
     List<AffectedUsersEntity> findAll();
     Integer updateUsersByProtocol(Long protocol, LocalDateTime finishDate);
-    Optional<AffectedUsersEntity> findByContractId(Long contractId);
+    Optional<AffectedUsersEntity> findFirstByContractId(Long contractId);
 }

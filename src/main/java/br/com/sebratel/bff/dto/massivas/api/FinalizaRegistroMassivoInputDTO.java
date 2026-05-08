@@ -10,11 +10,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class FinalizaRegistroMassivoInputDTO{
-    String assignmentId;
-    String incidentStatusId;
-    String description;
-    String progress;
-    String priority;
-    String notificationTarget;
-    String privateReport;
+    private String assignmentId;
+    private String incidentStatusId;
+    private String description;
+    private String progress;
+    private String priority;
+    private String notificationTarget;
+    private String privateReport;
 }

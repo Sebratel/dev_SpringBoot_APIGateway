@@ -26,6 +26,8 @@ import java.util.Arrays;
 public class AdicionarMassivaNoEllevenService {
 
     private final WebClient webClient;
+    @org.springframework.beans.factory.annotation.Value("${elleven.creation-delay:3000}")
+    private long creationDelay;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final String send_email = "0";
@@ -54,7 +56,7 @@ public class AdicionarMassivaNoEllevenService {
         // 2. Pontos de impacto
         log.debug("Configurando pontos de impacto para a massiva ID: {}", massivaId);
         try {
-            Thread.sleep(3000);
+            Thread.sleep(creationDelay);
         } catch (InterruptedException e) {
             log.info("A pausa foi interrompida!");
         }

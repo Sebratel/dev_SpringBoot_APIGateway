@@ -50,7 +50,7 @@ public class AffectedUserRepositoryImpl implements AffectedUserRepository {
     }
 
     @Override
-    public Optional<AffectedUsersEntity> findByContractId(Long contractId) {
-        return jpaRepository.findByContractId(contractId);
+    public Optional<AffectedUsersEntity> findFirstByContractId(Long contractId) {
+        return jpaRepository.findFirstByContractId(contractId);
     }
 }
