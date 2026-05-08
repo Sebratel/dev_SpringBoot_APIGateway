@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
+import br.com.sebratel.bff.controller.scripts.ContractActivationInvoiceController;
 import br.com.sebratel.bff.dto.ContratoAtivacaoFaturaDTO;
 import br.com.sebratel.bff.service.ContratoAtivacaoFaturaService;
 import org.junit.jupiter.api.DisplayName;

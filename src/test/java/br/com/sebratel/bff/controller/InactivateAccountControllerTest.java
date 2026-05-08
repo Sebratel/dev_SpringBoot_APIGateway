@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
+import br.com.sebratel.bff.controller.scripts.InactivateAccountController;
 import br.com.sebratel.bff.dto.InactivateAccountDTO;
 import br.com.sebratel.bff.service.InactivateAccountProducer;
 import com.fasterxml.jackson.databind.ObjectMapper;

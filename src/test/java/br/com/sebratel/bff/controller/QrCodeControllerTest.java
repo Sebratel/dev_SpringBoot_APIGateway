@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
+import br.com.sebratel.bff.controller.scripts.QrCodeController;
 import br.com.sebratel.bff.dto.QrCodeInputDTO;
 import br.com.sebratel.bff.dto.QrCodeOutputDTO;
 import br.com.sebratel.bff.service.QrCodeService;

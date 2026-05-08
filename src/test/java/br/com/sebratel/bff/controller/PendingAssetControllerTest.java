@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
+import br.com.sebratel.bff.controller.scripts.PendingAssetController;
 import br.com.sebratel.bff.dto.PatrimonioPendenteDTO;
 import br.com.sebratel.bff.service.PatrimonioPendenteService;
 import org.junit.jupiter.api.DisplayName;

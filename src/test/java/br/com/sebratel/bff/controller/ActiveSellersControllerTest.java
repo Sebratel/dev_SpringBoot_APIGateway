@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.BaseTest;
+import br.com.sebratel.bff.controller.scripts.ActiveSellersController;
 import br.com.sebratel.bff.dto.VendedoresAtivosDTO;
 import br.com.sebratel.bff.service.VendedoresAtivosService;
 import org.junit.jupiter.api.DisplayName;
