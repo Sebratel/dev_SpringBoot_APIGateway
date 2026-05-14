@@ -44,7 +44,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/api/v1/afetados/contract/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/matrix").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/swagger_ui.html").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").authenticated()
                         .requestMatchers("/api/v1/token/google").authenticated()
                         .anyRequest().authenticated()
                 )
