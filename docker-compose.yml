@@ -4,7 +4,7 @@ services:
     container_name: bff-java-service
     restart: unless-stopped
     ports:
-      - "8082:8085"
+      - "8086:8085"
     networks:
       - proxy
       - default
