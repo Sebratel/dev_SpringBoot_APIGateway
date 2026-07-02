@@ -1,6 +1,9 @@
 package br.com.sebratel.bff.repository.erp;
 
+import br.com.sebratel.bff.model.Employee;
 import br.com.sebratel.bff.model.entity.PersonEntity;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -43,4 +46,16 @@ public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
         )
     """, nativeQuery = true)
     boolean hasB2BinInput(@Param("list") List<Long> list);
+
+    @Query(value = """
+        select EXISTS(
+            SELECT 
+                    1
+            FROM 
+                    people p
+            where  
+                    p.txId is :txId
+        )
+    """, nativeQuery = true)
+    Employee findByTxId(@Valid @NotNull String txId);
 }
