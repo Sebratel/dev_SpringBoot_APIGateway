@@ -1,7 +1,6 @@
 package br.com.sebratel.bff.service;
 
 import br.com.sebratel.bff.exceptions.ResourceNotFoundException;
-import br.com.sebratel.bff.model.Employee;
 import br.com.sebratel.bff.repository.erp.EmployeeRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -31,8 +30,8 @@ public class EmployeeService {
         return employeeRepository.hasB2BinInput(list);
     }
 
-    public Employee getPersonByCPF(@Valid @NotNull String txId) {
-        log.info("Buscando PersonId para o email: {}", txId);
+    public String getPersonByCPF(@Valid @NotNull String txId) {
+        log.info("Buscando PersonId para o cpf: {}", txId);
         return employeeRepository.findByTxId(txId);
     }
 }

@@ -46,9 +46,9 @@ public class EmployeeController {
     }
 
     @GetMapping("/get-person-name-by-cpf")
-    ApiResponse<Employee> getPersonByCPF(@RequestParam @Valid @NotNull String txId) {
+    ApiResponse<String> getPersonByCPF(@RequestParam @Valid @NotNull String txId) {
         log.info("Recebida requisição para obter Person pelo cpf: {}", txId);
-        return ApiResponse.<Employee>builder()
+        return ApiResponse.<String>builder()
                 .success(true)
                 .message("Sucesso")
                 .data(employeeService.getPersonByCPF(txId))

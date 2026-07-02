@@ -1,6 +1,5 @@
 package br.com.sebratel.bff.repository.erp;
 
-import br.com.sebratel.bff.model.Employee;
 import br.com.sebratel.bff.model.entity.PersonEntity;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -48,14 +47,12 @@ public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
     boolean hasB2BinInput(@Param("list") List<Long> list);
 
     @Query(value = """
-        select EXISTS(
-            SELECT 
-                    1
-            FROM 
-                    people p
-            where  
-                    p.txId is :txId
-        )
+        SELECT
+                p.name
+        FROM
+                people p
+        WHERE
+                p.tx_id = :txId
     """, nativeQuery = true)
-    Employee findByTxId(@Valid @NotNull String txId);
+    String findByTxId(@Valid @NotNull String txId);
 }
