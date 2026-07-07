@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Optional;
@@ -17,6 +18,8 @@ import java.util.Optional;
 @Service
 @Slf4j
 public class MatrixService {
+
+    private static final ZoneOffset APPLICATION_ZONE_OFFSET = ZoneOffset.of("-03:00");
 
     final PersonRepository personRepository;
     final AffectedUserRepository affectedUserRepository;
@@ -74,7 +77,7 @@ public class MatrixService {
                         .build();
             }
 
-            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime now = LocalDateTime.now(APPLICATION_ZONE_OFFSET);
             AffectedUsersEntity usuarioAfetado = usuarioAfetadoEntity.get();
             long hoursBetween = ChronoUnit.HOURS.between(now, usuarioAfetado.getFinishDate());
             Integer numberOfHours = (hoursBetween <= 0) ? 1 : (int) hoursBetween;
