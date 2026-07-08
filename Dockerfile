@@ -9,5 +9,6 @@ RUN mvn clean package -DskipTests -B
 
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
+ENV TZ=America/Sao_Paulo
 COPY --from=build /app/target/*.jar app.jar
-ENTRYPOINT ["java","-jar","app.jar"]
+ENTRYPOINT ["java","-Duser.timezone=America/Sao_Paulo","-jar","app.jar"]

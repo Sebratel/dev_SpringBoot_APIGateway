@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.TimeZone;
 
 @Slf4j
 @SpringBootApplication
@@ -17,6 +18,7 @@ import java.util.List;
 public class BffApplication {
 
 	public static void main(String[] args) {
+		TimeZone.setDefault(TimeZone.getTimeZone("America/Sao_Paulo"));
 		loadEnv();
 		SpringApplication.run(BffApplication.class, args);
 	}
