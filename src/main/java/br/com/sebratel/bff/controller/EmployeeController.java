@@ -44,4 +44,15 @@ public class EmployeeController {
                 .data(employeeService.getPersonIdByEmail(email))
                 .build();
     }
+
+    @GetMapping("/get-person-name-by-cpf")
+    ApiResponse<String> getPersonByCPF(@RequestParam @Valid @NotNull String txId) {
+        log.info("Recebida requisição para obter Person pelo cpf: {}", txId);
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Sucesso")
+                .data(employeeService.getPersonByCPF(txId))
+                .build();
+    }
+
 }

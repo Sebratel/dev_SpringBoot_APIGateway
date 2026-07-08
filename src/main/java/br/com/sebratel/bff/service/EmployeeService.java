@@ -2,6 +2,8 @@ package br.com.sebratel.bff.service;
 
 import br.com.sebratel.bff.exceptions.ResourceNotFoundException;
 import br.com.sebratel.bff.repository.erp.EmployeeRepository;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,5 +28,10 @@ public class EmployeeService {
 
     public boolean hasB2BinInput(List<Long> list) {
         return employeeRepository.hasB2BinInput(list);
+    }
+
+    public String getPersonByCPF(@Valid @NotNull String txId) {
+        log.info("Buscando PersonId para o cpf: {}", txId);
+        return employeeRepository.findByTxId(txId);
     }
 }
