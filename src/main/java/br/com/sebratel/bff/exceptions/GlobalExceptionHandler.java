@@ -40,7 +40,25 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGenericException(Exception ex, HttpServletRequest request) {
         log.error("Internal server error: {}", ex.getMessage(), ex);
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Ocorreu um erro inesperado no servidor.", request, null);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Ocorreu um erro inesperado no servidor.", request, buildErrorDetails(ex));
+    }
+
+    /**
+     * Monta detalhes legíveis do erro (tipo, mensagem e causa raiz) para retornar no campo `details`,
+     * facilitando o diagnóstico de erros inesperados sem precisar acessar o log do servidor.
+     */
+    private List<String> buildErrorDetails(Throwable ex) {
+        List<String> details = new java.util.ArrayList<>();
+        details.add(ex.getClass().getName() + ": " + ex.getMessage());
+
+        Throwable root = ex;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        if (root != ex) {
+            details.add("Causa raiz: " + root.getClass().getName() + ": " + root.getMessage());
+        }
+        return details;
     }
 
     @ExceptionHandler(IntegrationEllevenException.class)
