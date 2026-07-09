@@ -40,7 +40,7 @@ public class TokenRetryAspect {
                 lastException = e;
 
                 if (isUnauthorized(e)) {
-                    log.warn("Tentativa {}/{} falhou com 401. Invalidando cache e tentando novamente...", attempts, maxAttempts);
+                    log.warn("Tentativa {}/{} falhou com 401. Buscando novo token e tentando novamente...", attempts, maxAttempts);
                     if (attempts >= maxAttempts) {
                         log.error("Limite de retentativas atingido para o token.");
                         break;
@@ -53,7 +53,6 @@ public class TokenRetryAspect {
                         throw new RuntimeException("Thread interrompida durante o delay de retry", ie);
                     }
 
-                    tokenService.invalidateToken();
                     String newToken = tokenService.executar().accessToken();
                     Object[] args = joinPoint.getArgs();
                     updateTokenInArgs(joinPoint, args, newToken);

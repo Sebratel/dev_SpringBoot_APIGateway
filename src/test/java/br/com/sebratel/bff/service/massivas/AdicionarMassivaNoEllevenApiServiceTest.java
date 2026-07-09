@@ -15,8 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
@@ -43,9 +41,6 @@ class AdicionarMassivaNoEllevenApiServiceTest {
 
     @Mock
     private WebClient webClient;
-
-    @Mock
-    private CacheManager cacheManager;
 
     @Mock
     private EmployeeService employeeService;
@@ -194,7 +189,7 @@ class AdicionarMassivaNoEllevenApiServiceTest {
     }
 
     @Test
-    void executarComErro401DeveLimparCache() {
+    void executarComErro401DevePropagarExcecao() {
         // Arrange
         AberturaRegistroMassivoInputDTO input = new AberturaRegistroMassivoInputDTO();
         AberturaRegistroMassivoAssignmentDTO assignment = new AberturaRegistroMassivoAssignmentDTO();
@@ -223,49 +218,8 @@ class AdicionarMassivaNoEllevenApiServiceTest {
         WebClientResponseException.Unauthorized unauthorizedException = mock(WebClientResponseException.Unauthorized.class);
         when(responseSpec.bodyToMono(AberturaRegistroMassivoOutputDTO.class)).thenReturn(Mono.error(unauthorizedException));
 
-        Cache cache = mock(Cache.class);
-        when(cacheManager.getCache("token-de-integracao")).thenReturn(cache);
-
         // Act & Assert
         assertThrows(WebClientResponseException.Unauthorized.class, () -> service.executar(input));
-        verify(cache).evict("token-static-key");
-    }
-
-    @Test
-    void executarComErro401SemCache() {
-        // Arrange
-        AberturaRegistroMassivoInputDTO input = new AberturaRegistroMassivoInputDTO();
-        AberturaRegistroMassivoAssignmentDTO assignment = new AberturaRegistroMassivoAssignmentDTO();
-        assignment.setTitle("Test Title");
-        assignment.setDescription("Test Description");
-        input.setAssignment(assignment);
-        input.setAffectedUsers(new ArrayList<>());
-        input.setAffectedUsersQuantity(1);
-
-        RecuperarTokenEllevenOutputDTO tokenOutput = new RecuperarTokenEllevenOutputDTO("invalid-token", 3600, "Bearer", "all");
-        when(recuperarTokenService.executar()).thenReturn(tokenOutput);
-        when(employeeService.hasB2BinInput(any())).thenReturn(false);
-
-        WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
-        WebClient.RequestBodySpec requestBodySpec = mock(WebClient.RequestBodySpec.class);
-        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
-        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
-
-        when(webClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.header(anyString(), anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.contentType(any())).thenReturn(requestBodySpec);
-        when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-
-        WebClientResponseException.Unauthorized unauthorizedException = mock(WebClientResponseException.Unauthorized.class);
-        when(responseSpec.bodyToMono(AberturaRegistroMassivoOutputDTO.class)).thenReturn(Mono.error(unauthorizedException));
-
-        when(cacheManager.getCache("token-de-integracao")).thenReturn(null);
-
-        // Act & Assert
-        assertThrows(WebClientResponseException.Unauthorized.class, () -> service.executar(input));
-        verify(cacheManager).getCache("token-de-integracao");
     }
 
     @Test

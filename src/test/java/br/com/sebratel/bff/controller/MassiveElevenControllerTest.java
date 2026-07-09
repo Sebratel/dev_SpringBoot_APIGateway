@@ -290,11 +290,4 @@ class MassiveElevenControllerTest extends BaseTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.messages[0].message").value("Internal server error while finalizing massive incident: Failed to finalize linked protocol: 123"));
     }
-
-    @Test
-    @DisplayName("Should invalidate token cache")
-    void tokenCacheEvict_Success() throws Exception {
-        mockMvc.perform(post("/api/v1/massive-incidents/invalidate-token"))
-                .andExpect(status().isOk());
-    }
 }

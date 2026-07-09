@@ -21,8 +21,8 @@ O sistema decide automaticamente o tipo de incidente no Elleven com base no impa
     - [x] **Resiliência**: Se falhar na API externa, retorna `502 Bad Gateway`.
 
 ## 3. Autenticação e Resiliência
-- [x] **Token**: Bearer Token gerado via usuário integrador.
-- [x] **Cache**: Limpeza automática do cache `token-de-integracao` em caso de erro `401`.
+- [x] **Token**: Bearer Token gerado via usuário integrador a cada requisição.
+- [x] **Resiliência de Token**: Em caso de erro `401`, o `TokenRetryAspect` obtém um novo token e refaz a chamada.
 - [x] **Delay de Criação**: O fluxo legacy possui um delay configurável (`elleven.creation-delay`, padrão 3s) entre a criação e a adição de pontos de impacto.
 
 ## 4. Auditoria e Regras Pendentes
