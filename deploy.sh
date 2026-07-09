@@ -10,6 +10,11 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "--- 🏗️  Limpando e Buildando Containers ---"
+# BuildKit é necessário para o cache de dependencias (.m2) do Dockerfile
+export DOCKER_BUILDKIT=1
+export COMPOSE_DOCKER_CLI_BUILD=1
+# Evita timeout do compose em builds mais longos
+export COMPOSE_HTTP_TIMEOUT=600
 docker-compose up -d --build
 
 echo "--- 🧹 Removendo imagens órfãs (opcional) ---"
