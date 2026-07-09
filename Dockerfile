@@ -6,22 +6,22 @@ WORKDIR /app
 # Copia apenas o POM primeiro para garantir o cache das dependências
 COPY pom.xml .
 
-# CORREÇÃO: Usamos o verify para baixar dependências E plugins em modo offline simulado
+# CORREÇÃO: Comando ajustado com os goals corretos separados por espaço
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn dependency:plugins--go-offline dependency:resolve-plugins -B
+    mvn dependency:go-offline dependency:resolve-plugins -B
 
 COPY src ./src
 
-# Executa o package usando o mesmo cache e em modo offline (se possível) para acelerar
+# Executa o package usando o mesmo cache. Tiramos o "-o" por segurança,
+# caso o seu projeto use algum plugin dinâmico gerado durante o build.
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn clean package -DskipTests -B -o
+    mvn clean package -DskipTests -B
 
 # --- Estágio 2: Runtime ---
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 ENV TZ=America/Sao_Paulo
 
-# Evita usar wildcard (*) se houver mais de um jar gerado (como o original + plain)
 COPY --from=build /app/target/*.jar app.jar
 
 ENTRYPOINT ["java","-Duser.timezone=America/Sao_Paulo","-jar","app.jar"]
