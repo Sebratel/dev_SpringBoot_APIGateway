@@ -3,23 +3,28 @@ package br.com.sebratel.bff.service;
 import br.com.sebratel.bff.dto.splitters.RecuperarSolicitacaoDeClienteOutputDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import java.util.Objects;
+
 @Service
 @Slf4j
 public class RecuperarSolicitacoesDeUmUsuarioService {
 
     private final WebClient webClient;
+    private final CacheManager cacheManager;
     private final RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService;
 
 
     @Autowired
-    public RecuperarSolicitacoesDeUmUsuarioService(WebClient webClient, RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService) {
+    public RecuperarSolicitacoesDeUmUsuarioService(WebClient webClient, CacheManager cacheManager, RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService) {
         this.webClient = webClient;
+        this.cacheManager = cacheManager;
         this.recuperarTokenDoUsuarioIntegradorEllevenService = recuperarTokenDoUsuarioIntegradorEllevenService;
     }
 
@@ -43,8 +48,10 @@ public class RecuperarSolicitacoesDeUmUsuarioService {
                     .block();
 
         } catch (WebClientResponseException.Unauthorized e) {
-            log.error("Erro 401 na API Elleven ao recuperar solicitações do cliente. Invalidando token em cache.");
-            recuperarTokenDoUsuarioIntegradorEllevenService.invalidateToken();
+            if (cacheManager.getCache("token-de-integracao") != null) {
+                Objects.requireNonNull(cacheManager.getCache("token-de-integracao")).evict("token-static-key");
+                log.error("Cache do token invalidado devido a erro 401 na API.");
+            }
             throw e;
         }
     }

@@ -3,6 +3,7 @@ package br.com.sebratel.bff.service;
 import br.com.sebratel.bff.dto.RelatorioFinalDTO;
 import br.com.sebratel.bff.repository.erp.ContractActivationRepository;
 import br.com.sebratel.bff.repository.erp.projections.ContractActivationProjection;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ public class ContractDataService {
         this.contractActivationRepository = contractActivationRepository;
     }
 
+    @Cacheable(value = "contracts-activation", key = "'dados-completos'")
     @Transactional(readOnly = true)
     public List<RelatorioFinalDTO> getDadosCompletosCache() {
         return contractActivationRepository.findMergedContractData()

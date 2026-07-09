@@ -9,6 +9,8 @@ Este projeto é um Backend For Frontend (BFF) que atua como um API Gateway para 
 - **Bancos de Dados:**
   - **PostgreSQL:** Banco de dados do ERP e Usuários Afetados.
   - **MariaDB:** Banco de dados do Radius.
+  - **Redis:** Cache de dados.
+- **Mensageria:** Spring Kafka
 - **Documentação:** SpringDoc OpenAPI (Swagger)
 - **Testes:** JUnit 5, Testcontainers, Allure Reports, JaCoCo (Cobertura)
 - **Outros:** Selenium/WebDriverManager (Automação), Lombok, MapStruct (Mapeamento)

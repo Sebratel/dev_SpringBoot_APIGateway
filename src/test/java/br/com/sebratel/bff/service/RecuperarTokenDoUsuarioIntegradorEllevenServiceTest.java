@@ -7,6 +7,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.MediaType;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -29,6 +31,9 @@ class RecuperarTokenDoUsuarioIntegradorEllevenServiceTest {
 
     @Mock
     private EllevenCredentialsDTO credentials;
+
+    @Mock
+    private CacheManager cacheManager;
 
     @InjectMocks
     private RecuperarTokenDoUsuarioIntegradorEllevenService service;
@@ -61,5 +66,18 @@ class RecuperarTokenDoUsuarioIntegradorEllevenServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals("token", result.accessToken());
+    }
+
+    @Test
+    void invalidateToken_ShouldEvictCache() {
+        // Arrange
+        Cache cache = mock(Cache.class);
+        when(cacheManager.getCache("token-de-integracao")).thenReturn(cache);
+
+        // Act
+        service.invalidateToken();
+
+        // Assert
+        verify(cache).evict("token-static-key");
     }
 }

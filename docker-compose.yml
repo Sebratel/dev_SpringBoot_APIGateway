@@ -27,6 +27,11 @@ services:
       - RADIUS_DB_USER=${RADIUS_DB_USER}
       - RADIUS_DB_PASS=${RADIUS_DB_PASS}
 
+      # Redis (já existente no ambiente)
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+
       # Logs
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - LOG_FILE_PATH=${LOG_FILE_PATH:-logs/bff.log}

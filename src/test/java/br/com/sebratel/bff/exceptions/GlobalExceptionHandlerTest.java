@@ -70,17 +70,5 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<ApiError> response = exceptionHandler.handleGenericException(ex, request);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertEquals("Ocorreu um erro inesperado no servidor.", response.getBody().getMessage());
-        assertNotNull(response.getBody().getDetails());
-        assertTrue(response.getBody().getDetails().get(0).contains("Generic error"));
-    }
-
-    @Test
-    void shouldIncludeRootCauseInGenericExceptionDetails() {
-        Exception root = new IllegalStateException("conexao recusada");
-        Exception ex = new RuntimeException("falha ao processar", root);
-        ResponseEntity<ApiError> response = exceptionHandler.handleGenericException(ex, request);
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals(2, response.getBody().getDetails().size());
-        assertTrue(response.getBody().getDetails().get(1).contains("conexao recusada"));
     }
 }

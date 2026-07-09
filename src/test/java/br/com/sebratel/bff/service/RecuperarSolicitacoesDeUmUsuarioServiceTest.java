@@ -9,6 +9,8 @@ import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -27,6 +29,9 @@ class RecuperarSolicitacoesDeUmUsuarioServiceTest {
 
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private WebClient.Builder webClientBuilder;
+
+    @Mock
+    private CacheManager cacheManager;
 
     @Mock
     private RecuperarTokenDoUsuarioIntegradorEllevenService tokenService;
@@ -68,7 +73,7 @@ class RecuperarSolicitacoesDeUmUsuarioServiceTest {
     }
 
     @Test
-    void executar_ShouldPropagateException_WhenUnauthorized() {
+    void executar_ShouldEvictCache_WhenUnauthorized() {
         // Arrange
         String clientId = "123";
         String token = "expired-token";
@@ -85,7 +90,36 @@ class RecuperarSolicitacoesDeUmUsuarioServiceTest {
         when(responseSpec.bodyToMono(RecuperarSolicitacaoDeClienteOutputDTO.class))
                 .thenReturn(Mono.error(WebClientResponseException.create(401, "Unauthorized", null, null, null)));
 
+        Cache cache = mock(Cache.class);
+        when(cacheManager.getCache("token-de-integracao")).thenReturn(cache);
+
         // Act & Assert
         assertThrows(WebClientResponseException.Unauthorized.class, () -> service.executar(clientId));
+        verify(cache).evict("token-static-key");
+    }
+
+    @Test
+    void executar_ShouldNotEvictCache_WhenUnauthorizedAndCacheIsNull() {
+        // Arrange
+        String clientId = "123";
+        String token = "expired-token";
+        when(tokenService.executar()).thenReturn(new RecuperarTokenEllevenOutputDTO(token, 3600, "bearer", "scope"));
+
+        WebClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.header(anyString(), anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(RecuperarSolicitacaoDeClienteOutputDTO.class))
+                .thenReturn(Mono.error(WebClientResponseException.create(401, "Unauthorized", null, null, null)));
+
+        when(cacheManager.getCache("token-de-integracao")).thenReturn(null);
+
+        // Act & Assert
+        assertThrows(WebClientResponseException.Unauthorized.class, () -> service.executar(clientId));
+        verify(cacheManager, times(1)).getCache("token-de-integracao");
     }
 }
