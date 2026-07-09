@@ -10,7 +10,6 @@ import br.com.sebratel.bff.utils.JwtInformation;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.CacheManager;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -19,7 +18,6 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 @Slf4j
@@ -34,14 +32,12 @@ public class AdicionarMassivaNoEllevenApiService {
 
     private final RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService;
     private final WebClient webClient;
-    private final CacheManager cacheManager;
     private final EmployeeService employeeService;
 
     @Autowired
-    public AdicionarMassivaNoEllevenApiService(RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService, WebClient webClient, CacheManager cacheManager, EmployeeService employeeService) {
+    public AdicionarMassivaNoEllevenApiService(RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService, WebClient webClient, EmployeeService employeeService) {
         this.recuperarTokenDoUsuarioIntegradorEllevenService = recuperarTokenDoUsuarioIntegradorEllevenService;
         this.webClient = webClient;
-        this.cacheManager = cacheManager;
         this.employeeService = employeeService;
     }
 
@@ -87,11 +83,8 @@ public class AdicionarMassivaNoEllevenApiService {
             return response;
 
         } catch (WebClientResponseException.Unauthorized e) {
-            log.error("[MASSIVA-ERRO] Erro de autenticação (401) na API Elleven. Verificando limpeza de cache.");
-            if (cacheManager.getCache("token-de-integracao") != null) {
-                log.warn("[MASSIVA-CACHE] Token inválido detectado. Evicting 'token-static-key' do cache.");
-                Objects.requireNonNull(cacheManager.getCache("token-de-integracao")).evict("token-static-key");
-            }
+            log.error("[MASSIVA-ERRO] Erro de autenticação (401) na API Elleven. Invalidando token em cache.");
+            recuperarTokenDoUsuarioIntegradorEllevenService.invalidateToken();
             throw e;
         } catch (WebClientResponseException e) {
             // Log específico para erros de API (4xx ou 5xx) com o corpo do erro da API

@@ -40,7 +40,7 @@ public class TokenRetryAspect {
                 lastException = e;
 
                 if (isUnauthorized(e)) {
-                    log.warn("Tentativa {}/{} falhou com 401. Invalidando cache e tentando novamente...", attempts, maxAttempts);
+                    log.warn("Tentativa {}/{} falhou com 401. Invalidando token em cache e tentando novamente...", attempts, maxAttempts);
                     if (attempts >= maxAttempts) {
                         log.error("Limite de retentativas atingido para o token.");
                         break;
