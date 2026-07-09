@@ -9,9 +9,9 @@ import br.com.sebratel.bff.repository.erp.projections.ContractProjection;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -79,8 +79,8 @@ public class MatrixService {
 
             LocalDateTime now = LocalDateTime.now(APPLICATION_ZONE_OFFSET);
             AffectedUsersEntity usuarioAfetado = usuarioAfetadoEntity.get();
-            long hoursBetween = ChronoUnit.HOURS.between(now, usuarioAfetado.getFinishDate());
-            Integer numberOfHours = (hoursBetween <= 0) ? 1 : (int) hoursBetween;
+            long minutesBetween = Duration.between(now, usuarioAfetado.getFinishDate()).toMinutes();
+            Integer numberOfHours = (minutesBetween <= 0) ? 1 : (int) Math.ceil(minutesBetween / 60.0);
 
             return MatrixMassiveOutputDTO
                     .builder()
