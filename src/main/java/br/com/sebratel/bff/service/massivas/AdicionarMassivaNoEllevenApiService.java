@@ -83,7 +83,8 @@ public class AdicionarMassivaNoEllevenApiService {
             return response;
 
         } catch (WebClientResponseException.Unauthorized e) {
-            log.error("[MASSIVA-ERRO] Erro de autenticação (401) na API Elleven.");
+            log.error("[MASSIVA-ERRO] Erro de autenticação (401) na API Elleven. Invalidando token em cache.");
+            recuperarTokenDoUsuarioIntegradorEllevenService.invalidateToken();
             throw e;
         } catch (WebClientResponseException e) {
             // Log específico para erros de API (4xx ou 5xx) com o corpo do erro da API

@@ -43,7 +43,8 @@ public class RecuperarSolicitacoesDeUmUsuarioService {
                     .block();
 
         } catch (WebClientResponseException.Unauthorized e) {
-            log.error("Erro 401 na API Elleven ao recuperar solicitações do cliente.");
+            log.error("Erro 401 na API Elleven ao recuperar solicitações do cliente. Invalidando token em cache.");
+            recuperarTokenDoUsuarioIntegradorEllevenService.invalidateToken();
             throw e;
         }
     }
