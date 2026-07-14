@@ -55,4 +55,23 @@ public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
                 p.tx_id = :txId
     """, nativeQuery = true)
     String findByTxId(@Valid @NotNull String txId);
+
+    @Query(value = """
+        SELECT
+                p.tx_id
+        FROM
+                people p
+        WHERE
+                p.email = :email
+    """, nativeQuery = true)
+    String findTxIdByEmail(@Valid @NotNull String email);
+
+    @Query(value = """
+        select p.tx_id 
+            from authentication_contracts ac
+                                inner join contracts c on c.id = ac.contract_id
+                                inner join people p on p.id = c.client_id
+                                where ac.contract_id = :contract;
+    """, nativeQuery = true)
+    Long findTxIdByContract(@Valid @NotNull Long contract); // Alterado de String para Long
 }
