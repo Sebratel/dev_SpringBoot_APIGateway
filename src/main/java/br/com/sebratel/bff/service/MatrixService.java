@@ -51,7 +51,7 @@ public class MatrixService {
             Optional<ContractProjection> contractProjection = personRepository.findContractByCPF(cpf);
 
             if (contractProjection.isEmpty()) {
-                log.error("CLIENTE DE CPF {} NÃO TEM CONTRATO VINCULADO", cpf);
+                log.info("CLIENTE DE CPF {} NÃO TEM CONTRATO VINCULADO", cpf);
                 return MatrixMassiveOutputDTO
                         .builder()
                         .status("not_found_client")
@@ -67,7 +67,7 @@ public class MatrixService {
                     .findFirstByContractId(contract.getContractId());
             log.info("Realizada pesquisa de usuario afetado para contrato {} com cpf {}", contract.getContractId(), cpf);
             if (usuarioAfetadoEntity.isEmpty()) {
-                log.error("NÃO FOI ENCONTRADO CLIENTE DE CONTRACT ID {}", contract.getContractId());
+                log.info("NÃO FOI ENCONTRADO CLIENTE DE CONTRACT ID {}", contract.getContractId());
                 return MatrixMassiveOutputDTO
                         .builder()
                         .status("not_found_client")
