@@ -34,4 +34,9 @@ public class EmployeeService {
         log.info("Buscando PersonId para o cpf: {}", txId);
         return employeeRepository.findByTxId(txId);
     }
+
+    public Long getTxIdByContract(@Valid @NotNull Long contract) {
+        log.info("Buscando txId para o contrato: {}", contract);
+        return employeeRepository.findTxIdByContract(contract);
+    }
 }
