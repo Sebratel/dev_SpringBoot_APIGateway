@@ -54,7 +54,7 @@ public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
         WHERE
                 p.tx_id = :txId
     """, nativeQuery = true)
-    String findByTxId(@Valid @NotNull String txId);
+    List<String> findByTxId(@Valid @NotNull String txId);
 
     @Query(value = """
         SELECT

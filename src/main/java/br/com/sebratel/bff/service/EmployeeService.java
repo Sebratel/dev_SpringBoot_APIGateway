@@ -32,7 +32,7 @@ public class EmployeeService {
 
     public String getPersonByCPF(@Valid @NotNull String txId) {
         log.info("Buscando PersonId para o cpf: {}", txId);
-        return employeeRepository.findByTxId(txId);
+        return employeeRepository.findByTxId(txId).getFirst();
     }
 
     public Long getTxIdByContract(@Valid @NotNull Long contract) {
