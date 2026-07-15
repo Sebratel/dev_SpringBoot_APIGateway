@@ -87,10 +87,12 @@ public class AffectedUserService {
             LocalDateTime finish = affectedUser.getFinishDate();
             long hoursRemaining = ChronoUnit.HOURS.between(now, finish);
             long estimateTimeOfRestoration = Math.max(0, hoursRemaining);
+            long timeHour = affectedUser.getFinishDate().getHour();
 
             ImpactDetailsOutputDTO impactDetailsDTO = ImpactDetailsOutputDTO.builder()
                     .reason(affectedUser.getReason())
                     .estimateTimeOfRestoration(estimateTimeOfRestoration > 0 ?estimateTimeOfRestoration : 2)
+                    .estimatedTimeHour(timeHour)
                     .build();
             Map<Long, ImpactDetailsOutputDTO> impactedUsers = new HashMap<>();
             impactedUsers.put(affectedUser.getContractId(), impactDetailsDTO);

@@ -53,9 +53,9 @@ public class EmployeeController {
     }
 
     @GetMapping("/get-cpf-by-contract")
-    ApiResponse<Long> getCpfByContract(@RequestParam @Valid @NotNull Long contract) {
+    ApiResponse<String> getCpfByContract(@RequestParam @Valid @NotNull Long contract) {
         log.info("Recebida requisição para obter Person pelo cpf: {}", contract);
-        return ApiResponse.<Long>builder()
+        return ApiResponse.<String>builder()
                 .success(true)
                 .message("Sucesso")
                 .data(employeeService.getTxIdByContract(contract))
