@@ -12,4 +12,6 @@ public class ImpactDetailsOutputDTO {
     String reason;
     @NotNull(message = "A data de previsão não pode ser nula")
     Long estimateTimeOfRestoration;
+    @NotNull(message = "Hora prevista")
+    Long estimatedTimeHour;
 }
