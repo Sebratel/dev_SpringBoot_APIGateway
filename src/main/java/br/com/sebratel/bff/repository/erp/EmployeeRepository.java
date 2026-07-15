@@ -73,5 +73,5 @@ public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
                                 inner join people p on p.id = c.client_id
                                 where ac.contract_id = :contract;
     """, nativeQuery = true)
-    Long findTxIdByContract(@Valid @NotNull Long contract); // Alterado de String para Long
+    String findTxIdByContract(@Valid @NotNull Long contract); // Alterado de String para Long
 }

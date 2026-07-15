@@ -35,7 +35,7 @@ public class EmployeeService {
         return employeeRepository.findByTxId(txId).getFirst();
     }
 
-    public Long getTxIdByContract(@Valid @NotNull Long contract) {
+    public String getTxIdByContract(@Valid @NotNull Long contract) {
         log.info("Buscando txId para o contrato: {}", contract);
         return employeeRepository.findTxIdByContract(contract);
     }
