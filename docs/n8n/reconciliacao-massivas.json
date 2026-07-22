@@ -24,7 +24,7 @@
       "name": "Config",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [180, 300]
+      "position": [160, 300]
     },
     {
       "parameters": {
@@ -37,10 +37,8 @@
       "name": "GET Elleven",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [400, 200],
-      "credentials": {
-        "httpBasicAuth": { "id": "REPLACE_ME", "name": "Gateway Basic Auth" }
-      }
+      "position": [360, 300],
+      "credentials": { "httpBasicAuth": { "id": "REPLACE_ME", "name": "Gateway Basic Auth" } }
     },
     {
       "parameters": {
@@ -53,32 +51,25 @@
       "name": "GET History (Splitters)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [620, 200],
-      "credentials": {
-        "httpBasicAuth": { "id": "REPLACE_ME", "name": "Gateway Basic Auth" }
-      }
+      "position": [560, 300],
+      "credentials": { "httpBasicAuth": { "id": "REPLACE_ME", "name": "Gateway Basic Auth" } }
     },
     {
       "parameters": {
-        "jsCode": "// n8n 2.x: Code node roda isolado (task runner) - apenas JS puro, sem env vars nem require.\n// Le os dois endpoints, faz join por protocolo e emite 1 item por DIVERGENCIA.\n// Divergencia-alvo: Splitters encerrou (status=encerrada) mas Elleven segue aberto (finalizado null).\n\nfunction unwrap(resp) {\n  if (Array.isArray(resp)) return resp;\n  if (resp && Array.isArray(resp.data)) return resp.data;\n  return [];\n}\n\nconst elleven = unwrap($('GET Elleven').first().json);\nconst hist = unwrap($('GET History (Splitters)').first().json);\nconst limit = Number($('Config').item.json.limit) || 0;\n\nconst ellevenByProto = new Map();\nfor (const e of elleven) {\n  if (e && e.protocolo != null) ellevenByProto.set(String(e.protocolo), e);\n}\n\nconst divergencias = [];\nfor (const h of hist) {\n  if (!h || h.protocolo == null) continue;\n  const proto = String(h.protocolo);\n  const e = ellevenByProto.get(proto);\n  if (!e) continue;\n  const fechadoNoSplitters = h.status === 'encerrada';\n  const abertoNoElleven = !e.finalizado;\n  if (fechadoNoSplitters && abertoNoElleven) {\n    if (!h.assignmentId) continue;\n    divergencias.push({\n      json: {\n        protocolo: proto,\n        assignmentId: String(h.assignmentId),\n        ultimaAcaoSplitters: h.ultimaAcaoEm,\n        statusElleven: e.status,\n        body: {\n          assignmentId: String(h.assignmentId),\n          incidentStatusId: '8',\n          description: 'Encerramento automatico via reconciliacao n8n (Splitters x Voalle). Protocolo ' + proto + ' encerrado no Splitters em ' + (h.ultimaAcaoEm || 'N/D') + ' e ainda aberto no Voalle. Fonte da verdade: ultima acao = Splitters.',\n          progress: '0',\n          priority: '35',\n          notificationTarget: '0',\n          privateReport: 'true'\n        }\n      }\n    });\n  }\n}\n\nreturn limit > 0 ? divergencias.slice(0, limit) : divergencias;"
+        "jsCode": "// n8n 2.x: Code node isolado (task runner) - JS puro, sem env vars nem require. Date/JSON ok.\n// Reconciliacao BIDIRECIONAL por protocolo entre Splitters (massiva_history) e Voalle (Elleven).\n// Regra: quem teve a ULTIMA ACAO e a fonte da verdade. Só propagamos FECHAMENTO; nunca reabrimos.\n// Se o lado ABERTO teve acao mais recente que o fechamento do outro -> acao='revisar_manual'.\n\nfunction unwrap(resp) {\n  if (Array.isArray(resp)) return resp;\n  if (resp && Array.isArray(resp.data)) return resp.data;\n  return [];\n}\nfunction ts(v) {\n  if (!v) return null;\n  const d = new Date(v);\n  return isNaN(d.getTime()) ? null : d.getTime();\n}\n\nconst elleven = unwrap($('GET Elleven').first().json);\nconst hist = unwrap($('GET History (Splitters)').first().json);\nconst limit = Number($('Config').item.json.limit) || 0;\n\nconst ellevenByProto = new Map();\nfor (const e of elleven) {\n  if (e && e.protocolo != null) ellevenByProto.set(String(e.protocolo), e);\n}\n\nconst itens = [];\nfor (const h of hist) {\n  if (!h || h.protocolo == null) continue;\n  const proto = String(h.protocolo);\n  const e = ellevenByProto.get(proto);\n  if (!e) continue; // so reconcilia o que existe nos dois lados\n\n  const splittersClosed = h.status === 'encerrada';\n  const voalleClosed = !!e.finalizado;\n  if (splittersClosed === voalleClosed) continue; // em sincronia\n\n  const tSplitters = ts(h.ultimaAcaoEm);\n  const tVoalle = voalleClosed ? ts(e.finalizado) : ts(e.criacao);\n\n  let acao;\n  let motivoRevisao = null;\n  if (splittersClosed && !voalleClosed) {\n    // Splitters fechou; Voalle aberto.\n    if (tSplitters != null && tVoalle != null && tVoalle > tSplitters) {\n      acao = 'revisar_manual';\n      motivoRevisao = 'Voalle (aberto) teve acao mais recente (' + e.criacao + ') que o fechamento no Splitters (' + h.ultimaAcaoEm + ').';\n    } else {\n      acao = 'fechar_voalle';\n    }\n  } else {\n    // Voalle fechou; Splitters aberto.\n    if (tSplitters != null && tVoalle != null && tSplitters > tVoalle) {\n      acao = 'revisar_manual';\n      motivoRevisao = 'Splitters (aberto) teve acao mais recente (' + h.ultimaAcaoEm + ') que o fechamento na Voalle (' + e.finalizado + ').';\n    } else {\n      acao = 'fechar_splitters';\n    }\n  }\n\n  const assignmentId = h.assignmentId != null ? String(h.assignmentId) : '';\n  itens.push({\n    json: {\n      protocolo: proto,\n      assignmentId: assignmentId,\n      acao: acao,\n      motivoRevisao: motivoRevisao,\n      statusSplitters: h.status,\n      ultimaAcaoSplitters: h.ultimaAcaoEm,\n      finalizadoVoalle: e.finalizado || null,\n      bodyVoalle: {\n        assignmentId: assignmentId,\n        incidentStatusId: '8',\n        description: 'Encerramento automatico via reconciliacao n8n. Protocolo ' + proto + ' encerrado no Splitters em ' + (h.ultimaAcaoEm || 'N/D') + ' e ainda aberto no Voalle.',\n        progress: '0',\n        priority: '35',\n        notificationTarget: '0',\n        privateReport: 'true'\n      },\n      bodySplitters: {\n        closedBy: 'reconciliacao-n8n',\n        closeDescription: 'Encerrado via reconciliacao automatica. Voalle ja estava fechado em ' + (e.finalizado || 'N/D') + '.'\n      }\n    }\n  });\n}\n\nreturn limit > 0 ? itens.slice(0, limit) : itens;"
       },
       "id": "reconciliar",
       "name": "Reconciliar (diff)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [840, 200]
+      "position": [760, 300]
     },
     {
       "parameters": {
         "conditions": {
           "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
           "conditions": [
-            {
-              "id": "c1",
-              "leftValue": "={{ $('Config').item.json.dryRun }}",
-              "rightValue": "",
-              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
-            }
+            { "id": "c1", "leftValue": "={{ $('Config').item.json.dryRun }}", "rightValue": "", "operator": { "type": "boolean", "operation": "true", "singleValue": true } }
           ],
           "combinator": "and"
         },
@@ -88,7 +79,7 @@
       "name": "É dry-run?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [1060, 200]
+      "position": [960, 300]
     },
     {
       "parameters": {},
@@ -96,7 +87,48 @@
       "name": "Somente inspecionar (dry-run)",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [1280, 80]
+      "position": [1160, 140]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+                "conditions": [ { "leftValue": "={{ $json.acao }}", "rightValue": "fechar_voalle", "operator": { "type": "string", "operation": "equals" } } ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "fechar_voalle"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+                "conditions": [ { "leftValue": "={{ $json.acao }}", "rightValue": "fechar_splitters", "operator": { "type": "string", "operation": "equals" } } ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "fechar_splitters"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+                "conditions": [ { "leftValue": "={{ $json.acao }}", "rightValue": "revisar_manual", "operator": { "type": "string", "operation": "equals" } } ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "revisar_manual"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "switch-acao",
+      "name": "Rotear ação",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1160, 400]
     },
     {
       "parameters": {
@@ -106,62 +138,81 @@
         "genericAuthType": "httpBasicAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json.body) }}",
-        "options": {
-          "response": {
-            "response": { "fullResponse": true, "neverError": true }
-          }
-        }
+        "jsonBody": "={{ JSON.stringify($json.bodyVoalle) }}",
+        "options": { "response": { "response": { "fullResponse": true, "neverError": true } } }
       },
-      "id": "fechar-elleven",
-      "name": "Fechar no Elleven (Voalle)",
+      "id": "fechar-voalle",
+      "name": "Fechar na Voalle (Elleven)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1280, 300],
+      "position": [1380, 300],
       "onError": "continueRegularOutput",
-      "credentials": {
-        "httpBasicAuth": { "id": "REPLACE_ME", "name": "Gateway Basic Auth" }
-      }
+      "credentials": { "httpBasicAuth": { "id": "REPLACE_ME", "name": "Gateway Basic Auth" } }
     },
     {
       "parameters": {
-        "jsCode": "// Classifica cada tentativa de fechamento: sucesso vs falha.\n// Considera tanto erro HTTP/transporte quanto success:false no corpo da resposta.\nconst resultados = $input.all();\nconst origem = $('Reconciliar (diff)').all();\nconst sucessos = [];\nconst falhas = [];\n\nresultados.forEach((item, i) => {\n  const src = (origem[i] && origem[i].json) || {};\n  const proto = src.protocolo || '(desconhecido)';\n  const assignmentId = src.assignmentId || '';\n  const j = item.json || {};\n\n  if (j.error) {\n    const msg = typeof j.error === 'string' ? j.error : (j.error.message || JSON.stringify(j.error));\n    falhas.push({ protocolo: proto, assignmentId, motivo: 'Erro de transporte: ' + msg });\n    return;\n  }\n\n  const status = j.statusCode;\n  const body = (j.body !== undefined) ? j.body : j;\n  const httpOk = (status === undefined) || (status >= 200 && status < 300);\n  const logicOk = body && body.success === true;\n\n  if (httpOk && logicOk) {\n    sucessos.push({ protocolo: proto, assignmentId });\n  } else {\n    let motivo = 'HTTP ' + (status !== undefined ? status : '?');\n    if (body && Array.isArray(body.messages) && body.messages.length) {\n      motivo += ' - ' + body.messages.map(m => m.message).join('; ');\n    } else if (body && body.message) {\n      motivo += ' - ' + body.message;\n    }\n    falhas.push({ protocolo: proto, assignmentId, motivo });\n  }\n});\n\nconst temFalhas = falhas.length > 0;\nconst linhas = falhas.map(f => '<li>Protocolo <b>' + f.protocolo + '</b> (assignmentId ' + f.assignmentId + '): ' + f.motivo + '</li>').join('');\nconst assunto = '[Reconciliacao Massivas] ' + falhas.length + ' falha(s), ' + sucessos.length + ' sucesso(s)';\nconst corpoHtml = '<p>Reconciliacao Splitters x Voalle (Elleven) concluida.</p>'\n  + '<p><b>Sucessos:</b> ' + sucessos.length + ' &nbsp; <b>Falhas:</b> ' + falhas.length + '</p>'\n  + (temFalhas ? ('<p>Protocolos que <b>nao</b> puderam ser encerrados no Voalle:</p><ul>' + linhas + '</ul>') : '')\n  + '<p>Protocolos encerrados com sucesso: ' + (sucessos.map(s => s.protocolo).join(', ') || '-') + '</p>';\n\nreturn [{ json: { temFalhas, total: resultados.length, okCount: sucessos.length, falhaCount: falhas.length, sucessos, falhas, assunto, corpoHtml } }];"
+        "method": "PATCH",
+        "url": "={{ $('Config').item.json.baseUrl }}/api/v1/massivas-history/{{ $json.protocolo }}/encerrar",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.bodySplitters) }}",
+        "options": { "response": { "response": { "fullResponse": true, "neverError": true } } }
+      },
+      "id": "fechar-splitters",
+      "name": "Fechar no Splitters (massiva_history)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1380, 470],
+      "onError": "continueRegularOutput",
+      "credentials": { "httpBasicAuth": { "id": "REPLACE_ME", "name": "Gateway Basic Auth" } }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Roda 1x por item. Usa pairedItem para recuperar o item de origem (Reconciliar),\n// independentemente do caminho (DELETE, PATCH ou revisar_manual direto).\nconst src = $('Reconciliar (diff)').item.json;\nconst proto = src.protocolo;\nconst acao = src.acao;\n\nlet categoria;\nlet motivo = '';\n\nif (acao === 'revisar_manual') {\n  categoria = 'revisar';\n  motivo = src.motivoRevisao || 'Divergencia que requer revisao manual (nunca reabrir automaticamente).';\n} else {\n  const j = $json;\n  if (j && j.error) {\n    categoria = 'falha';\n    const msg = typeof j.error === 'string' ? j.error : (j.error.message || JSON.stringify(j.error));\n    motivo = 'Erro de transporte: ' + msg;\n  } else {\n    const status = j ? j.statusCode : undefined;\n    const body = (j && j.body !== undefined) ? j.body : j;\n    const httpOk = (status === undefined) || (status >= 200 && status < 300);\n    const logicOk = body && body.success === true;\n    if (httpOk && logicOk) {\n      categoria = 'ok';\n      motivo = acao === 'fechar_voalle' ? 'Fechado na Voalle (Elleven)' : 'Fechado no Splitters (massiva_history)';\n    } else {\n      categoria = 'falha';\n      motivo = 'HTTP ' + (status !== undefined ? status : '?');\n      if (body && Array.isArray(body.messages) && body.messages.length) motivo += ' - ' + body.messages.map(m => m.message).join('; ');\n      else if (body && body.message) motivo += ' - ' + body.message;\n    }\n  }\n}\n\nreturn { json: { protocolo: proto, acao: acao, categoria: categoria, motivo: motivo } };"
       },
       "id": "avaliar",
       "name": "Avaliar resultado",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1500, 300]
+      "position": [1600, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Agrega os resultados normalizados e monta o e-mail.\nconst rows = $input.all().map(i => i.json);\nconst ok = rows.filter(r => r.categoria === 'ok');\nconst falhas = rows.filter(r => r.categoria === 'falha');\nconst revisar = rows.filter(r => r.categoria === 'revisar');\nconst precisaEmail = falhas.length > 0 || revisar.length > 0;\n\nfunction li(r) { return '<li>Protocolo <b>' + r.protocolo + '</b> [' + r.acao + ']: ' + r.motivo + '</li>'; }\n\nconst assunto = '[Reconciliacao Massivas] ' + ok.length + ' ok, ' + falhas.length + ' falha(s), ' + revisar.length + ' p/ revisao';\nlet corpoHtml = '<p>Reconciliacao bidirecional Splitters x Voalle (Elleven) concluida.</p>'\n  + '<p><b>Fechados com sucesso:</b> ' + ok.length + ' &nbsp; <b>Falhas:</b> ' + falhas.length + ' &nbsp; <b>Revisao manual:</b> ' + revisar.length + '</p>';\nif (falhas.length) corpoHtml += '<p><b>Falhas ao propagar fechamento:</b></p><ul>' + falhas.map(li).join('') + '</ul>';\nif (revisar.length) corpoHtml += '<p><b>Requerem revisao manual (lado aberto com acao mais recente - nao reaberto automaticamente):</b></p><ul>' + revisar.map(li).join('') + '</ul>';\nif (ok.length) corpoHtml += '<p>Sucessos: ' + ok.map(r => r.protocolo + ' (' + r.acao + ')').join(', ') + '</p>';\n\nreturn [{ json: { precisaEmail, okCount: ok.length, falhaCount: falhas.length, revisarCount: revisar.length, ok, falhas, revisar, assunto, corpoHtml } }];"
+      },
+      "id": "resumo",
+      "name": "Resumo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1800, 400]
     },
     {
       "parameters": {
         "conditions": {
           "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
           "conditions": [
-            {
-              "id": "c2",
-              "leftValue": "={{ $json.temFalhas }}",
-              "rightValue": "",
-              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
-            }
+            { "id": "c2", "leftValue": "={{ $json.precisaEmail }}", "rightValue": "", "operator": { "type": "boolean", "operation": "true", "singleValue": true } }
           ],
           "combinator": "and"
         },
         "options": {}
       },
-      "id": "if-falhas",
-      "name": "Notificar falhas?",
+      "id": "if-notificar",
+      "name": "Notificar?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [1720, 300]
+      "position": [2000, 400]
     },
     {
       "parameters": {},
       "id": "noop-ok",
-      "name": "Tudo reconciliado (sem falhas)",
+      "name": "Tudo reconciliado (sem pendências)",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [1940, 200]
+      "position": [2220, 300]
     },
     {
       "parameters": {
@@ -172,14 +223,12 @@
         "html": "={{ $json.corpoHtml }}",
         "options": {}
       },
-      "id": "email-falhas",
-      "name": "E-mail: falhas de reconciliação",
+      "id": "email-reconciliacao",
+      "name": "E-mail: reconciliação (falhas/revisão)",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
-      "position": [1940, 400],
-      "credentials": {
-        "smtp": { "id": "REPLACE_ME_SMTP", "name": "SMTP Sebratel" }
-      }
+      "position": [2220, 500],
+      "credentials": { "smtp": { "id": "REPLACE_ME_SMTP", "name": "SMTP Sebratel" } }
     },
     {
       "parameters": {},
@@ -187,7 +236,7 @@
       "name": "Erro de execução",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [400, 620]
+      "position": [360, 680]
     },
     {
       "parameters": {
@@ -202,53 +251,42 @@
       "name": "E-mail: falha de execução",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
-      "position": [640, 620],
-      "credentials": {
-        "smtp": { "id": "REPLACE_ME_SMTP", "name": "SMTP Sebratel" }
-      }
+      "position": [600, 680],
+      "credentials": { "smtp": { "id": "REPLACE_ME_SMTP", "name": "SMTP Sebratel" } }
     }
   ],
   "connections": {
-    "Executar manualmente": {
-      "main": [[{ "node": "Config", "type": "main", "index": 0 }]]
-    },
-    "Config": {
-      "main": [[{ "node": "GET Elleven", "type": "main", "index": 0 }]]
-    },
-    "GET Elleven": {
-      "main": [[{ "node": "GET History (Splitters)", "type": "main", "index": 0 }]]
-    },
-    "GET History (Splitters)": {
-      "main": [[{ "node": "Reconciliar (diff)", "type": "main", "index": 0 }]]
-    },
-    "Reconciliar (diff)": {
-      "main": [[{ "node": "É dry-run?", "type": "main", "index": 0 }]]
-    },
+    "Executar manualmente": { "main": [[{ "node": "Config", "type": "main", "index": 0 }]] },
+    "Config": { "main": [[{ "node": "GET Elleven", "type": "main", "index": 0 }]] },
+    "GET Elleven": { "main": [[{ "node": "GET History (Splitters)", "type": "main", "index": 0 }]] },
+    "GET History (Splitters)": { "main": [[{ "node": "Reconciliar (diff)", "type": "main", "index": 0 }]] },
+    "Reconciliar (diff)": { "main": [[{ "node": "É dry-run?", "type": "main", "index": 0 }]] },
     "É dry-run?": {
       "main": [
         [{ "node": "Somente inspecionar (dry-run)", "type": "main", "index": 0 }],
-        [{ "node": "Fechar no Elleven (Voalle)", "type": "main", "index": 0 }]
+        [{ "node": "Rotear ação", "type": "main", "index": 0 }]
       ]
     },
-    "Fechar no Elleven (Voalle)": {
-      "main": [[{ "node": "Avaliar resultado", "type": "main", "index": 0 }]]
-    },
-    "Avaliar resultado": {
-      "main": [[{ "node": "Notificar falhas?", "type": "main", "index": 0 }]]
-    },
-    "Notificar falhas?": {
+    "Rotear ação": {
       "main": [
-        [{ "node": "E-mail: falhas de reconciliação", "type": "main", "index": 0 }],
-        [{ "node": "Tudo reconciliado (sem falhas)", "type": "main", "index": 0 }]
+        [{ "node": "Fechar na Voalle (Elleven)", "type": "main", "index": 0 }],
+        [{ "node": "Fechar no Splitters (massiva_history)", "type": "main", "index": 0 }],
+        [{ "node": "Avaliar resultado", "type": "main", "index": 0 }]
       ]
     },
-    "Erro de execução": {
-      "main": [[{ "node": "E-mail: falha de execução", "type": "main", "index": 0 }]]
-    }
+    "Fechar na Voalle (Elleven)": { "main": [[{ "node": "Avaliar resultado", "type": "main", "index": 0 }]] },
+    "Fechar no Splitters (massiva_history)": { "main": [[{ "node": "Avaliar resultado", "type": "main", "index": 0 }]] },
+    "Avaliar resultado": { "main": [[{ "node": "Resumo", "type": "main", "index": 0 }]] },
+    "Resumo": { "main": [[{ "node": "Notificar?", "type": "main", "index": 0 }]] },
+    "Notificar?": {
+      "main": [
+        [{ "node": "E-mail: reconciliação (falhas/revisão)", "type": "main", "index": 0 }],
+        [{ "node": "Tudo reconciliado (sem pendências)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Erro de execução": { "main": [[{ "node": "E-mail: falha de execução", "type": "main", "index": 0 }]] }
   },
-  "settings": {
-    "executionOrder": "v1"
-  },
+  "settings": { "executionOrder": "v1" },
   "pinData": {},
   "active": false
 }
