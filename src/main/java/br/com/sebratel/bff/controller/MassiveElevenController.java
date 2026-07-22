@@ -10,6 +10,7 @@ import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoOutputDTO;
 import br.com.sebratel.bff.dto.massivas.api.FinalizaRegistroMassivoInputDTO;
 import br.com.sebratel.bff.dto.massivas.api.FinalizarRegistroMassivoOutputDTO;
 import br.com.sebratel.bff.service.massivas.FinalizarMassivaNoEllevenApiService;
+import br.com.sebratel.bff.service.massivas.RecuperarPrevisaoMassivaPorContratoService;
 import br.com.sebratel.bff.service.massivas.RecuperarTodasAsMassivasPeloBancoService;
 import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoEllevenApiService;
 import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoEllevenService;
@@ -33,16 +34,18 @@ public class MassiveElevenController {
     private final AdicionarMassivaNoEllevenApiService adicionarMassivaNoEllevenApiService;
     private final GetAllMassivesService getAllMassivesService;
     private final RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService;
+    private final RecuperarPrevisaoMassivaPorContratoService recuperarPrevisaoMassivaPorContratoService;
     private final FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService;
 
     @Autowired
     public MassiveElevenController(AdicionarMassivaNoEllevenService adicionarMassivaNoEllevenService, AdicionarMassivaNoEllevenApiService adicionarMassivaNoEllevenApiService,
                                     EnviarListaDeAfetadosParaNativeService enviarListaDeAfetadosParaNativeService,
-                                    GetAllMassivesService getAllMassivesService, RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService, FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService) {
+                                    GetAllMassivesService getAllMassivesService, RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService, RecuperarPrevisaoMassivaPorContratoService recuperarPrevisaoMassivaPorContratoService, FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService) {
         this.adicionarMassivaNoEllevenService = adicionarMassivaNoEllevenService;
         this.adicionarMassivaNoEllevenApiService = adicionarMassivaNoEllevenApiService;
         this.getAllMassivesService = getAllMassivesService;
         this.recuperarTodasAsMassivasPeloBancoService = recuperarTodasAsMassivasPeloBancoService;
+        this.recuperarPrevisaoMassivaPorContratoService = recuperarPrevisaoMassivaPorContratoService;
         this.finalizarMassivaNoEllevenApiService = finalizarMassivaNoEllevenApiService;
     }
 
@@ -107,6 +110,24 @@ public class MassiveElevenController {
             log.error("Error retrieving massive incidents from ERP database. {}", e.getMessage());
             throw e;
         }
+    }
+
+    @GetMapping({"/estimated-end/contract/{contractNumber}", "/previsao-finalizacao/contrato/{contractNumber}"})
+    public ResponseEntity<ApiResponse<PrevisaoMassivaOutputDTO>> retrieveEstimatedEndByContract(@PathVariable String contractNumber) {
+        log.info("Retrieving estimated end of massive incident from ERP database. [Contract: {}]", contractNumber);
+
+        PrevisaoMassivaOutputDTO output = recuperarPrevisaoMassivaPorContratoService.executar(contractNumber);
+
+        log.info("Estimated end successfully retrieved for contract {}. [Protocol: {}, Forecast: {}]",
+                contractNumber, output.protocolo(), output.previsaoFinalizacao());
+
+        ApiResponse<PrevisaoMassivaOutputDTO> response = ApiResponse.<PrevisaoMassivaOutputDTO>builder()
+                .success(true)
+                .message("Estimated end of massive incident successfully retrieved.")
+                .data(output)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @PostMapping({"/save-massive-via-api", "salvar-massiva-via-api"})
