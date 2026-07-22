@@ -51,6 +51,9 @@ class MassiveElevenControllerTest extends BaseTest {
     private RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService;
 
     @MockitoBean
+    private RecuperarPrevisaoMassivaPorContratoService recuperarPrevisaoMassivaPorContratoService;
+
+    @MockitoBean
     private FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService;
 
     @Test
