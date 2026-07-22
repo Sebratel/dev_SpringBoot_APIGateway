@@ -1,0 +1,254 @@
+{
+  "name": "Reconciliação Massivas (Splitters x Voalle/Elleven)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-manual",
+      "name": "Executar manualmente",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-40, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "baseUrl", "value": "http://host.docker.internal:8085", "type": "string" },
+            { "id": "a2", "name": "dryRun", "value": true, "type": "boolean" },
+            { "id": "a3", "name": "limit", "value": 1, "type": "number" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "config",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Config').item.json.baseUrl }}/api/v1/massivas/recuperar-pelo-banco",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "id": "get-elleven",
+      "name": "GET Elleven",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [400, 200],
+      "credentials": {
+        "httpBasicAuth": { "id": "REPLACE_ME", "name": "Gateway Basic Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Config').item.json.baseUrl }}/api/v1/massivas-history/recuperar-pelo-banco",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "id": "get-history",
+      "name": "GET History (Splitters)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [620, 200],
+      "credentials": {
+        "httpBasicAuth": { "id": "REPLACE_ME", "name": "Gateway Basic Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n 2.x: Code node roda isolado (task runner) - apenas JS puro, sem env vars nem require.\n// Le os dois endpoints, faz join por protocolo e emite 1 item por DIVERGENCIA.\n// Divergencia-alvo: Splitters encerrou (status=encerrada) mas Elleven segue aberto (finalizado null).\n\nfunction unwrap(resp) {\n  if (Array.isArray(resp)) return resp;\n  if (resp && Array.isArray(resp.data)) return resp.data;\n  return [];\n}\n\nconst elleven = unwrap($('GET Elleven').first().json);\nconst hist = unwrap($('GET History (Splitters)').first().json);\nconst limit = Number($('Config').item.json.limit) || 0;\n\nconst ellevenByProto = new Map();\nfor (const e of elleven) {\n  if (e && e.protocolo != null) ellevenByProto.set(String(e.protocolo), e);\n}\n\nconst divergencias = [];\nfor (const h of hist) {\n  if (!h || h.protocolo == null) continue;\n  const proto = String(h.protocolo);\n  const e = ellevenByProto.get(proto);\n  if (!e) continue;\n  const fechadoNoSplitters = h.status === 'encerrada';\n  const abertoNoElleven = !e.finalizado;\n  if (fechadoNoSplitters && abertoNoElleven) {\n    if (!h.assignmentId) continue;\n    divergencias.push({\n      json: {\n        protocolo: proto,\n        assignmentId: String(h.assignmentId),\n        ultimaAcaoSplitters: h.ultimaAcaoEm,\n        statusElleven: e.status,\n        body: {\n          assignmentId: String(h.assignmentId),\n          incidentStatusId: '8',\n          description: 'Encerramento automatico via reconciliacao n8n (Splitters x Voalle). Protocolo ' + proto + ' encerrado no Splitters em ' + (h.ultimaAcaoEm || 'N/D') + ' e ainda aberto no Voalle. Fonte da verdade: ultima acao = Splitters.',\n          progress: '0',\n          priority: '35',\n          notificationTarget: '0',\n          privateReport: 'true'\n        }\n      }\n    });\n  }\n}\n\nreturn limit > 0 ? divergencias.slice(0, limit) : divergencias;"
+      },
+      "id": "reconciliar",
+      "name": "Reconciliar (diff)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [840, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('Config').item.json.dryRun }}",
+              "rightValue": "",
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-dryrun",
+      "name": "É dry-run?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1060, 200]
+    },
+    {
+      "parameters": {},
+      "id": "noop-inspecionar",
+      "name": "Somente inspecionar (dry-run)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1280, 80]
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "={{ $('Config').item.json.baseUrl }}/api/v1/massivas/finalizar-chamado-via-api",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "response": {
+            "response": { "fullResponse": true, "neverError": true }
+          }
+        }
+      },
+      "id": "fechar-elleven",
+      "name": "Fechar no Elleven (Voalle)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1280, 300],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpBasicAuth": { "id": "REPLACE_ME", "name": "Gateway Basic Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Classifica cada tentativa de fechamento: sucesso vs falha.\n// Considera tanto erro HTTP/transporte quanto success:false no corpo da resposta.\nconst resultados = $input.all();\nconst origem = $('Reconciliar (diff)').all();\nconst sucessos = [];\nconst falhas = [];\n\nresultados.forEach((item, i) => {\n  const src = (origem[i] && origem[i].json) || {};\n  const proto = src.protocolo || '(desconhecido)';\n  const assignmentId = src.assignmentId || '';\n  const j = item.json || {};\n\n  if (j.error) {\n    const msg = typeof j.error === 'string' ? j.error : (j.error.message || JSON.stringify(j.error));\n    falhas.push({ protocolo: proto, assignmentId, motivo: 'Erro de transporte: ' + msg });\n    return;\n  }\n\n  const status = j.statusCode;\n  const body = (j.body !== undefined) ? j.body : j;\n  const httpOk = (status === undefined) || (status >= 200 && status < 300);\n  const logicOk = body && body.success === true;\n\n  if (httpOk && logicOk) {\n    sucessos.push({ protocolo: proto, assignmentId });\n  } else {\n    let motivo = 'HTTP ' + (status !== undefined ? status : '?');\n    if (body && Array.isArray(body.messages) && body.messages.length) {\n      motivo += ' - ' + body.messages.map(m => m.message).join('; ');\n    } else if (body && body.message) {\n      motivo += ' - ' + body.message;\n    }\n    falhas.push({ protocolo: proto, assignmentId, motivo });\n  }\n});\n\nconst temFalhas = falhas.length > 0;\nconst linhas = falhas.map(f => '<li>Protocolo <b>' + f.protocolo + '</b> (assignmentId ' + f.assignmentId + '): ' + f.motivo + '</li>').join('');\nconst assunto = '[Reconciliacao Massivas] ' + falhas.length + ' falha(s), ' + sucessos.length + ' sucesso(s)';\nconst corpoHtml = '<p>Reconciliacao Splitters x Voalle (Elleven) concluida.</p>'\n  + '<p><b>Sucessos:</b> ' + sucessos.length + ' &nbsp; <b>Falhas:</b> ' + falhas.length + '</p>'\n  + (temFalhas ? ('<p>Protocolos que <b>nao</b> puderam ser encerrados no Voalle:</p><ul>' + linhas + '</ul>') : '')\n  + '<p>Protocolos encerrados com sucesso: ' + (sucessos.map(s => s.protocolo).join(', ') || '-') + '</p>';\n\nreturn [{ json: { temFalhas, total: resultados.length, okCount: sucessos.length, falhaCount: falhas.length, sucessos, falhas, assunto, corpoHtml } }];"
+      },
+      "id": "avaliar",
+      "name": "Avaliar resultado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1500, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            {
+              "id": "c2",
+              "leftValue": "={{ $json.temFalhas }}",
+              "rightValue": "",
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-falhas",
+      "name": "Notificar falhas?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1720, 300]
+    },
+    {
+      "parameters": {},
+      "id": "noop-ok",
+      "name": "Tudo reconciliado (sem falhas)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1940, 200]
+    },
+    {
+      "parameters": {
+        "fromEmail": "no-reply@sebratel.com.br",
+        "toEmail": "desenvolvimento@sebratel.com.br",
+        "subject": "={{ $json.assunto }}",
+        "emailFormat": "html",
+        "html": "={{ $json.corpoHtml }}",
+        "options": {}
+      },
+      "id": "email-falhas",
+      "name": "E-mail: falhas de reconciliação",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1940, 400],
+      "credentials": {
+        "smtp": { "id": "REPLACE_ME_SMTP", "name": "SMTP Sebratel" }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "error-trigger",
+      "name": "Erro de execução",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [400, 620]
+    },
+    {
+      "parameters": {
+        "fromEmail": "no-reply@sebratel.com.br",
+        "toEmail": "desenvolvimento@sebratel.com.br",
+        "subject": "=[Reconciliação Massivas] FALHA na execução do workflow \"{{ $json.workflow.name }}\"",
+        "emailFormat": "html",
+        "html": "=<p>A execução do workflow de reconciliação de massivas <b>falhou</b>.</p><p><b>Workflow:</b> {{ $json.workflow.name }}<br><b>Último node:</b> {{ $json.execution.lastNodeExecuted }}<br><b>Erro:</b> {{ $json.execution.error.message }}</p><p><a href=\"{{ $json.execution.url }}\">Abrir execução no n8n</a></p>",
+        "options": {}
+      },
+      "id": "email-erro-exec",
+      "name": "E-mail: falha de execução",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [640, 620],
+      "credentials": {
+        "smtp": { "id": "REPLACE_ME_SMTP", "name": "SMTP Sebratel" }
+      }
+    }
+  ],
+  "connections": {
+    "Executar manualmente": {
+      "main": [[{ "node": "Config", "type": "main", "index": 0 }]]
+    },
+    "Config": {
+      "main": [[{ "node": "GET Elleven", "type": "main", "index": 0 }]]
+    },
+    "GET Elleven": {
+      "main": [[{ "node": "GET History (Splitters)", "type": "main", "index": 0 }]]
+    },
+    "GET History (Splitters)": {
+      "main": [[{ "node": "Reconciliar (diff)", "type": "main", "index": 0 }]]
+    },
+    "Reconciliar (diff)": {
+      "main": [[{ "node": "É dry-run?", "type": "main", "index": 0 }]]
+    },
+    "É dry-run?": {
+      "main": [
+        [{ "node": "Somente inspecionar (dry-run)", "type": "main", "index": 0 }],
+        [{ "node": "Fechar no Elleven (Voalle)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fechar no Elleven (Voalle)": {
+      "main": [[{ "node": "Avaliar resultado", "type": "main", "index": 0 }]]
+    },
+    "Avaliar resultado": {
+      "main": [[{ "node": "Notificar falhas?", "type": "main", "index": 0 }]]
+    },
+    "Notificar falhas?": {
+      "main": [
+        [{ "node": "E-mail: falhas de reconciliação", "type": "main", "index": 0 }],
+        [{ "node": "Tudo reconciliado (sem falhas)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Erro de execução": {
+      "main": [[{ "node": "E-mail: falha de execução", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "active": false
+}
