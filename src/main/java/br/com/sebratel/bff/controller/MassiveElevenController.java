@@ -113,15 +113,14 @@ public class MassiveElevenController {
     }
 
     @GetMapping({"/estimated-end/contract/{contractNumber}", "/previsao-finalizacao/contrato/{contractNumber}"})
-    public ResponseEntity<ApiResponse<PrevisaoMassivaOutputDTO>> retrieveEstimatedEndByContract(@PathVariable String contractNumber) {
+    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> retrieveEstimatedEndByContract(@PathVariable String contractNumber) {
         log.info("Retrieving estimated end of massive incident from ERP database. [Contract: {}]", contractNumber);
 
-        PrevisaoMassivaOutputDTO output = recuperarPrevisaoMassivaPorContratoService.executar(contractNumber);
+        ImpactedUsersOutputDTO output = recuperarPrevisaoMassivaPorContratoService.executar(contractNumber);
 
-        log.info("Estimated end successfully retrieved for contract {}. [Protocol: {}, Forecast: {}]",
-                contractNumber, output.protocolo(), output.previsaoFinalizacao());
+        log.info("Estimated end successfully retrieved for contract {}.", contractNumber);
 
-        ApiResponse<PrevisaoMassivaOutputDTO> response = ApiResponse.<PrevisaoMassivaOutputDTO>builder()
+        ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                 .success(true)
                 .message("Estimated end of massive incident successfully retrieved.")
                 .data(output)
