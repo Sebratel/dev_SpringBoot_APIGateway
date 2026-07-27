@@ -53,7 +53,7 @@ public class AffectedUserController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            log.error("Error searching for users: {}", e.getMessage(), e);
+            log.info("Error searching for users: {}", e.getMessage(), e);
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(false)
                     .message("Error searching for users: " + e.getMessage())
@@ -105,7 +105,7 @@ public class AffectedUserController {
                     .build();
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("Error searching for users by PPPoE {}: {}", pppoe, e.getMessage(), e);
+            log.info("Error searching for users by PPPoE {}: {}", pppoe, e.getMessage(), e);
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(false)
                     .message("Error searching for users by PPPoE: " + e.getMessage())
@@ -133,7 +133,7 @@ public class AffectedUserController {
                     .build();
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("Error searching for users by PPPoE {}: {}", contractId, e.getMessage(), e);
+            log.info("Error searching for users by PPPoE {}: {}", contractId, e.getMessage(), e);
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(false)
                     .message("Error searching for users by PPPoE: " + e.getMessage())
@@ -168,7 +168,7 @@ public class AffectedUserController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            log.error("Error searching for users by protocol {}: {}", protocol, e.getMessage(), e);
+            log.info("Error searching for users by protocol {}: {}", protocol, e.getMessage(), e);
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(false)
                     .message("Error searching for users by protocol: " + e.getMessage())
