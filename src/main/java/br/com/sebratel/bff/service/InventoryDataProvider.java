@@ -16,7 +16,7 @@ public class InventoryDataProvider {
     private final InventoryRepository repository;
 
     public List<InventoryProjection> getFullInventory() {
-        log.warn("### Executando query pesada de estoque no banco de dados ###");
+        log.info("Executando query pesada de estoque no banco de dados");
         return repository.findAllEstoqueAgregado();
     }
 }

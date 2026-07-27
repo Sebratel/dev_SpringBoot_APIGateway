@@ -17,7 +17,7 @@ public class JwtInformation {
             log.info("Processando requisição para: {} ({})", nome, email);
             return new Employee(email, nome);
         }
-        log.warn("Falhou em encontrar usuario do contexto");
+        log.warn("Nenhum usuário JWT encontrado no contexto de segurança da requisição");
         return new Employee("", "");
     }
 }

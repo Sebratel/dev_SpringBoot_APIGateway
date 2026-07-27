@@ -76,7 +76,7 @@ public class AffectedUserController {
                     .build();
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
-            log.error("Error creating impacted users for protocol \n{}", e.getMessage());
+            log.error("Error creating impacted users for protocol: {}", e.getMessage());
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(false)
                     .message("Error creating impacted user: " + e.getMessage())
@@ -216,7 +216,7 @@ public class AffectedUserController {
             return ResponseEntity.ok(response);
 
         } catch (ResourceNotFoundException e) {
-            log.error("Protocol not found: {}", protocol);
+            log.warn("Protocol not found: {}", protocol);
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(false)
                     .message(e.getMessage())

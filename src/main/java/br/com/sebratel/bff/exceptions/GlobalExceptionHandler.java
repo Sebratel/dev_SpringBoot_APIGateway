@@ -63,7 +63,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IntegrationEllevenException.class)
     public ResponseEntity<ApiError> handleIntegrationElleven(IntegrationEllevenException ex, HttpServletRequest request) {
-        log.error("Integration Elleven error: {}", ex.getMessage());
+        log.warn("Integration Elleven error: {}", ex.getMessage());
         return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request, null);
     }
 
@@ -81,7 +81,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Object>> handleDataIntegrityViolation(DataIntegrityViolationException ex, HttpServletRequest request) {
         String rootMsg = ex.getRootCause() != null ? ex.getRootCause().getMessage() : ex.getMessage();
-        log.error("Database integrity violation: {}", rootMsg);
+        log.warn("Database integrity violation: {}", rootMsg);
         
         ApiResponse<Object> response = ApiResponse.builder()
                 .success(false)

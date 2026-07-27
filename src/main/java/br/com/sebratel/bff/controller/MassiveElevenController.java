@@ -157,7 +157,7 @@ public class MassiveElevenController {
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
-            log.error("Error creating massive incident in ERP for requester {}:\n {}", input.getPersonId(), e.getMessage());
+            log.error("Error creating massive incident in ERP for requester {}: {}", input.getPersonId(), e.getMessage());
             throw e;
         }
     }
@@ -179,14 +179,14 @@ public class MassiveElevenController {
                 return ResponseEntity.ok(output);
 
             } else {
-                log.error("Error finalizing massive incident in ERP. [ASSIGNMENT ID: {}, MESSAGE: {}]",
+                log.warn("Error finalizing massive incident in ERP. [ASSIGNMENT ID: {}, MESSAGE: {}]",
                         input.getAssignmentId(),
                         input.getDescription());
 
                 return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(output);
             }
         } catch (Exception e) {
-            log.error("Error finalizing massive incident SERVER ERROR. ASSIGNMENT: {}:\n {}", input.getAssignmentId(), e.getMessage());
+            log.error("Error finalizing massive incident SERVER ERROR. ASSIGNMENT: {}: {}", input.getAssignmentId(), e.getMessage());
 
             FinalizarRegistroMassivoOutputDTO errorOutput = FinalizarRegistroMassivoOutputDTO.builder()
                     .success(false)

@@ -61,8 +61,7 @@ public class AffectedUserService {
             }
         } catch (Exception e) {
             LocalDateTime now = LocalDateTime.now();
-            log.error("Erro ao criar evento ou incidente massivo: {} com timestamp {}", e, now);
-            log.error("Erro ao salvar usuários afetados. Chamando finalização massiva no Elleven.", e);
+            log.error("Erro ao salvar usuários afetados às {}. Chamando finalização massiva no Elleven.", now, e);
             FinalizaRegistroMassivoInputDTO finalizarInput = FinalizaRegistroMassivoInputDTO
                     .builder()
                     .assignmentId(input.getAssignmentId().toString())
