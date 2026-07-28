@@ -10,6 +10,7 @@ import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoOutputDTO;
 import br.com.sebratel.bff.dto.massivas.api.FinalizaRegistroMassivoInputDTO;
 import br.com.sebratel.bff.dto.massivas.api.FinalizarRegistroMassivoOutputDTO;
 import br.com.sebratel.bff.service.massivas.FinalizarMassivaNoEllevenApiService;
+import br.com.sebratel.bff.service.massivas.RecuperarPrevisaoMassivaPorContratoService;
 import br.com.sebratel.bff.service.massivas.RecuperarTodasAsMassivasPeloBancoService;
 import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoEllevenApiService;
 import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoEllevenService;
@@ -33,16 +34,18 @@ public class MassiveElevenController {
     private final AdicionarMassivaNoEllevenApiService adicionarMassivaNoEllevenApiService;
     private final GetAllMassivesService getAllMassivesService;
     private final RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService;
+    private final RecuperarPrevisaoMassivaPorContratoService recuperarPrevisaoMassivaPorContratoService;
     private final FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService;
 
     @Autowired
     public MassiveElevenController(AdicionarMassivaNoEllevenService adicionarMassivaNoEllevenService, AdicionarMassivaNoEllevenApiService adicionarMassivaNoEllevenApiService,
                                     EnviarListaDeAfetadosParaNativeService enviarListaDeAfetadosParaNativeService,
-                                    GetAllMassivesService getAllMassivesService, RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService, FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService) {
+                                    GetAllMassivesService getAllMassivesService, RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService, RecuperarPrevisaoMassivaPorContratoService recuperarPrevisaoMassivaPorContratoService, FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService) {
         this.adicionarMassivaNoEllevenService = adicionarMassivaNoEllevenService;
         this.adicionarMassivaNoEllevenApiService = adicionarMassivaNoEllevenApiService;
         this.getAllMassivesService = getAllMassivesService;
         this.recuperarTodasAsMassivasPeloBancoService = recuperarTodasAsMassivasPeloBancoService;
+        this.recuperarPrevisaoMassivaPorContratoService = recuperarPrevisaoMassivaPorContratoService;
         this.finalizarMassivaNoEllevenApiService = finalizarMassivaNoEllevenApiService;
     }
 
@@ -109,6 +112,23 @@ public class MassiveElevenController {
         }
     }
 
+    @GetMapping({"/estimated-end/contract/{contractNumber}", "/previsao-finalizacao/contrato/{contractNumber}"})
+    public ResponseEntity<ApiResponse<ImpactedUsersOutputDTO>> retrieveEstimatedEndByContract(@PathVariable String contractNumber) {
+        log.info("Retrieving estimated end of massive incident from ERP database. [Contract: {}]", contractNumber);
+
+        ImpactedUsersOutputDTO output = recuperarPrevisaoMassivaPorContratoService.executar(contractNumber);
+
+        log.info("Estimated end successfully retrieved for contract {}.", contractNumber);
+
+        ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                .success(true)
+                .message("Estimated end of massive incident successfully retrieved.")
+                .data(output)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
     @PostMapping({"/save-massive-via-api", "salvar-massiva-via-api"})
     public ResponseEntity<ApiResponse<AberturaRegistroMassivoOutputDTO>> createMassiveIncidentViaApi(
             @Valid @RequestBody AberturaRegistroMassivoInputDTO input) {
@@ -137,7 +157,7 @@ public class MassiveElevenController {
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
-            log.error("Error creating massive incident in ERP for requester {}:\n {}", input.getPersonId(), e.getMessage());
+            log.error("Error creating massive incident in ERP for requester {}: {}", input.getPersonId(), e.getMessage());
             throw e;
         }
     }
@@ -159,14 +179,14 @@ public class MassiveElevenController {
                 return ResponseEntity.ok(output);
 
             } else {
-                log.error("Error finalizing massive incident in ERP. [ASSIGNMENT ID: {}, MESSAGE: {}]",
+                log.warn("Error finalizing massive incident in ERP. [ASSIGNMENT ID: {}, MESSAGE: {}]",
                         input.getAssignmentId(),
                         input.getDescription());
 
                 return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(output);
             }
         } catch (Exception e) {
-            log.error("Error finalizing massive incident SERVER ERROR. ASSIGNMENT: {}:\n {}", input.getAssignmentId(), e.getMessage());
+            log.error("Error finalizing massive incident SERVER ERROR. ASSIGNMENT: {}: {}", input.getAssignmentId(), e.getMessage());
 
             FinalizarRegistroMassivoOutputDTO errorOutput = FinalizarRegistroMassivoOutputDTO.builder()
                     .success(false)

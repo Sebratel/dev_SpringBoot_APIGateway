@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Arrays;
 import java.util.Optional;
 
 @Service
@@ -90,7 +89,7 @@ public class MatrixService {
                     .status("client_found")
                     .build();
         }catch (Exception e) {
-            log.warn(Arrays.toString(e.getStackTrace()));
+            log.info("Não foi possível localizar contrato para o CPF {}: {}", cpf, e.getMessage());
             return MatrixMassiveOutputDTO
                     .builder()
                     .status("not_found_client")
