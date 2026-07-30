@@ -18,6 +18,8 @@ formato dos seus payloads de requisição e resposta. Portanto:
 
 ## [Não lançado]
 
+## [3.4.0] - 2026-07-30
+
 ### Corrigido
 - `/error` liberado no `SecurityConfig`. O dispatch de erro do Spring passa pelo
   filtro de segurança e caía em `.anyRequest().authenticated()`, então um 500 real
