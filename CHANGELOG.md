@@ -18,6 +18,27 @@ formato dos seus payloads de requisição e resposta. Portanto:
 
 ## [Não lançado]
 
+## [3.4.2] - 2026-07-30
+
+### Modificado
+- `GET /api/v1/matrix` passou a consultar a massiva de cada contrato pelo
+  `AffectedUserService` — o mesmo que atende `GET /api/v1/afetados/contract/{id}` —
+  em vez de acessar o repositório direto. Os dois endpoints respondem a partir da
+  mesma fonte. A semântica é a de antes: se qualquer contrato do CPF estiver em
+  massiva, responde `client_found`, parando no primeiro encontrado.
+- `estimateTimeOfRestoration` do `AffectedUserService` passou a arredondar para
+  cima, com fallback de 1 hora para massiva vencida (antes: `floor` via
+  `ChronoUnit.HOURS.between` e fallback 2). Alinha o cálculo ao que a `3.1.1`
+  estabeleceu para o `MatrixService` e elimina a divergência entre os dois
+  endpoints. **Consumidores de `/api/v1/afetados/**` podem ver valores até 1 hora
+  maiores**; informar 1h para uma massiva com 1h50 restantes subestimava a
+  previsão passada ao cliente.
+
+### Corrigido
+- Um contrato sem massiva não interrompe mais a varredura dos contratos seguintes.
+  O `ResourceNotFoundException` é tratado dentro do laço, e não pelo `catch`
+  genérico do `getContractInfoByCPF`.
+
 ## [3.4.1] - 2026-07-30
 
 ### Corrigido

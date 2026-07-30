@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -84,13 +85,17 @@ public class AffectedUserService {
         List<Map<Long, ImpactDetailsOutputDTO>> impactedUsersDTO = affectedUsers.stream().map(affectedUser -> {
             LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
             LocalDateTime finish = affectedUser.getFinishDate();
-            long hoursRemaining = ChronoUnit.HOURS.between(now, finish);
-            long estimateTimeOfRestoration = Math.max(0, hoursRemaining);
+            // Arredonda para cima: informar 1h para uma massiva que ainda tem 1h50 restantes
+            // subestima a previsao passada ao cliente.
+            long minutesRemaining = Duration.between(now, finish).toMinutes();
+            long estimateTimeOfRestoration = (minutesRemaining <= 0)
+                    ? 1
+                    : (long) Math.ceil(minutesRemaining / 60.0);
             long timeHour = affectedUser.getFinishDate().getHour();
 
             ImpactDetailsOutputDTO impactDetailsDTO = ImpactDetailsOutputDTO.builder()
                     .reason(affectedUser.getReason())
-                    .estimateTimeOfRestoration(estimateTimeOfRestoration > 0 ?estimateTimeOfRestoration : 2)
+                    .estimateTimeOfRestoration(estimateTimeOfRestoration)
                     .estimatedTimeHour(timeHour)
                     .build();
             Map<Long, ImpactDetailsOutputDTO> impactedUsers = new HashMap<>();

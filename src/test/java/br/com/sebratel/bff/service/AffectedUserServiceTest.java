@@ -49,7 +49,7 @@ class AffectedUserServiceTest {
 
         AffectedUsersEntity user2 = new AffectedUsersEntity();
         user2.setContractId(2L);
-        user2.setFinishDate(LocalDateTime.now().minusHours(1)); // hoursRemaining <= 0
+        user2.setFinishDate(LocalDateTime.now().minusHours(1)); // minutesRemaining <= 0
         user2.setReason("Outage");
         
         when(repository.findAll()).thenReturn(List.of(user1, user2));
@@ -61,7 +61,7 @@ class AffectedUserServiceTest {
         assertNotNull(result);
         assertEquals(2, result.getImpactedUsers().size());
         assertEquals(3L, result.getImpactedUsers().get(0).get(1L).getEstimateTimeOfRestoration());
-        assertEquals(2L, result.getImpactedUsers().get(1).get(2L).getEstimateTimeOfRestoration()); // Should be 2 because estimateTimeOfRestoration <= 0
+        assertEquals(1L, result.getImpactedUsers().get(1).get(2L).getEstimateTimeOfRestoration()); // Massiva vencida: fallback de 1 hora
     }
 
     @Test

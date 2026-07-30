@@ -1,32 +1,29 @@
 package br.com.sebratel.bff.service;
 
 import br.com.sebratel.bff.dto.MatrixMassiveOutputDTO;
+import br.com.sebratel.bff.dto.massivas.ImpactDetailsOutputDTO;
+import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
+import br.com.sebratel.bff.exceptions.ResourceNotFoundException;
 import br.com.sebratel.bff.model.entity.PersonEntity;
-import br.com.sebratel.bff.model.entity.AffectedUsersEntity;
-import br.com.sebratel.bff.repository.afetados.AffectedUserRepository;
 import br.com.sebratel.bff.repository.erp.PersonRepository;
 import br.com.sebratel.bff.repository.erp.projections.ContractProjection;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
 @Slf4j
 public class MatrixService {
 
-    private static final ZoneOffset APPLICATION_ZONE_OFFSET = ZoneOffset.of("-03:00");
-
     final PersonRepository personRepository;
-    final AffectedUserRepository affectedUserRepository;
+    final AffectedUserService affectedUserService;
 
-    public MatrixService(PersonRepository personRepository, AffectedUserRepository affectedUserRepository) {
+    public MatrixService(PersonRepository personRepository, AffectedUserService affectedUserService) {
         this.personRepository = personRepository;
-        this.affectedUserRepository = affectedUserRepository;
+        this.affectedUserService = affectedUserService;
     }
 
     public MatrixMassiveOutputDTO getContractInfoByCPF(String cpf) {
@@ -49,38 +46,53 @@ public class MatrixService {
                 return notFoundClient();
             }
 
-            log.info("Encontrados {} contratos para o CPF, verificando massiva ativa em cada um", contracts.size());
+            log.info("Encontrados {} contratos para o CPF, verificando massiva em cada um", contracts.size());
 
             for (ContractProjection contract : contracts) {
-                Optional<AffectedUsersEntity> usuarioAfetadoEntity = affectedUserRepository
-                        .findFirstByContractId(contract.getContractId());
+                Optional<ImpactDetailsOutputDTO> impactDetails = findImpactByContract(contract.getContractId());
 
-                if (usuarioAfetadoEntity.isEmpty()) {
-                    log.info("Nenhum usuario afetado para o contrato {}", contract.getContractId());
+                if (impactDetails.isEmpty()) {
                     continue;
                 }
 
-                AffectedUsersEntity usuarioAfetado = usuarioAfetadoEntity.get();
-                log.info("Massiva ativa encontrada para o contrato {}", contract.getContractId());
-
-                LocalDateTime now = LocalDateTime.now(APPLICATION_ZONE_OFFSET);
-                long minutesBetween = Duration.between(now, usuarioAfetado.getFinishDate()).toMinutes();
-                Integer numberOfHours = (minutesBetween <= 0) ? 1 : (int) Math.ceil(minutesBetween / 60.0);
+                ImpactDetailsOutputDTO impact = impactDetails.get();
+                log.info("Massiva encontrada para o contrato {}", contract.getContractId());
 
                 return MatrixMassiveOutputDTO
                         .builder()
-                        .resolutionTime(numberOfHours)
-                        .resolutionTimeHour("" + usuarioAfetado.getFinishDate().getHour())
+                        .resolutionTime(impact.getEstimateTimeOfRestoration().intValue())
+                        .resolutionTimeHour("" + impact.getEstimatedTimeHour())
                         .authenticationProblems(1L)
                         .status("client_found")
                         .build();
             }
 
-            log.info("Nenhum dos {} contratos do CPF possui massiva ativa", contracts.size());
+            log.info("Nenhum dos {} contratos do CPF possui massiva", contracts.size());
             return notFoundClient();
         }catch (Exception e) {
             log.info("Não foi possível localizar contrato para o CPF {}: {}", cpf, e.getMessage());
             return notFoundClient();
+        }
+    }
+
+    /**
+     * Consulta a massiva de um contrato reaproveitando o mesmo service que atende
+     * GET /api/v1/afetados/contract/{contractId}, para que os dois endpoints respondam
+     * a partir da mesma fonte.
+     *
+     * O ResourceNotFoundException e tratado aqui, e nao no catch externo, porque um
+     * contrato sem massiva nao pode interromper a varredura dos contratos seguintes.
+     */
+    private Optional<ImpactDetailsOutputDTO> findImpactByContract(Long contractId) {
+        try {
+            ImpactedUsersOutputDTO impactedUsers = affectedUserService.getUsuariosAfetadosByContractId(contractId);
+            return impactedUsers.getImpactedUsers().stream()
+                    .map(entry -> entry.get(contractId))
+                    .filter(Objects::nonNull)
+                    .findFirst();
+        } catch (ResourceNotFoundException e) {
+            log.info("Nenhum usuario afetado para o contrato {}", contractId);
+            return Optional.empty();
         }
     }
 
