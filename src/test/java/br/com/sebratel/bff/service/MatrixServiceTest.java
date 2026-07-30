@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,7 +45,7 @@ class MatrixServiceTest {
         affected.setFinishDate(LocalDateTime.now().plusHours(5));
 
         when(personRepository.findByTxId(cpf)).thenReturn(Optional.of(person));
-        when(personRepository.findContractByCPF(cpf)).thenReturn(Optional.of(contract));
+        when(personRepository.findContractsByCPF(cpf)).thenReturn(List.of(contract));
         when(affectedUserRepository.findFirstByContractId(100L)).thenReturn(Optional.of(affected));
 
         // Act
@@ -77,7 +78,7 @@ class MatrixServiceTest {
         String cpf = "12345678900";
         PersonEntity person = new PersonEntity();
         when(personRepository.findByTxId(cpf)).thenReturn(Optional.of(person));
-        when(personRepository.findContractByCPF(cpf)).thenReturn(Optional.empty());
+        when(personRepository.findContractsByCPF(cpf)).thenReturn(List.of());
 
         // Act
         MatrixMassiveOutputDTO result = service.getContractInfoByCPF(cpf);
@@ -95,7 +96,7 @@ class MatrixServiceTest {
         when(contract.getContractId()).thenReturn(100L);
 
         when(personRepository.findByTxId(cpf)).thenReturn(Optional.of(person));
-        when(personRepository.findContractByCPF(cpf)).thenReturn(Optional.of(contract));
+        when(personRepository.findContractsByCPF(cpf)).thenReturn(List.of(contract));
         when(affectedUserRepository.findFirstByContractId(100L)).thenReturn(Optional.empty());
 
         // Act
@@ -103,6 +104,57 @@ class MatrixServiceTest {
 
         // Assert
         assertEquals("not_found_client", result.getStatus());
+    }
+
+    @Test
+    void getContractInfoByCPF_ShouldReturnClientFound_WhenCpfHasMultipleContractsAndOnlyTheLastIsAffected() {
+        // Cenario que antes estourava IncorrectResultSizeDataAccessException, pois a query
+        // devolvia mais de uma linha para um Optional. A excecao era engolida pelo catch e
+        // o cliente afetado era reportado como not_found_client.
+        String cpf = "12345678900";
+        PersonEntity person = new PersonEntity();
+        person.setId(1L);
+
+        ContractProjection withoutMassive = mock(ContractProjection.class);
+        when(withoutMassive.getContractId()).thenReturn(100L);
+        ContractProjection withMassive = mock(ContractProjection.class);
+        when(withMassive.getContractId()).thenReturn(200L);
+
+        AffectedUsersEntity affected = new AffectedUsersEntity();
+        affected.setFinishDate(LocalDateTime.now().plusHours(5));
+
+        when(personRepository.findByTxId(cpf)).thenReturn(Optional.of(person));
+        when(personRepository.findContractsByCPF(cpf)).thenReturn(List.of(withoutMassive, withMassive));
+        when(affectedUserRepository.findFirstByContractId(100L)).thenReturn(Optional.empty());
+        when(affectedUserRepository.findFirstByContractId(200L)).thenReturn(Optional.of(affected));
+
+        MatrixMassiveOutputDTO result = service.getContractInfoByCPF(cpf);
+
+        assertEquals("client_found", result.getStatus());
+        assertEquals(1L, result.getAuthenticationProblems());
+        verify(affectedUserRepository).findFirstByContractId(100L);
+        verify(affectedUserRepository).findFirstByContractId(200L);
+    }
+
+    @Test
+    void getContractInfoByCPF_ShouldReturnNotFound_WhenNoneOfTheContractsIsAffected() {
+        String cpf = "12345678900";
+        PersonEntity person = new PersonEntity();
+
+        ContractProjection first = mock(ContractProjection.class);
+        when(first.getContractId()).thenReturn(100L);
+        ContractProjection second = mock(ContractProjection.class);
+        when(second.getContractId()).thenReturn(200L);
+
+        when(personRepository.findByTxId(cpf)).thenReturn(Optional.of(person));
+        when(personRepository.findContractsByCPF(cpf)).thenReturn(List.of(first, second));
+        when(affectedUserRepository.findFirstByContractId(anyLong())).thenReturn(Optional.empty());
+
+        MatrixMassiveOutputDTO result = service.getContractInfoByCPF(cpf);
+
+        assertEquals("not_found_client", result.getStatus());
+        assertEquals(0L, result.getAuthenticationProblems());
+        assertEquals("23", result.getResolutionTimeHour());
     }
 
     @Test
@@ -131,7 +183,7 @@ class MatrixServiceTest {
         affected.setFinishDate(LocalDateTime.now().minusHours(2)); // Branch: hoursBetween <= 0
 
         when(personRepository.findByTxId(cpf)).thenReturn(Optional.of(person));
-        when(personRepository.findContractByCPF(cpf)).thenReturn(Optional.of(contract));
+        when(personRepository.findContractsByCPF(cpf)).thenReturn(List.of(contract));
         when(affectedUserRepository.findFirstByContractId(100L)).thenReturn(Optional.of(affected));
 
         // Act
@@ -142,3 +194,4 @@ class MatrixServiceTest {
         assertEquals(1, result.getResolutionTime()); // Branch: hoursBetween <= 0 ? 1 : (int) hoursBetween
     }
 }
+

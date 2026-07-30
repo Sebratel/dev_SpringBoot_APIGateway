@@ -18,6 +18,19 @@ formato dos seus payloads de requisição e resposta. Portanto:
 
 ## [Não lançado]
 
+## [3.4.1] - 2026-07-30
+
+### Corrigido
+- `GET /api/v1/matrix` reportava `not_found_client` para CPF com mais de um
+  contrato. A query `findContractByCPF` devolvia `Optional<ContractProjection>`,
+  então mais de uma linha estourava `IncorrectResultSizeDataAccessException`; a
+  exceção era engolida pelo `catch (Exception)` do `MatrixService` e o cliente
+  afetado saía como não encontrado. A query passou a devolver `List`, com
+  `DISTINCT` (o join com `authentication_contracts` duplicava linhas do mesmo
+  contrato) e `ORDER BY` para resultado determinístico.
+- O `MatrixService` agora percorre todos os contratos do CPF e responde
+  `client_found` no primeiro com massiva ativa, em vez de considerar apenas um.
+
 ## [3.4.0] - 2026-07-30
 
 ### Corrigido

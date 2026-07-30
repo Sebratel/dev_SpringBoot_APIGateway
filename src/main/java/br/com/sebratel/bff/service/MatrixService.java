@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -36,68 +37,60 @@ public class MatrixService {
 
             if (personEntity.isEmpty()) {
                 log.warn("Nenhum person encontrado: {}", cpf);
-                return MatrixMassiveOutputDTO
-                        .builder()
-                        .status("not_found_client")
-                        .authenticationProblems(0L)
-                        .resolutionTimeHour("23")
-                        .authenticationProblems(0L)
-                        .build();
+                return notFoundClient();
             }
 
             log.info("Encontrado personId {}, iniciando procura de contrato pelo CPF", personEntity.get().getId());
 
-            Optional<ContractProjection> contractProjection = personRepository.findContractByCPF(cpf);
+            List<ContractProjection> contracts = personRepository.findContractsByCPF(cpf);
 
-            if (contractProjection.isEmpty()) {
-                log.info("CLIENTE DE CPF {} NÃO TEM CONTRATO VINCULADO", cpf);
+            if (contracts.isEmpty()) {
+                log.info("Cliente de CPF {} nao tem contrato vinculado", cpf);
+                return notFoundClient();
+            }
+
+            log.info("Encontrados {} contratos para o CPF, verificando massiva ativa em cada um", contracts.size());
+
+            for (ContractProjection contract : contracts) {
+                Optional<AffectedUsersEntity> usuarioAfetadoEntity = affectedUserRepository
+                        .findFirstByContractId(contract.getContractId());
+
+                if (usuarioAfetadoEntity.isEmpty()) {
+                    log.info("Nenhum usuario afetado para o contrato {}", contract.getContractId());
+                    continue;
+                }
+
+                AffectedUsersEntity usuarioAfetado = usuarioAfetadoEntity.get();
+                log.info("Massiva ativa encontrada para o contrato {}", contract.getContractId());
+
+                LocalDateTime now = LocalDateTime.now(APPLICATION_ZONE_OFFSET);
+                long minutesBetween = Duration.between(now, usuarioAfetado.getFinishDate()).toMinutes();
+                Integer numberOfHours = (minutesBetween <= 0) ? 1 : (int) Math.ceil(minutesBetween / 60.0);
+
                 return MatrixMassiveOutputDTO
                         .builder()
-                        .status("not_found_client")
-                        .authenticationProblems(0L)
-                        .resolutionTimeHour("23")
-                        .authenticationProblems(0L)
+                        .resolutionTime(numberOfHours)
+                        .resolutionTimeHour("" + usuarioAfetado.getFinishDate().getHour())
+                        .authenticationProblems(1L)
+                        .status("client_found")
                         .build();
             }
 
-            ContractProjection contract = contractProjection.get();
-            log.info("Encontrado contrato {}", contract.getContractId());
-            Optional<AffectedUsersEntity> usuarioAfetadoEntity = affectedUserRepository
-                    .findFirstByContractId(contract.getContractId());
-            log.info("Realizada pesquisa de usuario afetado para contrato {} com cpf {}", contract.getContractId(), cpf);
-            if (usuarioAfetadoEntity.isEmpty()) {
-                log.info("NÃO FOI ENCONTRADO CLIENTE DE CONTRACT ID {}", contract.getContractId());
-                return MatrixMassiveOutputDTO
-                        .builder()
-                        .status("not_found_client")
-                        .authenticationProblems(0L)
-                        .resolutionTimeHour("23")
-                        .authenticationProblems(0L)
-                        .build();
-            }
-
-            LocalDateTime now = LocalDateTime.now(APPLICATION_ZONE_OFFSET);
-            AffectedUsersEntity usuarioAfetado = usuarioAfetadoEntity.get();
-            long minutesBetween = Duration.between(now, usuarioAfetado.getFinishDate()).toMinutes();
-            Integer numberOfHours = (minutesBetween <= 0) ? 1 : (int) Math.ceil(minutesBetween / 60.0);
-
-            return MatrixMassiveOutputDTO
-                    .builder()
-                    .resolutionTime(numberOfHours)
-                    .resolutionTimeHour("" + usuarioAfetado.getFinishDate().getHour())
-                    .authenticationProblems(1L)
-                    .status("client_found")
-                    .build();
+            log.info("Nenhum dos {} contratos do CPF possui massiva ativa", contracts.size());
+            return notFoundClient();
         }catch (Exception e) {
             log.info("Não foi possível localizar contrato para o CPF {}: {}", cpf, e.getMessage());
-            return MatrixMassiveOutputDTO
-                    .builder()
-                    .status("not_found_client")
-                    .authenticationProblems(0L)
-                    .resolutionTimeHour("23")
-                    .authenticationProblems(0L)
-                    .build();
+            return notFoundClient();
         }
+    }
+
+    private MatrixMassiveOutputDTO notFoundClient() {
+        return MatrixMassiveOutputDTO
+                .builder()
+                .status("not_found_client")
+                .authenticationProblems(0L)
+                .resolutionTimeHour("23")
+                .build();
     }
 
 
