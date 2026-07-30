@@ -18,6 +18,25 @@ formato dos seus payloads de requisição e resposta. Portanto:
 
 ## [Não lançado]
 
+### Corrigido
+- `/error` liberado no `SecurityConfig`. O dispatch de erro do Spring passa pelo
+  filtro de segurança e caía em `.anyRequest().authenticated()`, então um 500 real
+  era convertido em `401 "Acesso restrito"` e a causa original se perdia. Afetava
+  em especial os endpoints públicos `GET /api/v1/afetados/contract/**` e
+  `GET /api/v1/matrix`, que não têm token para o dispatch de erro carregar.
+- Log do Spring Security deixou de ser `DEBUG` fixo e passou a respeitar
+  `${SECURITY_LOG_LEVEL:INFO}`. As duas linhas sobrescreviam `logging.level.root`
+  sem condição, então baixar `LOG_LEVEL` não silenciava o `FilterChainProxy` —
+  que despejava `DEBUG ... Securing GET /error` em produção.
+
+### Modificado
+- Os quatro endpoints de busca de usuários impactados (`GET /`, `/pppoe/{pppoe}`,
+  `/contract/{contractId}`, `/protocol/{protocol}`) passam a responder `404` em vez
+  de `500` quando a busca não encontra usuários, e as mensagens deixaram de começar
+  com "Error" — o texto anterior fazia buscas full-text no Kibana classificarem
+  buscas vazias como erro. `POST`, `DELETE` e `PATCH` seguem retornando 400/500,
+  já que falha de escrita não é ausência de dado.
+
 ## [3.3.1] - 2026-07-27
 
 ### Corrigido

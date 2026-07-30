@@ -72,14 +72,14 @@ class AffectedUserControllerTest extends BaseTest {
     }
 
     @Test
-    @DisplayName("Should return 500 when error occurs in getAllImpactedUsers")
+    @DisplayName("Should return 404 when search fails in getAllImpactedUsers")
     void getAllImpactedUsers_Error() throws Exception {
         when(affectedUSerService.getAll()).thenThrow(new RuntimeException("Database error"));
 
         mockMvc.perform(get("/api/v1/impacted-users"))
-                .andExpect(status().isInternalServerError())
+                .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.message").value(containsString("Error searching for users")));
+                .andExpect(jsonPath("$.message").value(containsString("Could not find users")));
     }
 
     @Test
@@ -160,13 +160,14 @@ class AffectedUserControllerTest extends BaseTest {
     }
 
     @Test
-    @DisplayName("Should return 500 when error occurs in getImpactedUsersByPppoe")
+    @DisplayName("Should return 404 when search fails in getImpactedUsersByPppoe")
     void getImpactedUsersByPppoe_Error() throws Exception {
         when(affectedUSerService.getUsuariosAfetadosByPppoe(anyString())).thenThrow(new RuntimeException("Error"));
 
         mockMvc.perform(get("/api/v1/impacted-users/pppoe/test"))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.success").value(false));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value(containsString("Could not find users by PPPoE")));
     }
 
     @Test
@@ -198,13 +199,14 @@ class AffectedUserControllerTest extends BaseTest {
     }
 
     @Test
-    @DisplayName("Should return 500 when error occurs in getImpactedUsersByContractId")
+    @DisplayName("Should return 404 when search fails in getImpactedUsersByContractId")
     void getImpactedUsersByContractId_Error() throws Exception {
         when(affectedUSerService.getUsuariosAfetadosByContractId(anyLong())).thenThrow(new RuntimeException("Error"));
 
         mockMvc.perform(get("/api/v1/impacted-users/contract/123"))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.success").value(false));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value(containsString("Could not find users by contractId")));
     }
 
     @Test
@@ -236,13 +238,14 @@ class AffectedUserControllerTest extends BaseTest {
     }
 
     @Test
-    @DisplayName("Should return 500 when error occurs in getImpactedUsersByProtocol")
+    @DisplayName("Should return 404 when search fails in getImpactedUsersByProtocol")
     void getImpactedUsersByProtocol_Error() throws Exception {
         when(affectedUSerService.getUsuariosByProtocol(anyLong())).thenThrow(new RuntimeException("Error"));
 
         mockMvc.perform(get("/api/v1/impacted-users/protocol/123"))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.success").value(false));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value(containsString("Could not find users by protocol")));
     }
 
     @Test
