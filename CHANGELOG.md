@@ -18,6 +18,61 @@ formato dos seus payloads de requisição e resposta. Portanto:
 
 ## [Não lançado]
 
+## [3.4.2] - 2026-07-30
+
+### Modificado
+- `GET /api/v1/matrix` passou a consultar a massiva de cada contrato pelo
+  `AffectedUserService` — o mesmo que atende `GET /api/v1/afetados/contract/{id}` —
+  em vez de acessar o repositório direto. Os dois endpoints respondem a partir da
+  mesma fonte. A semântica é a de antes: se qualquer contrato do CPF estiver em
+  massiva, responde `client_found`, parando no primeiro encontrado.
+- `estimateTimeOfRestoration` do `AffectedUserService` passou a arredondar para
+  cima, com fallback de 1 hora para massiva vencida (antes: `floor` via
+  `ChronoUnit.HOURS.between` e fallback 2). Alinha o cálculo ao que a `3.1.1`
+  estabeleceu para o `MatrixService` e elimina a divergência entre os dois
+  endpoints. **Consumidores de `/api/v1/afetados/**` podem ver valores até 1 hora
+  maiores**; informar 1h para uma massiva com 1h50 restantes subestimava a
+  previsão passada ao cliente.
+
+### Corrigido
+- Um contrato sem massiva não interrompe mais a varredura dos contratos seguintes.
+  O `ResourceNotFoundException` é tratado dentro do laço, e não pelo `catch`
+  genérico do `getContractInfoByCPF`.
+
+## [3.4.1] - 2026-07-30
+
+### Corrigido
+- `GET /api/v1/matrix` reportava `not_found_client` para CPF com mais de um
+  contrato. A query `findContractByCPF` devolvia `Optional<ContractProjection>`,
+  então mais de uma linha estourava `IncorrectResultSizeDataAccessException`; a
+  exceção era engolida pelo `catch (Exception)` do `MatrixService` e o cliente
+  afetado saía como não encontrado. A query passou a devolver `List`, com
+  `DISTINCT` (o join com `authentication_contracts` duplicava linhas do mesmo
+  contrato) e `ORDER BY` para resultado determinístico.
+- O `MatrixService` agora percorre todos os contratos do CPF e responde
+  `client_found` no primeiro com massiva ativa, em vez de considerar apenas um.
+
+## [3.4.0] - 2026-07-30
+
+### Corrigido
+- `/error` liberado no `SecurityConfig`. O dispatch de erro do Spring passa pelo
+  filtro de segurança e caía em `.anyRequest().authenticated()`, então um 500 real
+  era convertido em `401 "Acesso restrito"` e a causa original se perdia. Afetava
+  em especial os endpoints públicos `GET /api/v1/afetados/contract/**` e
+  `GET /api/v1/matrix`, que não têm token para o dispatch de erro carregar.
+- Log do Spring Security deixou de ser `DEBUG` fixo e passou a respeitar
+  `${SECURITY_LOG_LEVEL:INFO}`. As duas linhas sobrescreviam `logging.level.root`
+  sem condição, então baixar `LOG_LEVEL` não silenciava o `FilterChainProxy` —
+  que despejava `DEBUG ... Securing GET /error` em produção.
+
+### Modificado
+- Os quatro endpoints de busca de usuários impactados (`GET /`, `/pppoe/{pppoe}`,
+  `/contract/{contractId}`, `/protocol/{protocol}`) passam a responder `404` em vez
+  de `500` quando a busca não encontra usuários, e as mensagens deixaram de começar
+  com "Error" — o texto anterior fazia buscas full-text no Kibana classificarem
+  buscas vazias como erro. `POST`, `DELETE` e `PATCH` seguem retornando 400/500,
+  já que falha de escrita não é ausência de dado.
+
 ## [3.3.1] - 2026-07-27
 
 ### Corrigido

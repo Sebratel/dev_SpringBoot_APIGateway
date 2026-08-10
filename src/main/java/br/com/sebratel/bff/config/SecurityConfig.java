@@ -42,6 +42,9 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
+                        // O dispatch de erro do Spring passa pelo filtro de seguranca; sem isso um 500
+                        // real vira 401 e a causa original se perde.
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/afetados/contract/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/matrix").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").authenticated()

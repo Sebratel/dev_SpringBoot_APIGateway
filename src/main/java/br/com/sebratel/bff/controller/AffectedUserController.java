@@ -52,13 +52,20 @@ public class AffectedUserController {
                     .build();
             return ResponseEntity.ok(response);
 
-        } catch (Exception e) {
-            log.info("Error searching for users: {}", e.getMessage(), e);
+        } catch (ResourceNotFoundException e) {
+            log.info("Could not find users: {}", e.getMessage());
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(false)
-                    .message("Error searching for users: " + e.getMessage())
+                    .message("Could not find users: " + e.getMessage())
                     .build();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (Exception e) {
+            log.error("Error searching impacted users: {}", e.getMessage(), e);
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(false)
+                    .message("Could not find users: " + e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
     }
 
@@ -104,13 +111,20 @@ public class AffectedUserController {
                     .data(impactedUsers)
                     .build();
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.info("Error searching for users by PPPoE {}: {}", pppoe, e.getMessage(), e);
+        } catch (ResourceNotFoundException e) {
+            log.info("Could not find users by PPPoE {}: {}", pppoe, e.getMessage());
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(false)
-                    .message("Error searching for users by PPPoE: " + e.getMessage())
+                    .message("Could not find users by PPPoE: " + e.getMessage())
                     .build();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (Exception e) {
+            log.error("Error searching users by PPPoE {}: {}", pppoe, e.getMessage(), e);
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(false)
+                    .message("Could not find users by PPPoE: " + e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
     }
 
@@ -132,13 +146,20 @@ public class AffectedUserController {
                     .data(impactedUsers)
                     .build();
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.info("Error searching for users by PPPoE {}: {}", contractId, e.getMessage(), e);
+        } catch (ResourceNotFoundException e) {
+            log.info("Could not find users by contractId {}: {}", contractId, e.getMessage());
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(false)
-                    .message("Error searching for users by PPPoE: " + e.getMessage())
+                    .message("Could not find users by contractId: " + e.getMessage())
                     .build();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (Exception e) {
+            log.error("Error searching users by contractId {}: {}", contractId, e.getMessage(), e);
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(false)
+                    .message("Could not find users by contractId: " + e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
     }
 
@@ -167,13 +188,20 @@ public class AffectedUserController {
                     .build();
             return ResponseEntity.ok(response);
 
-        } catch (Exception e) {
-            log.info("Error searching for users by protocol {}: {}", protocol, e.getMessage(), e);
+        } catch (ResourceNotFoundException e) {
+            log.info("Could not find users by protocol {}: {}", protocol, e.getMessage());
             ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
                     .success(false)
-                    .message("Error searching for users by protocol: " + e.getMessage())
+                    .message("Could not find users by protocol: " + e.getMessage())
                     .build();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (Exception e) {
+            log.error("Error searching users by protocol {}: {}", protocol, e.getMessage(), e);
+            ApiResponse<ImpactedUsersOutputDTO> response = ApiResponse.<ImpactedUsersOutputDTO>builder()
+                    .success(false)
+                    .message("Could not find users by protocol: " + e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
     }
 
