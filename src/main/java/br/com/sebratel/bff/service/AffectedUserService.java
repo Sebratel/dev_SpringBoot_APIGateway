@@ -149,9 +149,9 @@ public class AffectedUserService {
     }
 
     public ImpactedUsersOutputDTO getUsuariosAfetadosByContractId(Long contractId) {
-        log.info("Buscando usuário afetado pelo email: {}", contractId);
+        log.info("Buscando usuário afetado pelo contractId: {}", contractId);
         AffectedUsersEntity affectedUsersEntity = affectedUserRepository.findFirstByContractId(contractId).orElseThrow(() -> new ResourceNotFoundException("Usuário afetado não encontrado"));
-        log.info("Usuário afetado encontrado por email: {}", affectedUsersEntity);
+        log.info("Usuário afetado encontrado por contractId: {}", affectedUsersEntity);
         return getImpactedUsersDTO(List.of(affectedUsersEntity));
     }
 }
