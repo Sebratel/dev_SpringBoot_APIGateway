@@ -5,10 +5,12 @@ import br.com.sebratel.bff.dto.massivas.api.EllevenCompleteTaskResponseDTO;
 import br.com.sebratel.bff.utils.DatabaseErrorParser;
 
 import br.com.sebratel.bff.dto.massivas.*;
+import br.com.sebratel.bff.dto.massivas.api.AberturaProtocoloInfraInputDTO;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoInputDTO;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoOutputDTO;
 import br.com.sebratel.bff.dto.massivas.api.FinalizaRegistroMassivoInputDTO;
 import br.com.sebratel.bff.dto.massivas.api.FinalizarRegistroMassivoOutputDTO;
+import br.com.sebratel.bff.service.massivas.AbrirProtocoloInfraNoEllevenApiService;
 import br.com.sebratel.bff.service.massivas.FinalizarMassivaNoEllevenApiService;
 import br.com.sebratel.bff.service.massivas.RecuperarPrevisaoMassivaPorContratoService;
 import br.com.sebratel.bff.service.massivas.RecuperarTodasAsMassivasPeloBancoService;
@@ -36,17 +38,20 @@ public class MassiveElevenController {
     private final RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService;
     private final RecuperarPrevisaoMassivaPorContratoService recuperarPrevisaoMassivaPorContratoService;
     private final FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService;
+    private final AbrirProtocoloInfraNoEllevenApiService abrirProtocoloInfraNoEllevenApiService;
 
     @Autowired
     public MassiveElevenController(AdicionarMassivaNoEllevenService adicionarMassivaNoEllevenService, AdicionarMassivaNoEllevenApiService adicionarMassivaNoEllevenApiService,
                                     EnviarListaDeAfetadosParaNativeService enviarListaDeAfetadosParaNativeService,
-                                    GetAllMassivesService getAllMassivesService, RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService, RecuperarPrevisaoMassivaPorContratoService recuperarPrevisaoMassivaPorContratoService, FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService) {
+                                    GetAllMassivesService getAllMassivesService, RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService, RecuperarPrevisaoMassivaPorContratoService recuperarPrevisaoMassivaPorContratoService, FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService,
+                                    AbrirProtocoloInfraNoEllevenApiService abrirProtocoloInfraNoEllevenApiService) {
         this.adicionarMassivaNoEllevenService = adicionarMassivaNoEllevenService;
         this.adicionarMassivaNoEllevenApiService = adicionarMassivaNoEllevenApiService;
         this.getAllMassivesService = getAllMassivesService;
         this.recuperarTodasAsMassivasPeloBancoService = recuperarTodasAsMassivasPeloBancoService;
         this.recuperarPrevisaoMassivaPorContratoService = recuperarPrevisaoMassivaPorContratoService;
         this.finalizarMassivaNoEllevenApiService = finalizarMassivaNoEllevenApiService;
+        this.abrirProtocoloInfraNoEllevenApiService = abrirProtocoloInfraNoEllevenApiService;
     }
 
     @PostMapping
@@ -158,6 +163,43 @@ public class MassiveElevenController {
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
             log.error("Error creating massive incident in ERP for requester {}: {}", input.getPersonId(), e.getMessage());
+            throw e;
+        }
+    }
+
+    @PostMapping({"/open-infra-solicitation-via-api", "abrir-protocolo-infra-via-api"})
+    public ResponseEntity<ApiResponse<AberturaRegistroMassivoOutputDTO>> openInfraSolicitationViaApi(
+            @Valid @RequestBody AberturaProtocoloInfraInputDTO input) {
+
+        log.info("Starting infrastructure protocol creation in ERP via API. [Type: {}, Requester: {}]",
+                input.getInfraType(), input.getPersonId());
+
+        try {
+            AberturaRegistroMassivoOutputDTO output = abrirProtocoloInfraNoEllevenApiService.executar(input);
+
+            if (!output.isSuccess()) {
+                ApiResponse<AberturaRegistroMassivoOutputDTO> apiResponse = ApiResponse.<AberturaRegistroMassivoOutputDTO>builder()
+                        .success(false)
+                        .message("Failed to create infrastructure protocol in ERP. Elleven side ERROR")
+                        .data(output)
+                        .build();
+                return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(apiResponse);
+            }
+
+            log.info("Infrastructure protocol successfully created in ERP. [PROTOCOL ID: {}, ASSIGNMENT ID: {}, MESSAGE: {}]",
+                    output.getResponse().getProtocol(),
+                    output.getResponse().getAssignmentId(),
+                    output.getResponse().getMessage());
+
+            ApiResponse<AberturaRegistroMassivoOutputDTO> response = ApiResponse.<AberturaRegistroMassivoOutputDTO>builder()
+                    .success(true)
+                    .message("Infrastructure protocol successfully created in ERP.")
+                    .data(output)
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            log.error("Error creating infrastructure protocol in ERP for requester {}: {}", input.getPersonId(), e.getMessage());
             throw e;
         }
     }
