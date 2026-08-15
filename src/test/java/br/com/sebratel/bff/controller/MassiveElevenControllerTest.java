@@ -56,6 +56,9 @@ class MassiveElevenControllerTest extends BaseTest {
     @MockitoBean
     private FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService;
 
+    @MockitoBean
+    private AbrirProtocoloInfraNoEllevenApiService abrirProtocoloInfraNoEllevenApiService;
+
     @Test
     @DisplayName("Should create massive incident with flutter data")
     void createMassiveIncidentWithFlutterData_Success() throws Exception {
@@ -176,6 +179,64 @@ class MassiveElevenControllerTest extends BaseTest {
                         .content(objectMapper.writeValueAsString(input)))
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.success").value(false));
+    }
+
+    private AberturaProtocoloInfraInputDTO buildInfraInput() {
+        AberturaRegistroMassivoAssignmentDTO assignment = new AberturaRegistroMassivoAssignmentDTO();
+        assignment.setTitle("Protocolo de Infra");
+        assignment.setDescription("Mascara de infraestrutura");
+
+        AberturaProtocoloInfraInputDTO input = new AberturaProtocoloInfraInputDTO();
+        input.setInfraType("cto_lo");
+        input.setPersonId(1L);
+        input.setAuthenticationAccessPointCode("CAN-C-5562");
+        input.setAssignment(assignment);
+        return input;
+    }
+
+    @Test
+    @DisplayName("Should open infrastructure protocol via API")
+    void openInfraSolicitationViaApi_Success() throws Exception {
+        AberturaRegistroMassivoOutputDTO output = new AberturaRegistroMassivoOutputDTO();
+        output.setSuccess(true);
+        AberturaRegistroMassivoResponseDTO responseDTO = new AberturaRegistroMassivoResponseDTO();
+        responseDTO.setProtocol(123L);
+        responseDTO.setAssignmentId(456L);
+        output.setResponse(responseDTO);
+
+        when(abrirProtocoloInfraNoEllevenApiService.executar(any())).thenReturn(output);
+
+        mockMvc.perform(post("/api/v1/massive-incidents/open-infra-solicitation-via-api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(buildInfraInput())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("Should return 502 when open infra fails on Elleven side")
+    void openInfraSolicitationViaApi_Fail() throws Exception {
+        AberturaRegistroMassivoOutputDTO output = new AberturaRegistroMassivoOutputDTO();
+        output.setSuccess(false);
+
+        when(abrirProtocoloInfraNoEllevenApiService.executar(any())).thenReturn(output);
+
+        mockMvc.perform(post("/api/v1/massive-incidents/open-infra-solicitation-via-api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(buildInfraInput())))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    @DisplayName("Should return 500 when open infra fails with exception")
+    void openInfraSolicitationViaApi_Exception() throws Exception {
+        when(abrirProtocoloInfraNoEllevenApiService.executar(any())).thenThrow(new RuntimeException("Error"));
+
+        mockMvc.perform(post("/api/v1/massive-incidents/open-infra-solicitation-via-api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(buildInfraInput())))
+                .andExpect(status().isInternalServerError());
     }
 
     @Test
