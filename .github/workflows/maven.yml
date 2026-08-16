@@ -1,36 +1,101 @@
-name: Java CI with Maven
+name: CI
 
+# Antes, este workflow so cobria a branch "staging" -- a "main" nao tinha nenhuma
+# verificacao automatizada. Agora ambas sao cobertas, em push e em pull request.
 on:
   push:
-    branches: [ "staging" ]
+    branches: [ "main", "staging" ]
   pull_request:
-    branches: [ "staging" ]
+    branches: [ "main", "staging" ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-test:
+    name: Build e Testes
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        cache: maven
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
 
-    - name: Build with Maven
-      # O comando 'verify' executa testes unitários, JaCoCo e Allure results
-      run: ./mvnw -B clean verify --file pom.xml
+      - name: Build e testes
+        # "clean" e obrigatorio: sem ele, class files de builds anteriores
+        # (inclusive de outras branches) sobrevivem em target/ e o Surefire
+        # tenta executar testes cujo codigo-fonte nao existe mais.
+        run: ./mvnw -B clean verify --file pom.xml
 
-    - name: Upload JaCoCo Coverage Report
-      uses: actions/upload-artifact@v4
-      with:
-        name: jacoco-report
-        path: target/site/jacoco/
-        retention-days: 7
+      - name: Resumo dos testes
+        if: always()
+        run: |
+          echo "### Resultado dos testes" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if ls target/surefire-reports/*.txt >/dev/null 2>&1; then
+            TOTAL=$(grep -ho "Tests run: [0-9]*" target/surefire-reports/*.txt \
+                    | awk -F': ' '{s+=$2} END {print s+0}')
+            FAILS=$(grep -ho "Failures: [0-9]*" target/surefire-reports/*.txt \
+                    | awk -F': ' '{s+=$2} END {print s+0}')
+            ERRS=$(grep -ho "Errors: [0-9]*" target/surefire-reports/*.txt \
+                    | awk -F': ' '{s+=$2} END {print s+0}')
+            echo "| Metrica | Valor |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Testes executados | $TOTAL |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Falhas | $FAILS |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Erros | $ERRS |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Nenhum relatorio do Surefire encontrado." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
-    - name: Update dependency graph
-      uses: advanced-security/maven-dependency-submission-action@v4
+      - name: Publicar relatorios de teste
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
+          retention-days: 7
+
+      - name: Publicar cobertura JaCoCo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+          retention-days: 7
+
+      - name: Atualizar grafo de dependencias
+        # Alimenta o Dependabot. So faz sentido no push da branch, nao em PR de fork.
+        if: github.event_name == 'push'
+        uses: advanced-security/maven-dependency-submission-action@v4
+
+  docker-build:
+    name: Build da imagem Docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build da imagem
+        run: docker build . --file Dockerfile --tag bff-sebratel:${{ github.sha }}
+
+      - name: Scan da imagem (Trivy)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: bff-sebratel:${{ github.sha }}
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          # Nao bloqueia: a imagem base carrega CVEs de SO fora do controle deste
+          # repositorio. Serve para dar visibilidade e orientar o bump da base.
+          exit-code: '0'

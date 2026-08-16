@@ -1,0 +1,290 @@
+name: Security
+
+# Pipeline de seguranca. Estrutura:
+#
+#   Pull Request / Push
+#        |
+#        +--> secret-scanning     (Gitleaks)
+#        +--> dependency-security (OWASP Dependency-Check)
+#        +--> sast                (Semgrep)
+#        +--> security-tests      (testes de autenticacao/autorizacao)
+#        |
+#        +--> security-gate       (agrega e decide bloqueio)
+#
+# O que BLOQUEIA o pipeline esta documentado no job security-gate.
+
+on:
+  push:
+    branches: [ "main", "staging" ]
+  pull_request:
+    branches: [ "main", "staging" ]
+  schedule:
+    # Varredura completa semanal: CVEs novas aparecem para codigo que nao mudou.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GITLEAKS_VERSION: '8.30.1'
+
+jobs:
+  # ---------------------------------------------------------------------
+  # SECRET SCANNING
+  # ---------------------------------------------------------------------
+  secret-scanning:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Instalar Gitleaks
+        run: |
+          curl -sSL -o /tmp/gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      # Bloqueante: impede que um secret NOVO entre no repositorio.
+      - name: Verificar secrets introduzidos por este PR
+        if: github.event_name == 'pull_request'
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          echo "Analisando commits de $BASE ate $HEAD"
+          gitleaks git . \
+            --log-opts="$BASE..$HEAD" \
+            --redact \
+            --report-format=sarif \
+            --report-path=gitleaks-pr.sarif \
+            --exit-code=1
+
+      # Informativo: o historico ja contem a chave privada RSA (finding F-01).
+      # Enquanto ela nao for removida e rotacionada, este passo continuara
+      # apontando o problema -- de proposito. Nao bloqueia para nao travar
+      # todo PR por um passivo pre-existente, mas o resultado fica registrado.
+      - name: Varredura do historico completo (informativo)
+        id: full-history
+        continue-on-error: true
+        run: |
+          gitleaks git . \
+            --redact \
+            --report-format=sarif \
+            --report-path=gitleaks-history.sarif \
+            --exit-code=1
+
+      - name: Resumo
+        if: always()
+        run: |
+          {
+            echo "### Secret Scanning"
+            echo ""
+            if [ "${{ steps.full-history.outcome }}" = "failure" ]; then
+              echo ":warning: **Secrets detectados no historico do repositorio.**"
+              echo ""
+              echo "Passivo conhecido: \`src/main/resources/id_rsa_private.pem\` (finding F-01)."
+              echo "Exige rotacao da chave e limpeza de historico. Valores nao sao exibidos (--redact)."
+            else
+              echo ":white_check_mark: Nenhum secret detectado no historico."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar relatorios
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-reports
+          path: gitleaks-*.sarif
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------
+  # DEPENDENCY SECURITY
+  # ---------------------------------------------------------------------
+  dependency-security:
+    name: Dependency Security
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      # A base do NVD e grande; sem cache cada execucao levaria dezenas de minutos.
+      - name: Cache da base do NVD
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: nvd-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: nvd-${{ runner.os }}-
+
+      - name: OWASP Dependency-Check
+        # NVD_API_KEY e opcional, mas fortemente recomendado: sem ele a API do NVD
+        # aplica rate limit agressivo e a atualizacao pode levar mais de 30 minutos.
+        # Solicite em https://nvd.nist.gov/developers/request-an-api-key
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          ARGS=""
+          if [ -n "$NVD_API_KEY" ]; then
+            ARGS="-DnvdApiKey=$NVD_API_KEY"
+          else
+            echo "::warning::NVD_API_KEY nao configurado -- a varredura sera lenta."
+          fi
+          ./mvnw -B -Psecurity verify -DskipTests $ARGS
+
+      - name: Resumo
+        if: always()
+        run: |
+          {
+            echo "### Dependency Security (OWASP Dependency-Check)"
+            echo ""
+            echo "Limite de bloqueio: **CVSS >= 7.0** (HIGH/CRITICAL)."
+            echo ""
+            echo "Supressoes: \`.github/dependency-check-suppressions.xml\` -- toda supressao exige justificativa e data de revisao."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar relatorio
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: target/dependency-check-report.*
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------
+  # SAST
+  # ---------------------------------------------------------------------
+  sast:
+    name: SAST (Semgrep)
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Passada completa, sem bloquear: gera o inventario de achados.
+      - name: Varredura completa (informativa)
+        continue-on-error: true
+        run: |
+          semgrep scan \
+            --config=p/java \
+            --config=p/secrets \
+            --config=p/owasp-top-ten \
+            --config=.semgrep/sebratel.yml \
+            --sarif --output=semgrep.sarif \
+            --metrics=off
+
+      # Passada de bloqueio: apenas severidade ERROR.
+      - name: Gate (apenas severidade ERROR)
+        run: |
+          semgrep scan \
+            --config=p/java \
+            --config=p/secrets \
+            --config=p/owasp-top-ten \
+            --config=.semgrep/sebratel.yml \
+            --severity=ERROR \
+            --error \
+            --metrics=off
+
+      - name: Publicar relatorio
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-sarif
+          path: semgrep.sarif
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------
+  # SECURITY TESTS
+  # ---------------------------------------------------------------------
+  security-tests:
+    name: Testes de Seguranca
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      # Roda a matriz de autenticacao/autorizacao isoladamente, para que uma
+      # regressao de seguranca apareca como falha propria e nao diluida na suite.
+      - name: Matriz de autenticacao e autorizacao
+        run: ./mvnw -B clean test -Dtest='SecurityIntegrationTest' -DfailIfNoTests=true
+
+      - name: Publicar relatorio
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-test-reports
+          path: target/surefire-reports/
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------
+  # SECURITY GATE
+  # ---------------------------------------------------------------------
+  security-gate:
+    name: Security Gate
+    runs-on: ubuntu-latest
+    needs: [secret-scanning, dependency-security, sast, security-tests]
+    if: always()
+    steps:
+      - name: Avaliar resultados
+        run: |
+          SECRETS="${{ needs.secret-scanning.result }}"
+          DEPS="${{ needs.dependency-security.result }}"
+          SAST="${{ needs.sast.result }}"
+          TESTS="${{ needs.security-tests.result }}"
+
+          {
+            echo "### Security Gate"
+            echo ""
+            echo "| Verificacao | Resultado | Bloqueia? |"
+            echo "| --- | --- | --- |"
+            echo "| Secret scanning (novos secrets) | $SECRETS | sim |"
+            echo "| Dependency security (CVSS >= 7) | $DEPS | sim |"
+            echo "| SAST (severidade ERROR) | $SAST | sim |"
+            echo "| Testes de seguranca | $TESTS | sim |"
+            echo ""
+            echo "**Nao bloqueiam automaticamente:** achados LOW/INFO, secrets ja existentes"
+            echo "no historico (passivo F-01, reportado a parte), CVEs suprimidas com"
+            echo "justificativa registrada e CVEs de sistema operacional da imagem base."
+            echo ""
+            echo "Nada e ignorado em silencio: todo achado fica nos artefatos do run."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          FALHOU=0
+          for RESULTADO in "$SECRETS" "$DEPS" "$SAST" "$TESTS"; do
+            if [ "$RESULTADO" != "success" ] && [ "$RESULTADO" != "skipped" ]; then
+              FALHOU=1
+            fi
+          done
+
+          if [ "$FALHOU" -eq 1 ]; then
+            echo "::error::Security gate bloqueou o pipeline. Verifique a tabela no resumo do run."
+            exit 1
+          fi
+          echo "Security gate aprovado."

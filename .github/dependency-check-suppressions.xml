@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Supressoes do OWASP Dependency-Check.
+
+  REGRA: nenhuma supressao sem justificativa escrita e sem data de revisao.
+  Uma supressao declara "esta CVE nao e explorevel NESTE contexto" -- nunca
+  "esta CVE e inconveniente". Se nao houver argumento tecnico, corrija a
+  dependencia em vez de suprimir.
+
+  Formato de cada entrada:
+    <notes>
+      CVE:        identificador
+      Motivo:     por que nao e explorevel aqui
+      Revisar em: AAAA-MM-DD
+      Autor:      quem decidiu
+    </notes>
+
+  Este arquivo comeca vazio de proposito. A primeira execucao do
+  security.yml vai listar os achados reais; cada um deve ser tratado
+  (corrigido ou suprimido com justificativa), nunca ignorado em silencio.
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+
+    <!--
+      Exemplo desativado, mantido apenas como modelo de preenchimento.
+      Remova o comentario e ajuste ao suprimir algo de verdade.
+
+    <suppress>
+        <notes><![CDATA[
+          CVE:        CVE-0000-00000
+          Motivo:     biblioteca presente apenas em escopo de teste, nao vai para
+                      a imagem de producao.
+          Revisar em: 2026-12-31
+          Autor:      nome.sobrenome
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/grupo/artefato@.*$</packageUrl>
+        <cve>CVE-0000-00000</cve>
+    </suppress>
+    -->
+
+</suppressions>
