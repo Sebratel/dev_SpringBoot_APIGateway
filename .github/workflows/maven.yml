@@ -19,6 +19,11 @@ jobs:
   build-and-test:
     name: Build e Testes
     runs-on: ubuntu-latest
+    # O maven-dependency-submission-action publica o snapshot do grafo de
+    # dependencias via API e precisa de escrita. Com o "contents: read" herdado
+    # do nivel do workflow ele falha com 403 depois do build inteiro.
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
@@ -90,7 +95,10 @@ jobs:
         run: docker build . --file Dockerfile --tag bff-sebratel:${{ github.sha }}
 
       - name: Scan da imagem (Trivy)
-        uses: aquasecurity/trivy-action@0.28.0
+        # As tags desta action sao prefixadas com "v". Referenciar "0.28.0" sem o
+        # prefixo faz o GitHub falhar na resolucao da action, antes de qualquer
+        # step rodar -- o job morre em poucos segundos sem log util.
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: bff-sebratel:${{ github.sha }}
           format: table

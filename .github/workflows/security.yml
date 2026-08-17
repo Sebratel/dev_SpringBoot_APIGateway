@@ -179,8 +179,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Passada completa, sem bloquear: gera o inventario de achados.
-      - name: Varredura completa (informativa)
+      # Uma unica varredura, sem bloquear aqui. A decisao de bloqueio fica no
+      # passo seguinte, para que os achados apareçam no resumo do PR mesmo
+      # quando o gate falha -- "semgrep --error" aborta sem dizer o que achou.
+      - name: Varredura
         continue-on-error: true
         run: |
           semgrep scan \
@@ -188,27 +190,18 @@ jobs:
             --config=p/secrets \
             --config=p/owasp-top-ten \
             --config=.semgrep/sebratel.yml \
-            --sarif --output=semgrep.sarif \
+            --json --output=semgrep.json \
             --metrics=off
 
-      # Passada de bloqueio: apenas severidade ERROR.
-      - name: Gate (apenas severidade ERROR)
-        run: |
-          semgrep scan \
-            --config=p/java \
-            --config=p/secrets \
-            --config=p/owasp-top-ten \
-            --config=.semgrep/sebratel.yml \
-            --severity=ERROR \
-            --error \
-            --metrics=off
+      - name: Relatorio e gate
+        run: python3 .github/scripts/semgrep_gate.py semgrep.json
 
       - name: Publicar relatorio
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: semgrep-sarif
-          path: semgrep.sarif
+          name: semgrep-relatorio
+          path: semgrep.json
           retention-days: 30
           if-no-files-found: ignore
 
