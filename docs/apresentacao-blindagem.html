@@ -1,0 +1,961 @@
+<title>Blindagem do BFF Sebratel</title>
+<style>
+  /* ---------- tokens: tema claro completo ---------- */
+  :root {
+    --ground:      #F5F7F8;
+    --surface:     #FFFFFF;
+    --surface-2:   #EBF0F2;
+    --ink:         #131A1F;
+    --ink-soft:    #55636D;
+    --ink-faint:   #85939E;
+    --line:        #D8E0E4;
+    --line-strong: #B9C6CC;
+    --accent:      #0E4F63;
+    --accent-soft: #E0EEF3;
+    --sev-crit:    #A32A21;
+    --sev-high:    #AE600D;
+    --sev-med:     #756B1C;
+    --sev-low:     #57656F;
+    --ok:          #2C7A4C;
+    --shadow:      0 1px 2px rgba(19,26,31,.06), 0 6px 18px rgba(19,26,31,.05);
+
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+    --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #0D1317;
+      --surface:     #131C21;
+      --surface-2:   #1A252B;
+      --ink:         #E4ECEF;
+      --ink-soft:    #9BAAB3;
+      --ink-faint:   #6D7C86;
+      --line:        #24323A;
+      --line-strong: #35474F;
+      --accent:      #56B4CC;
+      --accent-soft: #11303B;
+      --sev-crit:    #E86A5E;
+      --sev-high:    #E09A42;
+      --sev-med:     #C4B85A;
+      --sev-low:     #90A0AA;
+      --ok:          #5EBE85;
+      --shadow:      0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #0D1317;
+    --surface:     #131C21;
+    --surface-2:   #1A252B;
+    --ink:         #E4ECEF;
+    --ink-soft:    #9BAAB3;
+    --ink-faint:   #6D7C86;
+    --line:        #24323A;
+    --line-strong: #35474F;
+    --accent:      #56B4CC;
+    --accent-soft: #11303B;
+    --sev-crit:    #E86A5E;
+    --sev-high:    #E09A42;
+    --sev-med:     #C4B85A;
+    --sev-low:     #90A0AA;
+    --ok:          #5EBE85;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
+  }
+
+  /* ---------- base ---------- */
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 940px;
+    margin: 0 auto;
+    padding: 0 24px 96px;
+  }
+
+  p, li { max-width: 68ch; }
+
+  a { color: var(--accent); }
+
+  code, .mono {
+    font-family: var(--font-mono);
+    font-size: .88em;
+  }
+
+  :where(p, li) code {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: .08em .34em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- cabecalho ---------- */
+  .head {
+    border-bottom: 1px solid var(--line);
+    padding: 72px 0 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(2.3rem, 6vw, 3.5rem);
+    line-height: 1.08;
+    letter-spacing: -.015em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .lede {
+    font-size: 1.16rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin: 0;
+    max-width: 62ch;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink-faint);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .meta strong {
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+
+  /* ---------- secoes ---------- */
+  section { padding-top: 60px; }
+
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.5rem, 3.2vw, 1.95rem);
+    line-height: 1.2;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+    margin: 0 0 6px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  h3 {
+    font-size: 1.06rem;
+    font-weight: 650;
+    letter-spacing: -.005em;
+    text-wrap: balance;
+    margin: 32px 0 8px;
+  }
+
+  .sub {
+    color: var(--ink-soft);
+    font-size: .95rem;
+    margin: 14px 0 0;
+  }
+
+  /* ---------- metricas ---------- */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 26px;
+  }
+
+  .metric {
+    background: var(--surface);
+    padding: 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .metric .n {
+    font-family: var(--font-display);
+    font-size: 2.1rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+  }
+
+  .metric .k {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    line-height: 1.35;
+  }
+
+  /* ---------- camadas ---------- */
+  .layers {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 28px;
+  }
+
+  .layer {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+    border-radius: 5px;
+    padding: 20px 22px;
+    box-shadow: var(--shadow);
+  }
+
+  .layer-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 12px;
+    margin-bottom: 8px;
+  }
+
+  .layer-name {
+    font-size: 1.05rem;
+    font-weight: 650;
+    margin: 0;
+  }
+
+  .layer-tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .layer p { margin: 0 0 10px; font-size: .95rem; }
+  .layer p:last-child { margin-bottom: 0; }
+
+  .items {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .items li {
+    font-size: .9rem;
+    padding-left: 18px;
+    position: relative;
+    color: var(--ink-soft);
+  }
+
+  .items li::before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    top: .62em;
+    width: 6px;
+    height: 6px;
+    border: 1.5px solid var(--accent);
+    border-radius: 1px;
+  }
+
+  /* ---------- tabelas ---------- */
+  .scroll {
+    overflow-x: auto;
+    margin-top: 24px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: .9rem;
+    min-width: 560px;
+  }
+
+  th {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line-strong);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+
+  td.id {
+    font-family: var(--font-mono);
+    font-size: .82rem;
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+
+  /* ---------- severidade / estado ---------- */
+  .pill {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 3px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+  }
+
+  .crit { color: var(--sev-crit); }
+  .high { color: var(--sev-high); }
+  .med  { color: var(--sev-med); }
+  .low  { color: var(--sev-low); }
+  .done { color: var(--ok); }
+
+  /* ---------- pipeline ---------- */
+  .pipe {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    margin-top: 26px;
+    padding-bottom: 6px;
+    overflow-x: auto;
+  }
+
+  .stage {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 14px 16px;
+    min-width: 152px;
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .stage.gate {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .stage .t {
+    font-size: .88rem;
+    font-weight: 650;
+    line-height: 1.25;
+  }
+
+  .stage .d {
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.4;
+  }
+
+  .stage .tool {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    letter-spacing: .04em;
+    margin-top: auto;
+    padding-top: 6px;
+  }
+
+  /* ---------- destaque ---------- */
+  .case {
+    margin-top: 28px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 26px 28px;
+    box-shadow: var(--shadow);
+  }
+
+  .case h3 { margin-top: 0; }
+
+  .beats {
+    list-style: none;
+    counter-reset: beat;
+    margin: 18px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .beats li {
+    counter-increment: beat;
+    padding-left: 40px;
+    position: relative;
+    font-size: .93rem;
+  }
+
+  .beats li::before {
+    content: counter(beat);
+    position: absolute;
+    left: 0;
+    top: -1px;
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--surface);
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  .note {
+    border-left: 3px solid var(--sev-high);
+    padding: 2px 0 2px 16px;
+    margin-top: 22px;
+    color: var(--ink-soft);
+    font-size: .93rem;
+  }
+
+  .note strong { color: var(--ink); }
+
+  /* ---------- rodape ---------- */
+  footer {
+    margin-top: 72px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    font-size: .85rem;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 620px) {
+    .head { padding-top: 48px; }
+    .wrap { padding: 0 18px 64px; }
+    .layer, .case { padding: 18px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="head">
+    <p class="eyebrow">Auditoria técnica &amp; hardening</p>
+    <h1>Blindagem do BFF Sebratel</h1>
+    <p class="lede">
+      Auditoria completa do serviço <span class="mono">bff-java-service</span>, correção das
+      falhas de menor risco, esteira de segurança no CI e instrumentação de observabilidade —
+      sem nenhuma mudança arquitetural.
+    </p>
+    <ul class="meta">
+      <li><strong>Repositório</strong> dev_SpringBoot_APIGateway</li>
+      <li><strong>Branch</strong> staging</li>
+      <li><strong>Stack</strong> Java 21 · Spring Boot 3.4.3</li>
+      <li><strong>Data</strong> agosto/2026</li>
+    </ul>
+  </header>
+
+  <section>
+    <h2>O ponto de partida</h2>
+    <p class="sub">
+      A primeira descoberta foi de nomenclatura, e mudou o foco de todo o trabalho.
+    </p>
+    <p>
+      O repositório se chama <span class="mono">APIGateway</span>, mas o serviço <strong>não é um
+      gateway</strong>. É um BFF: 50 endpoints REST próprios que consultam bancos diretamente e
+      chamam a API do ERP Elleven. Não há roteamento dinâmico nem repasse de requisição bruta.
+    </p>
+    <p>
+      Isso elimina por construção uma classe inteira de riscos que normalmente domina a auditoria de
+      um gateway — <em>request smuggling</em>, <em>host header injection</em>, confiança em
+      <span class="mono">X-Forwarded-*</span>. Auditadas as 14 chamadas de saída, todas usam host
+      literal: <strong>não há SSRF</strong>. As ~25 queries nativas usam parâmetros nomeados:
+      <strong>não há SQL injection</strong>.
+    </p>
+    <p>
+      Os riscos reais estavam em outro lugar — e eram mais graves.
+    </p>
+
+    <div class="metrics">
+      <div class="metric"><span class="n">248</span><span class="k">arquivos Java analisados</span></div>
+      <div class="metric"><span class="n">50</span><span class="k">endpoints mapeados</span></div>
+      <div class="metric"><span class="n">22</span><span class="k">achados classificados</span></div>
+      <div class="metric"><span class="n">0</span><span class="k">testes de segurança existentes</span></div>
+      <div class="metric"><span class="n">0</span><span class="k">verificações de segurança no CI</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>O que a auditoria encontrou</h2>
+    <p class="sub">
+      17 achados de segurança e 5 de dependências. Nada foi classificado como crítico só por
+      parecer suspeito — a severidade reflete o caminho de exploração real neste código.
+    </p>
+
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Severidade</th>
+            <th>Problema</th>
+            <th>Situação</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="id">F-01</td>
+            <td><span class="pill crit">Critical</span></td>
+            <td>Chave privada RSA versionada no Git e embarcada no JAR</td>
+            <td><span class="pill high">Exige rotação</span></td>
+          </tr>
+          <tr>
+            <td class="id">F-02</td>
+            <td><span class="pill crit">Critical</span></td>
+            <td>HTTP Basic com credencial estática anula a restrição de domínio do JWT</td>
+            <td><span class="pill low">Instrumentado</span></td>
+          </tr>
+          <tr>
+            <td class="id">F-03</td>
+            <td><span class="pill high">High</span></td>
+            <td>JWT sem validação de <span class="mono">audience</span> — token de qualquer app Google é aceito</td>
+            <td><span class="pill high">Aguarda client IDs</span></td>
+          </tr>
+          <tr>
+            <td class="id">F-04</td>
+            <td><span class="pill high">High</span></td>
+            <td><span class="mono">/api/v1/matrix</span> público — oráculo de CPF sem autenticação</td>
+            <td><span class="pill low">Instrumentado</span></td>
+          </tr>
+          <tr>
+            <td class="id">F-06</td>
+            <td><span class="pill high">High</span></td>
+            <td>Token bearer da integração gravado em log em texto puro</td>
+            <td><span class="pill done">Corrigido</span></td>
+          </tr>
+          <tr>
+            <td class="id">F-15</td>
+            <td><span class="pill high">High</span></td>
+            <td>Zero timeout no cliente HTTP — ERP lento derruba o serviço inteiro</td>
+            <td><span class="pill high">Aguarda medição</span></td>
+          </tr>
+          <tr>
+            <td class="id">F-17</td>
+            <td><span class="pill high">High</span></td>
+            <td>Todos os testes de controller rodavam com a segurança desligada</td>
+            <td><span class="pill done">Corrigido</span></td>
+          </tr>
+          <tr>
+            <td class="id">D-01</td>
+            <td><span class="pill high">High</span></td>
+            <td>Selenium e WebDriverManager no build sem nenhum uso no código</td>
+            <td><span class="pill done">Removidos</span></td>
+          </tr>
+          <tr>
+            <td class="id">F-14</td>
+            <td><span class="pill med">Medium</span></td>
+            <td>Retry após 401 reenviava exatamente o token que acabara de ser recusado</td>
+            <td><span class="pill done">Corrigido</span></td>
+          </tr>
+          <tr>
+            <td class="id">F-05 … F-13</td>
+            <td><span class="pill med">Medium</span></td>
+            <td>CORS aberto, ausência de autorização, sem rate limiting, exceções vazando ao cliente</td>
+            <td><span class="pill low">Documentados</span></td>
+          </tr>
+          <tr>
+            <td class="id">F-16</td>
+            <td><span class="pill low">Low</span></td>
+            <td>Pools de conexão sem dimensionamento; datasource morto apontando IP interno</td>
+            <td><span class="pill done">Parcial</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note">
+      <strong>Critério aplicado:</strong> severidade mede o risco <em>neste</em> código, não a nota
+      CVSS isolada. Uma CVE crítica em biblioteca que nunca é invocada não vira Critical — vira High
+      com a observação de que não há caminho de execução até ela.
+    </p>
+  </section>
+
+  <section>
+    <h2>As camadas de defesa</h2>
+    <p class="sub">
+      Seis camadas, da mais interna à mais externa. Cada uma pega o que a anterior deixou passar.
+    </p>
+
+    <div class="layers">
+
+      <article class="layer">
+        <div class="layer-head">
+          <h3 class="layer-name">Correções no código</h3>
+          <span class="layer-tag">camada 1 · runtime</span>
+        </div>
+        <p>
+          Só mudanças pequenas, localizadas e de baixo risco. Nenhuma refatoração, nenhuma troca de
+          biblioteca, nenhuma alteração de contrato de API.
+        </p>
+        <ul class="items">
+          <li>Token bearer removido dos logs — pré-requisito para ligar o APM com segurança</li>
+          <li><span class="mono">joinPoint.proceed(args)</span> no retry: a nova tentativa passa a levar o token renovado</li>
+          <li>Selenium e WebDriverManager removidos — junto foram ~25 artefatos transitivos</li>
+          <li>Datasource morto removido, com IP interno que estava fixo no código</li>
+        </ul>
+      </article>
+
+      <article class="layer">
+        <div class="layer-head">
+          <h3 class="layer-name">Testes</h3>
+          <span class="layer-tag">camada 2 · regressão</span>
+        </div>
+        <p>
+          Os 25 testes de controller existentes rodavam com <span class="mono">addFilters = false</span>:
+          a cadeia de segurança nunca era exercitada. Dava para introduzir um
+          <span class="mono">permitAll()</span> acidental com a suíte inteira verde.
+        </p>
+        <p>
+          A correção foi <strong>aditiva</strong> — nenhum teste existente foi tocado.
+        </p>
+        <ul class="items">
+          <li><span class="mono">SecurityIntegrationTest</span>: 11 cenários com os filtros ligados</li>
+          <li>Sem credencial, senha errada, usuário inexistente e token malformado devem dar 401</li>
+          <li>Rotas públicas conhecidas ficam registradas — quando forem fechadas, o teste falha de propósito</li>
+          <li><span class="mono">TokenRetryAspectTest</span>: prova que o retry leva o token novo</li>
+        </ul>
+      </article>
+
+      <article class="layer">
+        <div class="layer-head">
+          <h3 class="layer-name">Integração contínua</h3>
+          <span class="layer-tag">camada 3 · build</span>
+        </div>
+        <p>
+          A branch <span class="mono">main</span>, que é a de produção, não tinha
+          <strong>nenhuma</strong> verificação automatizada: os três workflows existentes cobriam só
+          a <span class="mono">staging</span>.
+        </p>
+        <ul class="items">
+          <li>Build e testes em push e pull request, agora para <span class="mono">main</span> e <span class="mono">staging</span></li>
+          <li><span class="mono">clean verify</span> obrigatório — sem ele, classes de builds antigos sobrevivem e quebram a suíte</li>
+          <li>Resumo de testes e cobertura JaCoCo publicados no próprio PR</li>
+          <li>Build da imagem Docker e scan com Trivy</li>
+        </ul>
+      </article>
+
+      <article class="layer">
+        <div class="layer-head">
+          <h3 class="layer-name">Portões de segurança</h3>
+          <span class="layer-tag">camada 4 · bloqueio</span>
+        </div>
+        <p>
+          Quatro verificações independentes e um portão que agrega o resultado das quatro. O que
+          bloqueia está definido de forma explícita, e o que não bloqueia continua sendo registrado.
+        </p>
+        <ul class="items">
+          <li>Segredos novos no diff do PR — bloqueia</li>
+          <li>Dependência com CVSS ≥ 7 — bloqueia</li>
+          <li>Achado de SAST com severidade ERROR — bloqueia</li>
+          <li>Falha nos testes de autenticação e autorização — bloqueia</li>
+        </ul>
+      </article>
+
+      <article class="layer">
+        <div class="layer-head">
+          <h3 class="layer-name">Os robôs</h3>
+          <span class="layer-tag">camada 5 · vigilância contínua</span>
+        </div>
+        <p>
+          Ferramentas que trabalham sozinhas, inclusive quando ninguém abre PR. A varredura de
+          dependências roda semanalmente por agendamento, porque CVE nova aparece em código que não
+          mudou.
+        </p>
+        <ul class="items">
+          <li><strong>Dependabot</strong> — alerta e propõe correção para dependências vulneráveis</li>
+          <li><strong>Gitleaks</strong> — segredos no diff e no histórico, com valores sempre mascarados</li>
+          <li><strong>Semgrep</strong> — SAST com regras públicas mais seis regras escritas para os achados desta auditoria</li>
+          <li><strong>OWASP Dependency-Check</strong> — CVEs em dependências diretas e transitivas</li>
+          <li><strong>Trivy</strong> — CVEs de sistema operacional na imagem Docker</li>
+        </ul>
+      </article>
+
+      <article class="layer">
+        <div class="layer-head">
+          <h3 class="layer-name">Observabilidade</h3>
+          <span class="layer-tag">camada 6 · produção</span>
+        </div>
+        <p>
+          Elastic APM Java Agent 1.56.0, falando com o <span class="mono">apm-server</span> pela rede
+          Docker interna. A rede foi declarada no repositório, e não criada à mão no Portainer,
+          porque o ambiente é GitOps.
+        </p>
+        <ul class="items">
+          <li>Corpo de requisição não é capturado — contém CPF, cookie de sessão e dados de funcionário</li>
+          <li>Captura de headers desligada explicitamente: o padrão do agente é ligado e enviaria <span class="mono">Authorization</span></li>
+          <li>Lista de campos sanitizados estendida com <span class="mono">cookiestring</span>, <span class="mono">syndata</span>, <span class="mono">cpf</span></li>
+          <li>Nenhuma instrumentação foi desativada — sem evidência de problema, desligar seria injustificado</li>
+        </ul>
+      </article>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>A esteira, da abertura do PR ao merge</h2>
+    <p class="sub">
+      Tudo roda em paralelo. O portão final só fecha quando as quatro verificações respondem.
+    </p>
+
+    <div class="pipe">
+      <div class="stage">
+        <span class="t">Build &amp; Testes</span>
+        <span class="d">264 testes, cobertura publicada no PR</span>
+        <span class="tool">maven · jacoco</span>
+      </div>
+      <div class="stage">
+        <span class="t">Segredos</span>
+        <span class="d">Diff do PR e histórico completo</span>
+        <span class="tool">gitleaks</span>
+      </div>
+      <div class="stage">
+        <span class="t">Dependências</span>
+        <span class="d">CVEs diretas e transitivas</span>
+        <span class="tool">dependency-check</span>
+      </div>
+      <div class="stage">
+        <span class="t">SAST</span>
+        <span class="d">Análise estática do código-fonte</span>
+        <span class="tool">semgrep</span>
+      </div>
+      <div class="stage">
+        <span class="t">Testes de segurança</span>
+        <span class="d">Matriz de autenticação isolada</span>
+        <span class="tool">junit</span>
+      </div>
+      <div class="stage gate">
+        <span class="t">Security Gate</span>
+        <span class="d">Agrega tudo e decide o bloqueio</span>
+        <span class="tool">merge liberado ou barrado</span>
+      </div>
+    </div>
+
+    <h3>O que explicitamente não bloqueia</h3>
+    <p>
+      Um portão que bloqueia em tudo é desligado na primeira semana. Achados de severidade baixa,
+      CVEs de sistema operacional da imagem base e supressões com justificativa registrada passam —
+      mas nenhum deles é descartado: todos ficam nos artefatos do run.
+    </p>
+    <p>
+      Toda supressão exige finding rastreado, justificativa técnica e data de revisão. Não existe
+      mecanismo para silenciar achado inconveniente.
+    </p>
+  </section>
+
+  <section>
+    <h2>O caso WebDriverManager</h2>
+    <p class="sub">
+      Um exemplo concreto de duas camadas independentes chegando à mesma conclusão.
+    </p>
+
+    <div class="case">
+      <h3>Como uma dependência esquecida virou risco crítico</h3>
+      <ol class="beats">
+        <li>
+          A auditoria manual notou que <span class="mono">selenium-java</span> e
+          <span class="mono">webdrivermanager</span> estavam no build sem nenhuma referência no
+          código — nem em <span class="mono">src/main</span>, nem em <span class="mono">src/test</span>.
+        </li>
+        <li>
+          Foram removidos. Junto saíram ~25 artefatos transitivos, incluindo o BouncyCastle 1.76 e um
+          bloco do OpenTelemetry que poderia conflitar com o agente do APM.
+        </li>
+        <li>
+          Dias depois, o Dependabot abriu um alerta independente na mesma dependência:
+          <strong>XXE, CVSS 9.3 Critical</strong>. Uma CVE direta que a análise manual de versões
+          não tinha identificado.
+        </li>
+        <li>
+          O Dependabot propôs atualizar para a versão 6.1.0. <strong>Essa era a correção errada</strong> —
+          a dependência não é usada por nada. Atualizar manteria os 25 artefatos e apenas moveria a
+          superfície de ataque de lugar.
+        </li>
+      </ol>
+
+      <p class="note">
+        <strong>A lição para o processo:</strong> a análise manual acertou o diagnóstico e a
+        remediação, mas errou a severidade — e foi o robô que corrigiu. É exatamente por isso que a
+        auditoria registra que o scanner, e não a análise humana de versões, é a fonte autoritativa
+        sobre CVEs.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Antes e depois</h2>
+
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Dimensão</th>
+            <th>Antes</th>
+            <th>Depois</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Testes automatizados</td>
+            <td>250, nenhum de segurança</td>
+            <td>264, com matriz de autenticação</td>
+          </tr>
+          <tr>
+            <td>Cadeia de segurança nos testes</td>
+            <td>Desligada em 100% dos testes de controller</td>
+            <td>Exercitada em classe dedicada</td>
+          </tr>
+          <tr>
+            <td>Cobertura de CI na branch de produção</td>
+            <td>Nenhuma</td>
+            <td>Build, testes e 4 verificações de segurança</td>
+          </tr>
+          <tr>
+            <td>Verificação de segredos</td>
+            <td>Inexistente</td>
+            <td>Diff do PR bloqueia; histórico é reportado</td>
+          </tr>
+          <tr>
+            <td>Análise estática</td>
+            <td>Inexistente</td>
+            <td>Semgrep com regras próprias do projeto</td>
+          </tr>
+          <tr>
+            <td>Varredura de dependências</td>
+            <td>Inexistente</td>
+            <td>Dependency-Check no PR e semanal, mais Dependabot</td>
+          </tr>
+          <tr>
+            <td>Observabilidade</td>
+            <td>Sem APM, sem healthcheck, sem métricas</td>
+            <td>Elastic APM com proteção de dados sensíveis</td>
+          </tr>
+          <tr>
+            <td>Credencial em log</td>
+            <td>Token bearer em texto puro</td>
+            <td>Removido, com regra de SAST para impedir recaída</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>O que ainda está aberto</h2>
+    <p class="sub">
+      O trabalho não termina porque o build ficou verde. Estes pontos dependem de decisão ou de
+      medição — nenhum deles deve ser fechado no escuro.
+    </p>
+
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Pendência</th>
+            <th>Por que ainda não foi feita</th>
+            <th>O que destrava</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Rotação da chave RSA</strong> <span class="pill crit">F-01</span></td>
+            <td>QR Codes já emitidos deixam de ser decifráveis com a chave nova</td>
+            <td>Definição de janela de transição pelo negócio</td>
+          </tr>
+          <tr>
+            <td><strong>Fechar o HTTP Basic</strong> <span class="pill crit">F-02</span></td>
+            <td>Remover às cegas derrubaria integrações desconhecidas</td>
+            <td>Dados do filtro de auditoria, já coletando em produção</td>
+          </tr>
+          <tr>
+            <td><strong>Validar o <span class="mono">audience</span> do JWT</strong> <span class="pill high">F-03</span></td>
+            <td>Se web e mobile usam client IDs diferentes, validar um só derruba um deles</td>
+            <td>Levantamento dos client IDs legítimos</td>
+          </tr>
+          <tr>
+            <td><strong>Timeout no cliente HTTP</strong> <span class="pill high">F-15</span></td>
+            <td>O valor certo vem da latência real, não de um palpite</td>
+            <td>Uma semana de dados do APM</td>
+          </tr>
+          <tr>
+            <td><strong>Modelo de autorização</strong> <span class="pill med">F-09</span></td>
+            <td>Mudança arquitetural — hoje qualquer autenticado acessa tudo</td>
+            <td>Definição de papéis pelo negócio</td>
+          </tr>
+          <tr>
+            <td><strong>Rate limiting</strong> <span class="pill med">F-10</span></td>
+            <td>Pertence ao proxy reverso, que está fora deste repositório</td>
+            <td>Configuração no Traefik/nginx</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note">
+      <strong>O filtro de auditoria é temporário e tem função única:</strong> registrar, a cada
+      requisição, qual mecanismo de autenticação foi usado e de onde vieram as chamadas anônimas.
+      Ele não altera requisição, resposta nem contexto de segurança, e engole qualquer erro interno
+      para nunca derrubar uma chamada real. Sai de cena assim que F-02 e F-04 forem fechados.
+    </p>
+  </section>
+
+  <section>
+    <h2>Princípios que guiaram o trabalho</h2>
+    <ul class="items" style="margin-top:22px">
+      <li>Preservar o comportamento atual sempre que não houvesse motivo de segurança para mudá-lo</li>
+      <li>Nenhuma refatoração massiva, troca de framework ou alteração de contrato de API</li>
+      <li>Medir antes de otimizar — nenhuma mudança de performance especulativa foi aplicada</li>
+      <li>Instrumentar antes de endurecer, quando fechar uma porta poderia quebrar um consumidor desconhecido</li>
+      <li>Toda correção de segurança acompanhada de teste, quando tecnicamente possível</li>
+      <li>Nenhum achado silenciado: o que não bloqueia continua registrado e rastreável</li>
+    </ul>
+  </section>
+
+  <footer>
+    Detalhamento completo dos 22 achados, threat model e roteiro de validação do APM em
+    <span class="mono">docs/AUDITORIA-SEGURANCA.md</span> e
+    <span class="mono">docs/APM-VALIDACAO.md</span>.
+  </footer>
+
+</div>

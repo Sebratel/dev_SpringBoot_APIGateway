@@ -801,8 +801,29 @@ Tree gerada com `mvnw dependency:tree` — 160 artefatos.
 ### D-01 · Selenium + WebDriverManager: dependências não utilizadas
 
 ```
-Severidade    MEDIUM  ·  Status: CONFIRMED
+Severidade    HIGH (revisada)  ·  Status: CONFIRMED
 ```
+
+> **Revisão de 2026-08-17.** Esta severidade foi elevada de MEDIUM para HIGH depois que o
+> Dependabot abriu o alerta #1 sobre `io.github.bonigarcia:webdrivermanager` 5.7.0:
+> **XXE (Improper Restriction of XML External Entity Reference), CVSS 9.3 Critical**,
+> corrigido em 6.1.0.
+>
+> A análise original citou apenas as CVEs *transitivas* do BouncyCastle e não identificou
+> esta CVE *direta* no próprio WebDriverManager. É precisamente o caso que justifica a
+> ressalva metodológica registrada no fim desta seção: a análise manual de versões não
+> substitui um scanner, e o scanner é a fonte autoritativa.
+>
+> **Exploitabilidade neste contexto permanece nula** — a classe vulnerável
+> (`WebDriverManager.java`) nunca é instanciada, porque nenhuma linha de código em
+> `src/main` ou `src/test` referencia a biblioteca (verificado nas branches `staging` e
+> `massivas-integracao`). Por isso HIGH e não CRITICAL: a CVE é crítica em si, mas não há
+> caminho de execução até ela neste repositório.
+>
+> **A correção continua sendo a remoção, não o bump para 6.1.0.** Atualizar manteria ~25
+> artefatos transitivos desnecessários e apenas trocaria a superfície de ataque de lugar.
+> Já aplicado no commit `2dce938` (branch `staging`). O alerta permanece aberto até que a
+> mudança alcance a branch default (`massivas-integracao`), que é a varrida pelo Dependabot.
 
 `selenium-java` 4.18.1 e `webdrivermanager` 5.7.0 estão no `pom.xml` mas **não são referenciados por nenhuma linha de código** (`src/main` nem `src/test` — verificado por grep de `WebDriver|ChromeDriver|selenium`).
 
@@ -853,6 +874,10 @@ Severidade    LOW  ·  Status: POTENTIAL / não explorável
 Há CVEs conhecidas em faixas 6.2.x anteriores à 6.2.7/6.2.8 (ex.: bypass de `disallowedFields` no `DataBinder`). Sobre as CVEs de Spring Security relacionadas a detecção de anotações com genéricos: **não são exploráveis aqui**, porque o projeto não usa nenhuma anotação de method security (ver F-09). Atualizar o parent para a última 3.4.x endereça o conjunto.
 
 ### Ressalva metodológica sobre CVEs
+
+**Esta ressalva já se provou necessária na prática:** o Dependabot encontrou a XXE de
+CVSS 9.3 no WebDriverManager (ver D-01), que a análise manual abaixo não identificou.
+Trate a lista a seguir como ponto de partida, nunca como inventário completo.
 
 As classificações acima vêm de análise de faixas de versão contra vulnerabilidades conhecidas até meu corte de conhecimento. **Não substituem um scanner.** Recomendo que o OWASP Dependency-Check ou o Dependabot, uma vez no CI (Etapa D), seja a **fonte autoritativa** — inclusive para revisar estas conclusões. Não classifiquei nada como CRITICAL sem caminho de exploração demonstrável, conforme a regra 4 do escopo.
 
