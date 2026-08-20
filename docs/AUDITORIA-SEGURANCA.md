@@ -938,6 +938,11 @@ Os itens que mexem em autenticação (F-02, F-03, F-04) ficam **bloqueados aguar
 
 ### D — CI
 
+> **Configuracao externa necessaria:** parte da esteira depende de coisas fora deste
+> repositorio — chave de API do NVD, Dependabot, branch protection, rede do ELK e rate
+> limiting no proxy. A lista completa, com passo a passo, esta em
+> [CI-PRE-REQUISITOS.md](CI-PRE-REQUISITOS.md).
+
 Workflows a criar em `.github/workflows/`:
 
 | Workflow | Valida | Bloqueia? |
