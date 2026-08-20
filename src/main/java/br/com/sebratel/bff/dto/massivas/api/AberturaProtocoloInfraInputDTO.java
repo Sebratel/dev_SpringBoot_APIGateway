@@ -23,6 +23,9 @@ public class AberturaProtocoloInfraInputDTO {
     /** AP principal da massiva (a lista completa vai no descritivo). Opcional. */
     private String authenticationAccessPointCode;
 
+    /** Código do Site — obrigatório para o tipo backbone (matriz interna de Rompimento de Backbone). */
+    private String authenticationSiteCode;
+
     @NotNull
     private AberturaRegistroMassivoAssignmentDTO assignment;
 }

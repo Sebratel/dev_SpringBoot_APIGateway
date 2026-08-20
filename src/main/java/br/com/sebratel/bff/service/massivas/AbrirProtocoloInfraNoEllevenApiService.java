@@ -114,6 +114,8 @@ public class AbrirProtocoloInfraNoEllevenApiService {
         body.setSolicitationServiceCategory2(CATEGORY_2_MANUTENCAO_FO);
         body.setSolicitationServiceCategory3(type.getCategory3());
         body.setAuthenticationAccessPointCode(input.getAuthenticationAccessPointCode());
+        // Site: obrigatório para backbone; nos demais tipos vem null e o @JsonInclude(NON_NULL) omite.
+        body.setAuthenticationSiteCode(input.getAuthenticationSiteCode());
         body.setAssignment(assignment);
         body.setAffectedUsers(new ArrayList<>());
         return body;
