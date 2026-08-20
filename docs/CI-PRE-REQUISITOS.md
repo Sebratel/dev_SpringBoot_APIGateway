@@ -12,6 +12,7 @@ Sem elas o pipeline não fica verde, e o motivo não é óbvio olhando só o có
 | 2 | **GitHub** | Dependabot alerts + security updates | Recomendado | nada |
 | 3 | **GitHub** | Branch protection com checks obrigatórios | Recomendado | nada |
 | 4 | **Host Docker** | Rede externa `elk_es_network` | Sim, para o APM | subida do container |
+| 4b | **Host Docker** | `chown` do volume `bff-logs` para UID 10001 | Sim, em ambiente existente | gravação de log |
 | 5 | **Proxy reverso** | Rate limiting (finding F-10) | Pendente | nada |
 
 ---
@@ -183,6 +184,64 @@ Deve mostrar `elk-network` com `name: elk_es_network` e `external: true`, manten
 
 ---
 
+## 4b. Host Docker — propriedade do volume de logs
+
+> **Passo obrigatório no próximo deploy em ambiente que já rodou antes.**
+> Sem ele o container sobe, mas não consegue gravar log.
+
+O container passou a rodar como usuário não-root (`bff`, UID **10001**) para atender ao
+achado de SAST `missing-user-entrypoint` — rodar como root significa que uma execução
+remota de código na aplicação já começa com privilégio máximo no namespace.
+
+A aplicação grava em `/app/logs/bff.log`, e esse caminho é o volume nomeado `bff-logs`.
+
+### Por que isso exige uma ação manual
+
+O Docker copia a propriedade do diretório da imagem apenas ao **inicializar um volume
+nomeado novo**. O `Dockerfile` já cria `/app/logs` com dono `bff:bff`, então:
+
+| Situação | Precisa de ação? |
+|---|---|
+| Ambiente novo, volume ainda não existe | Não — o volume nasce com o dono correto |
+| Ambiente existente (produção, stage) | **Sim** — o volume atual é de `root` |
+
+### Comando
+
+No host, com o container parado:
+
+```bash
+docker run --rm -v bff-logs:/logs alpine chown -R 10001:10001 /logs
+```
+
+O nome real do volume inclui o prefixo do projeto. Confirme antes:
+
+```bash
+docker volume ls | grep bff-logs
+```
+
+### Como verificar que deu certo
+
+```bash
+docker compose up -d
+docker exec bff-java-service sh -c 'id && touch /app/logs/.probe && rm /app/logs/.probe && echo ESCRITA_OK'
+```
+
+Esperado: `uid=10001(bff)` e `ESCRITA_OK`.
+
+Se aparecer `Permission denied`, o `chown` não foi aplicado no volume correto.
+
+### Alternativa
+
+Se preferir não mexer no volume, recrie-o — mas os logs históricos são perdidos:
+
+```bash
+docker compose down
+docker volume rm <prefixo>_bff-logs
+docker compose up -d
+```
+
+---
+
 ## 5. Proxy reverso — rate limiting
 
 Finding **F-10**: não existe rate limiting em nenhuma camada. Não deve ser implementado em
@@ -213,5 +272,7 @@ tamanho para corpos JSON (finding F-11).
 - [ ] Branch protection em `staging`
 - [ ] Rede `elk_es_network` existe no host
 - [ ] `docker compose config` resolve `elk-network` corretamente
+- [ ] Volume `bff-logs` chowneado para UID 10001 (ambientes existentes)
+- [ ] Escrita de log confirmada dentro do container
 - [ ] Rate limiting configurado no proxy reverso
 - [ ] Rotação da chave RSA (finding F-01) — depende de decisão de negócio

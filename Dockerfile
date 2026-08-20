@@ -67,6 +67,28 @@ ENV ELASTIC_APM_SANITIZE_FIELD_NAMES="password,passwd,pwd,secret,*key,*token*,*s
 # apareça. Reduzir depois de confirmado o volume (ex.: 0.2 em produção).
 ENV ELASTIC_APM_TRANSACTION_SAMPLE_RATE=1.0
 
+# ---------------------------------------------------------------------------
+# Usuario nao-root
+# ---------------------------------------------------------------------------
+# Rodar como root no container significa que uma execucao remota de codigo na
+# aplicacao ja comeca com privilegio maximo dentro do namespace. Achado do SAST
+# (regra missing-user-entrypoint).
+#
+# UID 10001 foi escolhido para nao colidir com usuario existente na imagem base
+# Ubuntu: 1000 e o primeiro UID que uma distro atribui e pode estar ocupado
+# dependendo da tag do temurin.
+#
+# /app/logs e criado e chowneado AQUI porque o Docker copia a propriedade do
+# diretorio da imagem ao inicializar um volume nomeado NOVO. Volume que ja
+# existe mantem a propriedade antiga -- ver docs/CI-PRE-REQUISITOS.md.
+RUN groupadd --gid 10001 bff \
+ && useradd --uid 10001 --gid 10001 --home-dir /app --shell /usr/sbin/nologin bff \
+ && mkdir -p /app/logs \
+ && chown -R bff:bff /app \
+ && chmod 0644 /apm-agent.jar
+
+USER bff
+
 ENTRYPOINT ["java", \
             "-javaagent:/apm-agent.jar", \
             "-Duser.timezone=America/Sao_Paulo", \
