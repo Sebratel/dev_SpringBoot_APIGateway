@@ -33,7 +33,7 @@ class AuthenticationSitesControllerTest extends BaseTest {
     @Test
     @DisplayName("Should return 200 and list of sites when title is provided")
     void getSites_Success() throws Exception {
-        AuthenticationSitesOutputDTO dto = new AuthenticationSitesOutputDTO("City", "Neighborhood");
+        AuthenticationSitesOutputDTO dto = new AuthenticationSitesOutputDTO(1L, "NHOPN", "City", "Neighborhood");
         when(authenticationSitesService.execute(anyString())).thenReturn(List.of(dto));
 
         mockMvc.perform(get("/api/v1/sites")
