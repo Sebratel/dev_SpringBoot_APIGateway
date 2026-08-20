@@ -93,9 +93,27 @@ def main() -> int:
 
     contagem = Counter(severidade(r) for r in resultados)
 
+    # O SHA no cabecalho existe para tornar o relatorio auto-identificavel.
+    # Sem ele e facil analisar o log de um run antigo e "corrigir" algo que ja
+    # foi corrigido -- aconteceu duas vezes durante a montagem deste pipeline.
+    sha = os.environ.get("GITHUB_SHA", "")
+    ref = os.environ.get("GITHUB_REF_NAME", "")
+    proveniencia = []
+    if sha:
+        proveniencia.append(f"commit `{sha[:7]}`")
+    if ref:
+        proveniencia.append(f"ref `{ref}`")
+
     linhas = [
         "### SAST (Semgrep)",
         "",
+    ]
+    if proveniencia:
+        linhas += [
+            "Analisado em " + ", ".join(proveniencia) + ".",
+            "",
+        ]
+    linhas += [
         "| Severidade | Achados |",
         "| --- | --- |",
         f"| ERROR | {contagem.get('ERROR', 0)} |",
@@ -155,7 +173,7 @@ def main() -> int:
 
     linhas += [
         "",
-        "Achados WARNING e INFO nao bloqueiam, mas ficam no SARIF publicado "
+        "Achados WARNING e INFO nao bloqueiam, mas ficam no JSON publicado "
         "nos artefatos do run. Nada e descartado.",
     ]
 
