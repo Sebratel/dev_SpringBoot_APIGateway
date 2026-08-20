@@ -65,8 +65,43 @@ enquanto isso não há cobertura de CVE em dependências.
 ### Primeira execução
 
 Mesmo com a chave, a primeira execução baixa a base inteira e demora. As seguintes são
-rápidas: o job persiste a base em cache com `if: always()`, portanto ela sobrevive mesmo
-quando o gate bloqueia por encontrar CVE.
+rápidas: o job persiste a base em cache — mas **só quando o download termina inteiro**.
+
+### Se aparecer `Cannot read the array length because "bytes" is null`
+
+Esse erro não é falta de chave. Ele significa que a base local do NVD está **parcial ou
+corrompida** — tipicamente porque um download foi interrompido no meio.
+
+Sintoma no log:
+
+```text
+[ERROR] Error updating the NVD Data
+org.owasp.dependencycheck.data.update.exception.UpdateException: Error updating the NVD Data
+    caused by NullPointerException: Cannot read the array length because "bytes" is null
+[ERROR] Unable to continue dependency-check analysis.
+```
+
+**No CI**, descarte o cache incrementando a variável `NVD_CACHE_VERSION` no job
+`dependency-security` de `.github/workflows/security.yml`:
+
+```yaml
+    env:
+      NVD_CACHE_VERSION: v3   # era v2
+```
+
+A próxima execução ignora o cache antigo e baixa a base do zero.
+
+**Localmente**, purgue a base:
+
+```bash
+./mvnw -Psecurity dependency-check:purge
+```
+
+> O workflow foi estruturado para não criar esse estado: a atualização da base
+> (`dependency-check:update-only`) é um passo separado da análise
+> (`dependency-check:check`), e o cache só é gravado quando a atualização termina com
+> sucesso. Um cache parcial é pior que nenhum cache — ele se propaga para todas as
+> execuções seguintes.
 
 ---
 

@@ -115,7 +115,10 @@ jobs:
     runs-on: ubuntu-latest
     # Sem este teto o job fica quase uma hora preso na atualizacao do NVD antes
     # de falhar, ocupando runner e atrasando o feedback do PR.
-    timeout-minutes: 25
+    timeout-minutes: 30
+    env:
+      # Incremente para invalidar um cache corrompido da base do NVD.
+      NVD_CACHE_VERSION: v2
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -159,29 +162,46 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # Restore/save separados de proposito: o actions/cache normal so grava no
-      # fim de um job BEM-SUCEDIDO. Como este job falha quando encontra CVE, a
-      # base do NVD nunca era persistida e toda execucao recomecava do zero.
+      # Restore e save separados de proposito: o actions/cache normal so grava no
+      # fim de um job BEM-SUCEDIDO. Como este job falha quando encontra CVE acima
+      # do limite, a base do NVD nunca era persistida e toda execucao recomecava
+      # do zero.
+      #
+      # NVD_CACHE_VERSION existe para descartar um cache corrompido: incremente o
+      # numero e a proxima execucao baixa a base inteira de novo.
       - name: Restaurar base do NVD
-        id: nvd-cache
         uses: actions/cache/restore@v4
         with:
           path: ~/.m2/repository/org/owasp/dependency-check-data
-          key: nvd-${{ runner.os }}-
-          restore-keys: nvd-${{ runner.os }}-
+          key: nvd-${{ env.NVD_CACHE_VERSION }}-${{ runner.os }}-
+          restore-keys: nvd-${{ env.NVD_CACHE_VERSION }}-${{ runner.os }}-
 
-      - name: OWASP Dependency-Check
+      # A atualizacao da base e um passo proprio, separado da analise, por um
+      # motivo especifico: e o unico jeito de distinguir "base baixada com
+      # sucesso" de "download quebrou no meio". Sem essa separacao, um download
+      # interrompido produzia uma base parcial que era cacheada e envenenava
+      # todas as execucoes seguintes com
+      # "NullPointerException: Cannot read the array length because bytes is null".
+      - name: Atualizar base do NVD
+        id: nvd-update
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        run: ./mvnw -B -Psecurity verify -DskipTests -DnvdApiKey="$NVD_API_KEY"
+        run: ./mvnw -B -Psecurity dependency-check:update-only -DnvdApiKey="$NVD_API_KEY"
 
+      # So persiste se a atualizacao terminou inteira. Um cache parcial e pior
+      # que nenhum cache.
       - name: Persistir base do NVD
-        # "always" para que a base sobreviva mesmo quando o gate bloqueia.
-        if: always()
+        if: steps.nvd-update.outcome == 'success'
         uses: actions/cache/save@v4
         with:
           path: ~/.m2/repository/org/owasp/dependency-check-data
-          key: nvd-${{ runner.os }}-${{ github.run_id }}
+          key: nvd-${{ env.NVD_CACHE_VERSION }}-${{ runner.os }}-${{ github.run_id }}
+
+      # autoUpdate=false: a base ja foi validada no passo anterior. Aqui e so
+      # analise, entao a falha deste passo significa CVE encontrada -- nunca
+      # problema de rede ou de base corrompida.
+      - name: Analisar dependencias
+        run: ./mvnw -B -Psecurity verify -DskipTests -DautoUpdate=false
 
       - name: Resumo
         if: always()
