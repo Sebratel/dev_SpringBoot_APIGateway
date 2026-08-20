@@ -33,8 +33,10 @@ public class AbrirProtocoloInfraNoEllevenApiService {
     private static final int SERVICE_LEVEL_AGREEMENT_ID = 99;
     private static final int COMPANY_PLACE_ID = 6;
     private static final String TEAM_CODE = "1093";
-    private static final String CATEGORY_1_INFRAESTRUTURA = "698";
-    private static final String CATEGORY_2_MANUTENCAO_FO = "960";
+    // Categorias enviadas como "etiqueta" (tag) da categoria no Voalle — NÃO é o id nem o nome.
+    // Sem a etiqueta correta o ERP responde code 1000 "Nenhuma etiqueta foi encontrada para consulta das categorias".
+    private static final String CATEGORY_1_INFRAESTRUTURA = "0a9e9b70";
+    private static final String CATEGORY_2_MANUTENCAO_FO = "1f77f32c";
 
     private static final String OPEN_DETAILED_SOLICITATION_URL =
             "https://erp.sebratel.net.br:45715/external/integrations/thirdparty/opendetailedsolicitation";
