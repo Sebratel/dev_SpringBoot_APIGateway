@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Supressoes do OWASP Dependency-Check.
+
+  REGRA: nenhuma supressao sem justificativa escrita e sem data de revisao.
+  Uma supressao declara "esta CVE nao e explorevel NESTE contexto", nunca
+  "esta CVE e inconveniente". Se nao houver argumento tecnico, corrija a
+  dependencia em vez de suprimir.
+
+  Formato de cada entrada:
+    <notes>
+      CVE:        identificador
+      Motivo:     por que nao e explorevel aqui
+      Revisar em: AAAA-MM-DD
+      Autor:      quem decidiu
+    </notes>
+
+  Este arquivo comeca vazio de proposito. A primeira execucao do
+  security.yml vai listar os achados reais; cada um deve ser tratado
+  (corrigido ou suprimido com justificativa), nunca ignorado em silencio.
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+
+    <suppress>
+        <notes><![CDATA[
+          CVE:        CVE-2026-65898
+          Motivo:     falso positivo de correspondencia de CPE. A CVE afeta o DOMPurify
+                      nas versoes 3.4.7 a 3.4.10 (pollution de ALLOWED_ATTR via
+                      setConfig()). O swagger-ui embutido pelo springdoc-openapi
+                      (springdoc-openapi-starter-webmvc-ui:2.8.17) resolve o
+                      DOMPurify em 3.3.2, fora do intervalo afetado; confirmado via
+                      mvn dependency:tree. Revisar ao subir o springdoc novamente,
+                      caso a versao do DOMPurify embutida mude.
+          Revisar em: 2027-02-28
+          Autor:      israel.barcelos
+        ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-65898</vulnerabilityName>
+    </suppress>
+
+    <suppress>
+        <notes><![CDATA[
+          CVE:        CVE-2026-47838
+          Motivo:     falso positivo de correspondencia de CPE (relatado em
+                      https://github.com/dependency-check/DependencyCheck/issues/8614).
+                      O dependency-check aponta a CVE contra exatamente a versao
+                      6.5.11, que e a versao ONDE O FIX FOI LANCADO (o problema
+                      afeta 6.5.10 e anteriores na linha 6.5.x), nao uma versao
+                      vulneravel. A CPE nao aparece na base propria do OSS Index/
+                      Sonatype Guide, indicando erro na fonte de dados usada pelo
+                      NVD para essa entrada.
+          Revisar em: 2027-02-28
+          Autor:      israel.barcelos
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework\.security/spring-security-web@.*$</packageUrl>
+        <cve>CVE-2026-47838</cve>
+    </suppress>
+
+    <!--
+      Exemplo desativado, mantido apenas como modelo de preenchimento.
+      Remova o comentario e ajuste ao suprimir algo de verdade.
+
+    <suppress>
+        <notes><![CDATA[
+          CVE:        CVE-0000-00000
+          Motivo:     biblioteca presente apenas em escopo de teste, nao vai para
+                      a imagem de producao.
+          Revisar em: 2026-12-31
+          Autor:      nome.sobrenome
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/grupo/artefato@.*$</packageUrl>
+        <cve>CVE-0000-00000</cve>
+    </suppress>
+    -->
+
+</suppressions>

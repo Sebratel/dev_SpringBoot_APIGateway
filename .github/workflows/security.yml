@@ -1,0 +1,351 @@
+name: Security
+
+# Pipeline de seguranca. Estrutura:
+#
+#   Pull Request / Push
+#        |
+#        +--> secret-scanning     (Gitleaks)
+#        +--> dependency-security (OWASP Dependency-Check)
+#        +--> sast                (Semgrep)
+#        +--> security-tests      (testes de autenticacao/autorizacao)
+#        |
+#        +--> security-gate       (agrega e decide bloqueio)
+#
+# O que BLOQUEIA o pipeline esta documentado no job security-gate.
+
+on:
+  push:
+    branches: [ "main", "staging" ]
+  pull_request:
+    branches: [ "main", "staging" ]
+  schedule:
+    # Varredura completa semanal: CVEs novas aparecem para codigo que nao mudou.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GITLEAKS_VERSION: '8.30.1'
+
+jobs:
+  # ---------------------------------------------------------------------
+  # SECRET SCANNING
+  # ---------------------------------------------------------------------
+  secret-scanning:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Instalar Gitleaks
+        run: |
+          curl -sSL -o /tmp/gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      # Bloqueante: impede que um secret NOVO entre no repositorio.
+      - name: Verificar secrets introduzidos por este PR
+        if: github.event_name == 'pull_request'
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          echo "Analisando commits de $BASE ate $HEAD"
+          gitleaks git . \
+            --log-opts="$BASE..$HEAD" \
+            --redact \
+            --report-format=sarif \
+            --report-path=gitleaks-pr.sarif \
+            --exit-code=1
+
+      # Informativo: o historico ja contem a chave privada RSA (finding F-01).
+      # Enquanto ela nao for removida e rotacionada, este passo continuara
+      # apontando o problema -- de proposito. Nao bloqueia para nao travar
+      # todo PR por um passivo pre-existente, mas o resultado fica registrado.
+      - name: Varredura do historico completo (informativo)
+        id: full-history
+        continue-on-error: true
+        run: |
+          gitleaks git . \
+            --redact \
+            --report-format=sarif \
+            --report-path=gitleaks-history.sarif \
+            --exit-code=1
+
+      - name: Resumo
+        if: always()
+        run: |
+          {
+            echo "### Secret Scanning"
+            echo ""
+            if [ "${{ steps.full-history.outcome }}" = "failure" ]; then
+              echo ":warning: **Secrets detectados no historico do repositorio.**"
+              echo ""
+              echo "Passivo conhecido: \`src/main/resources/id_rsa_private.pem\` (finding F-01)."
+              echo "Exige rotacao da chave e limpeza de historico. Valores nao sao exibidos (--redact)."
+            else
+              echo ":white_check_mark: Nenhum secret detectado no historico."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar relatorios
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-reports
+          path: gitleaks-*.sarif
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------
+  # DEPENDENCY SECURITY
+  # ---------------------------------------------------------------------
+  dependency-security:
+    name: Dependency Security
+    runs-on: ubuntu-latest
+    # Sem este teto o job fica quase uma hora preso na atualizacao do NVD antes
+    # de falhar, ocupando runner e atrasando o feedback do PR.
+    timeout-minutes: 30
+    env:
+      # Incremente para invalidar um cache corrompido da base do NVD.
+      NVD_CACHE_VERSION: v2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # A chave do NVD e gratuita e sai em minutos. Sem ela a API aplica rate
+      # limit agressivo: a atualizacao da base passa de 40 minutos e termina em
+      # erro. Falhar aqui, em segundos e com instrucao clara, e muito melhor do
+      # que queimar uma hora de runner para chegar ao mesmo lugar.
+      #
+      # Deliberadamente NAO pulamos a varredura quando a chave falta: um scan de
+      # dependencias silenciosamente ignorado produz falsa sensacao de seguranca,
+      # que e exatamente o que este pipeline existe para evitar.
+      - name: Exigir NVD_API_KEY
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          if [ -z "$NVD_API_KEY" ]; then
+            {
+              echo "### Dependency Security"
+              echo ""
+              echo ":x: **Secret \`NVD_API_KEY\` nao configurado.**"
+              echo ""
+              echo "Sem a chave, o OWASP Dependency-Check nao consegue atualizar a base do NVD"
+              echo "em tempo util (rate limit da API), e a varredura falha depois de ~45 minutos."
+              echo ""
+              echo "Como resolver (leva poucos minutos):"
+              echo "1. Solicite a chave gratuita em <https://nvd.nist.gov/developers/request-an-api-key>"
+              echo "2. Cadastre em **Settings > Secrets and variables > Actions** como \`NVD_API_KEY\`"
+              echo ""
+              echo "Enquanto isso nao acontece, este gate bloqueia de proposito: nao ha varredura"
+              echo "de dependencias, portanto nao ha garantia sobre CVEs nas dependencias."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::NVD_API_KEY ausente -- varredura de dependencias nao pode ser executada."
+            exit 1
+          fi
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+          # Grava um <server id="ossindex"> no settings.xml com placeholders
+          # ${env.*}; os valores reais sao injetados via env nos steps que
+          # rodam o mvnw abaixo. O OSS Index exige autenticacao desde set/2025
+          # e o username e ignorado para tokens (Personal Access Token).
+          server-id: ossindex
+          server-username: OSSINDEX_USERNAME
+          server-password: OSSINDEX_TOKEN
+
+      # Restore e save separados de proposito: o actions/cache normal so grava no
+      # fim de um job BEM-SUCEDIDO. Como este job falha quando encontra CVE acima
+      # do limite, a base do NVD nunca era persistida e toda execucao recomecava
+      # do zero.
+      #
+      # NVD_CACHE_VERSION existe para descartar um cache corrompido: incremente o
+      # numero e a proxima execucao baixa a base inteira de novo.
+      - name: Restaurar base do NVD
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: nvd-${{ env.NVD_CACHE_VERSION }}-${{ runner.os }}-
+          restore-keys: nvd-${{ env.NVD_CACHE_VERSION }}-${{ runner.os }}-
+
+      # A atualizacao da base e um passo proprio, separado da analise, por um
+      # motivo especifico: e o unico jeito de distinguir "base baixada com
+      # sucesso" de "download quebrou no meio". Sem essa separacao, um download
+      # interrompido produzia uma base parcial que era cacheada e envenenava
+      # todas as execucoes seguintes com
+      # "NullPointerException: Cannot read the array length because bytes is null".
+      - name: Atualizar base do NVD
+        id: nvd-update
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+          OSSINDEX_USERNAME: sebratel-ci
+          OSSINDEX_TOKEN: ${{ secrets.OSSINDEX_TOKEN }}
+        run: ./mvnw -B -Psecurity dependency-check:update-only -DnvdApiKey="$NVD_API_KEY"
+
+      # So persiste se a atualizacao terminou inteira. Um cache parcial e pior
+      # que nenhum cache.
+      - name: Persistir base do NVD
+        if: steps.nvd-update.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: nvd-${{ env.NVD_CACHE_VERSION }}-${{ runner.os }}-${{ github.run_id }}
+
+      # autoUpdate=false: a base ja foi validada no passo anterior. Aqui e so
+      # analise, entao a falha deste passo significa CVE encontrada -- nunca
+      # problema de rede ou de base corrompida.
+      - name: Analisar dependencias
+        env:
+          OSSINDEX_USERNAME: sebratel-ci
+          OSSINDEX_TOKEN: ${{ secrets.OSSINDEX_TOKEN }}
+        run: ./mvnw -B -Psecurity verify -DskipTests -DautoUpdate=false
+
+      - name: Resumo
+        if: always()
+        run: |
+          {
+            echo "### Dependency Security (OWASP Dependency-Check)"
+            echo ""
+            echo "Limite de bloqueio: **CVSS >= 7.0** (HIGH/CRITICAL)."
+            echo ""
+            echo "Supressoes: \`.github/dependency-check-suppressions.xml\` -- toda supressao exige justificativa e data de revisao."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar relatorio
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: target/dependency-check-report.*
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------
+  # SAST
+  # ---------------------------------------------------------------------
+  sast:
+    name: SAST (Semgrep)
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Uma unica varredura, sem bloquear aqui. A decisao de bloqueio fica no
+      # passo seguinte, para que os achados apareçam no resumo do PR mesmo
+      # quando o gate falha -- "semgrep --error" aborta sem dizer o que achou.
+      - name: Varredura
+        continue-on-error: true
+        run: |
+          semgrep scan \
+            --config=p/java \
+            --config=p/secrets \
+            --config=p/owasp-top-ten \
+            --config=.semgrep/sebratel.yml \
+            --json --output=semgrep.json \
+            --metrics=off
+
+      - name: Relatorio e gate
+        run: python3 .github/scripts/semgrep_gate.py semgrep.json
+
+      - name: Publicar relatorio
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-relatorio
+          path: semgrep.json
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------
+  # SECURITY TESTS
+  # ---------------------------------------------------------------------
+  security-tests:
+    name: Testes de Seguranca
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      # Roda a matriz de autenticacao/autorizacao isoladamente, para que uma
+      # regressao de seguranca apareca como falha propria e nao diluida na suite.
+      - name: Matriz de autenticacao e autorizacao
+        run: ./mvnw -B clean test -Dtest='SecurityIntegrationTest' -DfailIfNoTests=true
+
+      - name: Publicar relatorio
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-test-reports
+          path: target/surefire-reports/
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------
+  # SECURITY GATE
+  # ---------------------------------------------------------------------
+  security-gate:
+    name: Security Gate
+    runs-on: ubuntu-latest
+    needs: [secret-scanning, dependency-security, sast, security-tests]
+    if: always()
+    steps:
+      - name: Avaliar resultados
+        run: |
+          SECRETS="${{ needs.secret-scanning.result }}"
+          DEPS="${{ needs.dependency-security.result }}"
+          SAST="${{ needs.sast.result }}"
+          TESTS="${{ needs.security-tests.result }}"
+
+          {
+            echo "### Security Gate"
+            echo ""
+            echo "| Verificacao | Resultado | Bloqueia? |"
+            echo "| --- | --- | --- |"
+            echo "| Secret scanning (novos secrets) | $SECRETS | sim |"
+            echo "| Dependency security (CVSS >= 7) | $DEPS | sim |"
+            echo "| SAST (severidade ERROR) | $SAST | sim |"
+            echo "| Testes de seguranca | $TESTS | sim |"
+            echo ""
+            echo "**Nao bloqueiam automaticamente:** achados LOW/INFO, secrets ja existentes"
+            echo "no historico (passivo F-01, reportado a parte), CVEs suprimidas com"
+            echo "justificativa registrada e CVEs de sistema operacional da imagem base."
+            echo ""
+            echo "Nada e ignorado em silencio: todo achado fica nos artefatos do run."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          FALHOU=0
+          for RESULTADO in "$SECRETS" "$DEPS" "$SAST" "$TESTS"; do
+            if [ "$RESULTADO" != "success" ] && [ "$RESULTADO" != "skipped" ]; then
+              FALHOU=1
+            fi
+          done
+
+          if [ "$FALHOU" -eq 1 ]; then
+            echo "::error::Security gate bloqueou o pipeline. Verifique a tabela no resumo do run."
+            exit 1
+          fi
+          echo "Security gate aprovado."

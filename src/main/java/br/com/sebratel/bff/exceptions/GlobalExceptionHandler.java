@@ -67,6 +67,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request, null);
     }
 
+    @ExceptionHandler(InsigniaNotFoundException.class)
+    public ResponseEntity<ApiError> handleInsigniaNotFound(InsigniaNotFoundException ex, HttpServletRequest request) {
+        log.warn("Insignia not found: {}", ex.getMessage());
+        return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request, null);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidationErrors(MethodArgumentNotValidException ex, HttpServletRequest request) {
         List<String> errors = ex.getBindingResult()

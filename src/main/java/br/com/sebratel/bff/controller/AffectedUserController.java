@@ -225,7 +225,7 @@ public class AffectedUserController {
                     .success(false)
                     .message("Error removing users for protocol: " + e.getMessage())
                     .build();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
     }
 

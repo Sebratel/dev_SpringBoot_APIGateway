@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.dto.massivas.api;
 
 import br.com.sebratel.bff.model.entity.AffectedUsersEntity;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -31,6 +32,12 @@ public class AberturaRegistroMassivoInputDTO {
     private String solicitationServiceCategory4;
     private String solicitationServiceCategory5;
     private String authenticationAccessPointCode;
+    /**
+     * Código do Site (obrigatório para a matriz interna de Backbone no Voalle). NON_NULL para
+     * não alterar o payload da massiva/CTO, que não usa esse campo.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String authenticationSiteCode;
     @NotNull
     private AberturaRegistroMassivoAssignmentDTO assignment;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)

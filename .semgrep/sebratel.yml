@@ -1,0 +1,96 @@
+# Regras Semgrep especificas deste repositorio, derivadas dos achados da auditoria.
+#
+# Complementam (nao substituem) os pacotes p/java, p/secrets e p/owasp-top-ten.
+#
+# NIVEL DE SEVERIDADE
+# Todas comecam como WARNING de proposito: elas aparecem no relatorio mas nao
+# bloqueiam o pipeline, porque ainda nao foram exercitadas contra o codigo real.
+# Depois da primeira execucao no CI, confirmando ausencia de falso positivo,
+# promova para ERROR as que devem bloquear -- em especial sebratel-credencial-em-log.
+# O gate de bloqueio, hoje, vem dos pacotes oficiais do Semgrep.
+
+rules:
+
+  # Finding F-06: log.info(token) gravava o bearer token da integracao Elleven
+  # em texto puro no arquivo de log.
+  - id: sebratel-credencial-em-log
+    languages: [java]
+    severity: WARNING
+    message: >-
+      Possivel credencial escrita em log. Variaveis com nome de token/secret/senha
+      nunca devem ser logadas: o arquivo de log e coletado em volume e pode ser
+      enviado ao Elastic. Registre um identificador correlacionavel, nao o valor.
+    patterns:
+      - pattern-either:
+          - pattern: $LOG.info($X)
+          - pattern: $LOG.debug($X)
+          - pattern: $LOG.warn($X)
+          - pattern: $LOG.error($X)
+      # Restrito a identificadores: exclui strings literais que apenas mencionam
+      # a palavra "token" no texto da mensagem.
+      - metavariable-regex:
+          metavariable: $X
+          regex: (?i)^(?!")[A-Za-z_][A-Za-z0-9_]*(token|secret|senha|password|credential|apikey)[A-Za-z0-9_]*$
+
+  # Preventivo de SSRF. Hoje as 14 chamadas de saida usam host literal, o que
+  # torna SSRF inexistente. Esta regra existe para que isso continue verdadeiro:
+  # ela dispara se alguem passar a montar a URL de destino dinamicamente.
+  - id: sebratel-uri-de-saida-dinamica
+    languages: [java]
+    severity: WARNING
+    message: >-
+      URL de saida construida a partir de variavel. Confirme que host e protocolo
+      NAO derivam de entrada do usuario. Se derivarem, e SSRF -- valide contra
+      allowlist de hosts antes de chamar.
+    patterns:
+      - pattern: $CLIENT.uri($URL)
+      - pattern-not: $CLIENT.uri("...")
+
+  # Finding F-07: nome de classe, mensagem e causa raiz da excecao chegando ao
+  # cliente HTTP, vazando schema de banco e detalhes de infraestrutura.
+  - id: sebratel-excecao-exposta-na-resposta
+    languages: [java]
+    severity: WARNING
+    message: >-
+      Mensagem de excecao sendo devolvida ao cliente. Mantenha o log completo no
+      servidor e responda com mensagem generica mais um traceId correlacionavel.
+    patterns:
+      - pattern-either:
+          - pattern: $B.message($E.getMessage())
+          - pattern: $B.message($MSG + $E.getMessage())
+          - pattern: $B.body($E.getMessage())
+
+  # Finding F-02: senha em texto puro no UserDetailsService in-memory.
+  - id: sebratel-senha-noop
+    languages: [java]
+    severity: WARNING
+    message: >-
+      Senha armazenada com o encoder {noop} (texto puro). Use um PasswordEncoder
+      real (bcrypt/argon2) ou elimine a credencial estatica compartilhada.
+    pattern-regex: '"\{noop\}"'
+
+  # Findings F-04 e F-05: rotas publicas que expoem consulta por CPF e
+  # enumeracao de contratos.
+  - id: sebratel-rota-publica
+    languages: [java]
+    severity: WARNING
+    message: >-
+      Rota marcada como permitAll(). Toda rota publica precisa de justificativa
+      explicita, rate limiting no reverse proxy e confirmacao de que nao expoe
+      dado pessoal nem permite enumeracao.
+    pattern: $A.permitAll()
+
+  # Reforca a conclusao do threat model: nenhuma decisao pode depender de header
+  # que o cliente controla.
+  - id: sebratel-header-do-cliente-em-decisao
+    languages: [java]
+    severity: WARNING
+    message: >-
+      Header controlavel pelo cliente sendo lido. Nunca use X-Forwarded-*,
+      X-Real-IP ou similares para determinar identidade, origem ou permissao --
+      apenas para diagnostico.
+    patterns:
+      - pattern: $REQ.getHeader($H)
+      - metavariable-regex:
+          metavariable: $H
+          regex: (?i)"(x-forwarded-for|x-forwarded-host|x-forwarded-proto|x-real-ip|forwarded)"

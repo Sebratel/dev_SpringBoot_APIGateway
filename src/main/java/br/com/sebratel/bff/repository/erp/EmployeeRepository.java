@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.repository.erp;
 
 import br.com.sebratel.bff.model.entity.PersonEntity;
+import br.com.sebratel.bff.repository.erp.projections.InsigniaProjection;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -45,6 +46,20 @@ public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
         )
     """, nativeQuery = true)
     boolean hasB2BinInput(@Param("list") List<Long> list);
+
+    @Query(value = """
+        SELECT
+                i.id as id,
+                i.code as code,
+                i.title as title
+        FROM
+                people p
+        JOIN
+                insignias i ON i.id = p.insignia_id
+        WHERE
+                p.tx_id = :txId
+    """, nativeQuery = true)
+    Optional<InsigniaProjection> findInsigniaByTxId(@Param("txId") String txId);
 
     @Query(value = """
         SELECT

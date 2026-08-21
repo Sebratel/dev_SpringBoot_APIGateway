@@ -30,4 +30,14 @@ public class AuthenticationSitesController {
                 .message("Sites retrivied sucessfully")
                 .build();
     }
+
+    /** Busca por título (contém) para o seletor de site — usado na abertura de protocolo de backbone. */
+    @GetMapping("/search")
+    public ApiResponse<List<AuthenticationSitesOutputDTO>> searchSites(@RequestParam String q) {
+        return ApiResponse.<List<AuthenticationSitesOutputDTO>>builder()
+                .success(true)
+                .data(authenticationSitesService.search(q))
+                .message("Sites retrieved successfully")
+                .build();
+    }
 }
