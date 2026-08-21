@@ -271,6 +271,12 @@
                             <!-- Analisadores irrelevantes para um projeto Java puro. -->
                             <nodeAnalyzerEnabled>false</nodeAnalyzerEnabled>
                             <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+                            <!--
+                              OSS Index exige autenticacao desde set/2025. Credenciais vem do
+                              server "ossindex" no settings.xml (ver .github/workflows/security.yml,
+                              step "Configurar JDK 21"), nunca em texto puro aqui.
+                            -->
+                            <ossIndexServerId>ossindex</ossIndexServerId>
                             <!-- Dependencias de teste nao vao para producao. -->
                             <skipTestScope>true</skipTestScope>
                             <skipProvidedScope>false</skipProvidedScope>
