@@ -36,6 +36,8 @@
         <postgresql.version>42.7.13</postgresql.version>
         <tomcat.version>10.1.59</tomcat.version>
         <log4j2.version>2.26.1</log4j2.version>
+        <jackson-bom.version>2.22.2</jackson-bom.version>
+        <logback.version>1.5.38</logback.version>
     </properties>
 
     <dependencies>
