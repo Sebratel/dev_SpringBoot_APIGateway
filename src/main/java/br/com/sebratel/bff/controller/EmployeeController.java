@@ -1,6 +1,7 @@
 package br.com.sebratel.bff.controller;
 
 import br.com.sebratel.bff.dto.ApiResponse;
+import br.com.sebratel.bff.dto.CorporativoOutputDTO;
 import br.com.sebratel.bff.model.Employee;
 import br.com.sebratel.bff.service.EmployeeService;
 import br.com.sebratel.bff.utils.JwtInformation;
@@ -59,6 +60,16 @@ public class EmployeeController {
                 .success(true)
                 .message("Sucesso")
                 .data(employeeService.getTxIdByContract(contract))
+                .build();
+    }
+
+    @GetMapping("/is-corporativo")
+    ApiResponse<CorporativoOutputDTO> isCorporativo(@RequestParam @Valid @NotNull String txId) {
+        log.info("Recebida requisição para verificar se o cliente é corporativo pelo cpf/cnpj: {}", txId);
+        return ApiResponse.<CorporativoOutputDTO>builder()
+                .success(true)
+                .message("Sucesso")
+                .data(employeeService.getCorporativoByTxId(txId))
                 .build();
     }
 
