@@ -161,6 +161,13 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
+          # Grava um <server id="ossindex"> no settings.xml com placeholders
+          # ${env.*}; os valores reais sao injetados via env nos steps que
+          # rodam o mvnw abaixo. O OSS Index exige autenticacao desde set/2025
+          # e o username e ignorado para tokens (Personal Access Token).
+          server-id: ossindex
+          server-username: OSSINDEX_USERNAME
+          server-password: OSSINDEX_TOKEN
 
       # Restore e save separados de proposito: o actions/cache normal so grava no
       # fim de um job BEM-SUCEDIDO. Como este job falha quando encontra CVE acima
@@ -186,6 +193,8 @@ jobs:
         id: nvd-update
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+          OSSINDEX_USERNAME: sebratel-ci
+          OSSINDEX_TOKEN: ${{ secrets.OSSINDEX_TOKEN }}
         run: ./mvnw -B -Psecurity dependency-check:update-only -DnvdApiKey="$NVD_API_KEY"
 
       # So persiste se a atualizacao terminou inteira. Um cache parcial e pior
@@ -201,6 +210,9 @@ jobs:
       # analise, entao a falha deste passo significa CVE encontrada -- nunca
       # problema de rede ou de base corrompida.
       - name: Analisar dependencias
+        env:
+          OSSINDEX_USERNAME: sebratel-ci
+          OSSINDEX_TOKEN: ${{ secrets.OSSINDEX_TOKEN }}
         run: ./mvnw -B -Psecurity verify -DskipTests -DautoUpdate=false
 
       - name: Resumo
