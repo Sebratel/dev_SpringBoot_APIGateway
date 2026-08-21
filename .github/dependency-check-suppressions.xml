@@ -3,7 +3,7 @@
   Supressoes do OWASP Dependency-Check.
 
   REGRA: nenhuma supressao sem justificativa escrita e sem data de revisao.
-  Uma supressao declara "esta CVE nao e explorevel NESTE contexto" -- nunca
+  Uma supressao declara "esta CVE nao e explorevel NESTE contexto", nunca
   "esta CVE e inconveniente". Se nao houver argumento tecnico, corrija a
   dependencia em vez de suprimir.
 
@@ -28,7 +28,7 @@
                       nas versoes 3.4.7 a 3.4.10 (pollution de ALLOWED_ATTR via
                       setConfig()). O swagger-ui embutido pelo springdoc-openapi
                       (springdoc-openapi-starter-webmvc-ui:2.8.17) resolve o
-                      DOMPurify em 3.3.2, fora do intervalo afetado -- confirmado via
+                      DOMPurify em 3.3.2, fora do intervalo afetado; confirmado via
                       mvn dependency:tree. Revisar ao subir o springdoc novamente,
                       caso a versao do DOMPurify embutida mude.
           Revisar em: 2027-02-28
