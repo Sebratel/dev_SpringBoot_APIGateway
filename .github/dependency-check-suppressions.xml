@@ -21,6 +21,23 @@
 -->
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
 
+    <suppress>
+        <notes><![CDATA[
+          CVE:        CVE-2026-65898
+          Motivo:     falso positivo de correspondencia de CPE. A CVE afeta o DOMPurify
+                      nas versoes 3.4.7 a 3.4.10 (pollution de ALLOWED_ATTR via
+                      setConfig()). O swagger-ui embutido pelo springdoc-openapi
+                      (springdoc-openapi-starter-webmvc-ui:2.8.17) resolve o
+                      DOMPurify em 3.3.2, fora do intervalo afetado -- confirmado via
+                      mvn dependency:tree. Revisar ao subir o springdoc novamente,
+                      caso a versao do DOMPurify embutida mude.
+          Revisar em: 2027-02-28
+          Autor:      israel.barcelos
+        ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <cve>CVE-2026-65898</cve>
+    </suppress>
+
     <!--
       Exemplo desativado, mantido apenas como modelo de preenchimento.
       Remova o comentario e ajuste ao suprimir algo de verdade.
