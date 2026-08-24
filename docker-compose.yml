@@ -11,10 +11,24 @@ services:
     networks:
       - proxy
       - default
+      # Rede do stack ELK, necessária para alcançar apm-server:8200.
+      # Adicionada sem remover nenhuma das redes existentes.
+      - elk-network
     environment:
       # Aplicação
       - APP_NAME=bff
       - SPRING_PROFILES_ACTIVE=default
+
+      # Observabilidade (Elastic APM)
+      # Os defaults ficam no Dockerfile; aqui só o que pode variar por ambiente.
+      - ELASTIC_APM_SERVICE_NAME=${ELASTIC_APM_SERVICE_NAME:-api-gateway}
+      - ELASTIC_APM_SERVER_URL=${ELASTIC_APM_SERVER_URL:-http://apm-server:8200}
+      - ELASTIC_APM_ENVIRONMENT=${ELASTIC_APM_ENVIRONMENT:-production}
+      - ELASTIC_APM_ENABLED=${ELASTIC_APM_ENABLED:-true}
+      - ELASTIC_APM_TRANSACTION_SAMPLE_RATE=${ELASTIC_APM_TRANSACTION_SAMPLE_RATE:-1.0}
+
+      # Auditoria de autenticação (temporária, ver findings F-02 e F-04)
+      - AUTH_AUDIT_ENABLED=${AUTH_AUDIT_ENABLED:-true}
 
       # Segurança
       - SECURITY_USER=${SECURITY_USER}
@@ -63,3 +77,9 @@ networks:
     external: true
   default:
     driver: bridge
+  # Rede externa do stack ELK. Declarada aqui (e não criada manualmente no
+  # Portainer) porque o ambiente é GitOps: a topologia precisa estar versionada.
+  # Confirmar com:  docker compose config   ->  elk-network: name: elk_es_network
+  elk-network:
+    name: ${ELK_NETWORK_NAME:-elk_es_network}
+    external: true

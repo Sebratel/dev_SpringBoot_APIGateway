@@ -14,6 +14,7 @@ import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.List;
@@ -28,6 +29,9 @@ public class SecurityConfig {
 
     @Value("${spring.security.user.password}")
     private String password;
+
+    @Value("${security.audit.enabled:true}")
+    private boolean auditEnabled;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -59,7 +63,10 @@ public class SecurityConfig {
                             response.setCharacterEncoding("UTF-8");
                             response.getWriter().write("Acesso restrito: Token inválido ou não fornecido.");
                         })
-                );
+                )
+                // Auditoria somente-leitura, posicionada apos o AuthorizationFilter para
+                // que o principal ja esteja resolvido. Ver AuthAuditFilter.
+                .addFilterAfter(new AuthAuditFilter(auditEnabled), AuthorizationFilter.class);
 
         return http.build();
     }
@@ -67,12 +74,26 @@ public class SecurityConfig {
     @Bean
     public JwtDecoder jwtDecoder() {
         NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withJwkSetUri("https://www.googleapis.com/oauth2/v3/certs").build();
+        jwtDecoder.setJwtValidator(jwtValidator());
+        return jwtDecoder;
+    }
+
+    /**
+     * Validadores aplicados apos a verificacao de assinatura contra o JWKS do Google.
+     *
+     * <p>Extraido do {@link #jwtDecoder()} para poder ser testado sem depender de rede:
+     * o decoder faz fetch do JWKS, os validadores nao.
+     *
+     * <p>ATENCAO: a claim {@code aud} nao e validada aqui. Isso significa que um ID token
+     * emitido pelo Google para qualquer outro OAuth client e aceito, desde que o email
+     * pertenca ao dominio. Correcao pendente (finding F-03) -- exige levantar previamente
+     * todos os client IDs legitimos (web e mobile), sob pena de derrubar um dos front-ends.
+     */
+    static OAuth2TokenValidator<Jwt> jwtValidator() {
         OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer("https://accounts.google.com");
         OAuth2TokenValidator<Jwt> sebratelValidator = new JwtClaimValidator<String>("email",
                 email -> email != null && email.endsWith("@sebratel.com.br"));
-        OAuth2TokenValidator<Jwt> combinedValidator = new DelegatingOAuth2TokenValidator<>(withIssuer, sebratelValidator);
-        jwtDecoder.setJwtValidator(combinedValidator);
-        return jwtDecoder;
+        return new DelegatingOAuth2TokenValidator<>(withIssuer, sebratelValidator);
     }
 
     @Bean

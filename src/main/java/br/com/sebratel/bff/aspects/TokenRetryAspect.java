@@ -30,11 +30,15 @@ public class TokenRetryAspect {
         long delay = tokenRetry.delay();
         int maxAttempts = tokenRetry.maxAttempts();
         Throwable lastException = null;
+        // Os argumentos precisam ser mantidos fora do laco: apos um 401 o token e trocado
+        // aqui dentro e a nova tentativa tem que receber o array atualizado. Chamar
+        // proceed() sem argumentos reexecutaria o metodo com o token antigo.
+        Object[] args = joinPoint.getArgs();
 
         while (attempts < maxAttempts) {
             log.info("Aspect try on call {} attempt", attempts);
             try {
-                return joinPoint.proceed();
+                return joinPoint.proceed(args);
             } catch (Throwable e) {
                 attempts++;
                 lastException = e;
@@ -55,7 +59,6 @@ public class TokenRetryAspect {
 
                     tokenService.invalidateToken();
                     String newToken = tokenService.executar().accessToken();
-                    Object[] args = joinPoint.getArgs();
                     updateTokenInArgs(joinPoint, args, newToken);
                     continue;
                 }

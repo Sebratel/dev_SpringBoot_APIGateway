@@ -404,12 +404,12 @@ class AffectedUserControllerTest extends BaseTest {
     }
 
     @Test
-    @DisplayName("Should return 500 when error occurs in removeUsersByProtocol")
+    @DisplayName("Should return 404 when error occurs in removeUsersByProtocol")
     void removeUsersByProtocol_Error() throws Exception {
         doThrow(new RuntimeException("Error")).when(affectedUSerService).removeUsersByProtocol(anyLong());
 
         mockMvc.perform(delete("/api/v1/impacted-users/protocol/123"))
-                .andExpect(status().isInternalServerError())
+                .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success").value(false));
     }
 

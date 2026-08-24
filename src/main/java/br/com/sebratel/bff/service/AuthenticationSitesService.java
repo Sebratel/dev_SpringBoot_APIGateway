@@ -23,4 +23,17 @@ public class AuthenticationSitesService {
     public List<AuthenticationSitesOutputDTO> execute(String title) {
         return authenticationSitesRepository.findByTitle(title).stream().map(AuthenticationSitesOutputDTO::fromEntity).toList();
     }
+
+    /** Busca por título (contém, case-insensitive) para o seletor de site — usado no protocolo de backbone. */
+    public List<AuthenticationSitesOutputDTO> search(String query) {
+        String q = query == null ? "" : query.trim();
+        if (q.isEmpty()) {
+            return List.of();
+        }
+        return authenticationSitesRepository
+                .findTop50ByTitleContainingIgnoreCaseOrderByTitleAsc(q)
+                .stream()
+                .map(AuthenticationSitesOutputDTO::fromEntity)
+                .toList();
+    }
 }

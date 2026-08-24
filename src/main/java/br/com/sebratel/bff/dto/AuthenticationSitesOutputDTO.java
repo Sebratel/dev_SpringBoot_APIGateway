@@ -9,11 +9,16 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 public class AuthenticationSitesOutputDTO {
+    Long id;
+    /** Título do site — é também o "Código" para sites de POP/DC (vai em authenticationSiteCode). */
+    String title;
     String city;
     String neighborhood;
 
     public static AuthenticationSitesOutputDTO fromEntity(AuthenticationSiteEntity authenticationSiteEntity) {
         return new AuthenticationSitesOutputDTO(
+                authenticationSiteEntity.getId(),
+                authenticationSiteEntity.getTitle(),
                 authenticationSiteEntity.getCity(),
                 authenticationSiteEntity.getNeighborhood()
         );

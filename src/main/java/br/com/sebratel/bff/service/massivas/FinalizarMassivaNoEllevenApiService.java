@@ -37,7 +37,6 @@ public class FinalizarMassivaNoEllevenApiService {
 
         log.info("Iniciando finalização de massiva principal no ERP via API {}", this.getClass());
         String token = recuperarTokenDoUsuarioIntegradorEllevenService.executar().accessToken();
-        log.info(token);
 
         Employee x = JwtInformation.retrieveUserData();
         String email = x.email();

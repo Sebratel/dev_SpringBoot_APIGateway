@@ -42,3 +42,7 @@ logs/**
 /meus-logs/*
 /meus-logs/**
 /.junie/
+
+### Python (scripts auxiliares de CI) ###
+__pycache__/
+*.pyc

@@ -14,6 +14,15 @@ services:
     environment:
       - APP_NAME=bff
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-default}
+
+      # O agente APM está sempre presente na imagem, mas fica desligado aqui:
+      # este stack não está anexado à rede elk_es_network, então apm-server:8200
+      # não resolveria e o agente ficaria tentando conectar em vão.
+      # Para habilitar no stage: anexar o serviço à rede do ELK (como em
+      # docker-compose.yml) e definir ELASTIC_APM_ENABLED=true.
+      - ELASTIC_APM_ENABLED=${ELASTIC_APM_ENABLED:-false}
+      - ELASTIC_APM_ENVIRONMENT=${ELASTIC_APM_ENVIRONMENT:-staging}
+      - AUTH_AUDIT_ENABLED=${AUTH_AUDIT_ENABLED:-true}
       - SECURITY_USER=${SECURITY_USER}
       - SECURITY_PASS=${SECURITY_PASS}
       - ERP_DB_URL=${ERP_DB_URL}

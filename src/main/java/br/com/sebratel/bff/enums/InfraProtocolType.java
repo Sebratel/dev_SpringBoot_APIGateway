@@ -7,13 +7,17 @@ import java.util.Arrays;
  * Cada tipo carrega as constantes que o diferenciam no ERP Voalle (catálogo de serviço,
  * tipo de solicitação e a Categoria 3). As demais categorias/parâmetros são compartilhados
  * e ficam em {@code AbrirProtocoloInfraNoEllevenApiService}.
+ *
+ * IMPORTANTE: {@code category3} é a "etiqueta" (tag) da categoria no Voalle — NÃO é o id nem
+ * o nome. Sem a etiqueta correta o ERP responde code 1000
+ * "Nenhuma etiqueta foi encontrada para consulta das categorias".
  */
 public enum InfraProtocolType {
 
-    CTO_LO("cto_lo", 1114, 1186, "961"),
-    CTO_SINAL_ALTO("cto_sinal_alto", 1115, 1187, "962"),
-    CTO_AVARIADA("cto_avariada", 1116, 1188, "963"),
-    BACKBONE("backbone", 1121, 1193, "968");
+    CTO_LO("cto_lo", 1114, 1186, "3a25753b"),
+    CTO_SINAL_ALTO("cto_sinal_alto", 1115, 1187, "1b3681c5"),
+    CTO_AVARIADA("cto_avariada", 1116, 1188, "d96ee69d"),
+    BACKBONE("backbone", 1121, 1193, "676df99b");
 
     private final String code;
     private final int catalogServiceId;
