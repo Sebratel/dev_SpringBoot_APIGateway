@@ -18,18 +18,21 @@ public class SplittersController {
     private final ListarOltsService listarOltsService;
     private final RecuperarSolicitacoesDeUmUsuarioService recuperarSolicitacoesDeUmUsuarioService;
     private final GetConnectionsService getConnectionsService;
+    private final ProtocolosEmAndamentoService protocolosEmAndamentoService;
 
     @Autowired
     public SplittersController(RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService,
                                ListarSplittersService listarSplittersService,
                                ListarOltsService listarOltsService,
                                RecuperarSolicitacoesDeUmUsuarioService recuperarSolicitacoesDeUmUsuarioService,
-                               GetConnectionsService getConnectionsService) {
+                               GetConnectionsService getConnectionsService,
+                               ProtocolosEmAndamentoService protocolosEmAndamentoService) {
         this.recuperarTokenDoUsuarioIntegradorEllevenService = recuperarTokenDoUsuarioIntegradorEllevenService;
         this.listarSplittersService = listarSplittersService;
         this.listarOltsService = listarOltsService;
         this.recuperarSolicitacoesDeUmUsuarioService = recuperarSolicitacoesDeUmUsuarioService;
         this.getConnectionsService = getConnectionsService;
+        this.protocolosEmAndamentoService = protocolosEmAndamentoService;
     }
 
     @GetMapping("/recuperarToken")
@@ -69,5 +72,21 @@ public class SplittersController {
     @GetMapping("/solicitacoes/cliente/{clientId}")
     public RecuperarSolicitacaoDeClienteOutputDTO recuperarSolicitacoesDeUmCliente(@PathVariable String clientId) {
             return recuperarSolicitacoesDeUmUsuarioService.executar(clientId);
+    }
+
+    /**
+     * Cruza uma lista de PPPoEs (pendentes de informação de andar) com os
+     * protocolos de instalação/manutenção em aberto no Elleven.
+     *
+     * POST /api/v1/splitters/alertas-protocolo-pendente
+     * Body: { "pppoes": ["user1", "user2", ...] }
+     *
+     * Retorna apenas os PPPoEs que possuem protocolo aberto agora,
+     * enriquecidos com dados do cliente, splitter e tipo do protocolo.
+     */
+    @PostMapping("/alertas-protocolo-pendente")
+    public List<ProtocoloEmAndamentoDTO> alertasProtocoloPendente(
+            @RequestBody AlertaProtocoloPendenteInputDTO input) {
+        return protocolosEmAndamentoService.buscarAlertas(input.getPppoes());
     }
 }
