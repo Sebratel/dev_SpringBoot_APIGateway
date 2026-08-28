@@ -40,6 +40,9 @@ class SplittersControllerTest extends BaseTest {
     @MockitoBean
     private GetConnectionsService getConnectionsService;
 
+    @MockitoBean
+    private ProtocolosEmAndamentoService protocolosEmAndamentoService;
+
     @Test
     @DisplayName("Should recover Elleven token")
     void recuperarTokenDoUsuarioIntegradorElleven_Success() throws Exception {
