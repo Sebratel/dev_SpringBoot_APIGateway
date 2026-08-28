@@ -189,13 +189,17 @@ jobs:
       # interrompido produzia uma base parcial que era cacheada e envenenava
       # todas as execucoes seguintes com
       # "NullPointerException: Cannot read the array length because bytes is null".
+      # A chave e passada pelo NOME da variavel de ambiente, nao pelo valor.
+      # "-DnvdApiKey=<valor>" colocaria o segredo no argv do processo, visivel em
+      # listagem de processos e sujeito a aparecer em saida verbosa do Maven. A
+      # propria documentacao do plugin recomenda esta forma para CI.
       - name: Atualizar base do NVD
         id: nvd-update
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
           OSSINDEX_USERNAME: sebratel-ci
           OSSINDEX_TOKEN: ${{ secrets.OSSINDEX_TOKEN }}
-        run: ./mvnw -B -Psecurity dependency-check:update-only -DnvdApiKey="$NVD_API_KEY"
+        run: ./mvnw -B -Psecurity dependency-check:update-only -DnvdApiKeyEnvironmentVariable=NVD_API_KEY
 
       # So persiste se a atualizacao terminou inteira. Um cache parcial e pior
       # que nenhum cache.
