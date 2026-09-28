@@ -18,6 +18,7 @@ import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoEllevenApiService;
 import br.com.sebratel.bff.service.massivas.AdicionarMassivaNoEllevenService;
 import br.com.sebratel.bff.service.massivas.EnviarListaDeAfetadosParaNativeService;
 import br.com.sebratel.bff.service.massivas.GetAllMassivesService;
+import br.com.sebratel.bff.service.massivas.MassivaIdempotencyStore;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,12 +40,14 @@ public class MassiveElevenController {
     private final RecuperarPrevisaoMassivaPorContratoService recuperarPrevisaoMassivaPorContratoService;
     private final FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService;
     private final AbrirProtocoloInfraNoEllevenApiService abrirProtocoloInfraNoEllevenApiService;
+    private final MassivaIdempotencyStore idempotencyStore;
 
     @Autowired
     public MassiveElevenController(AdicionarMassivaNoEllevenService adicionarMassivaNoEllevenService, AdicionarMassivaNoEllevenApiService adicionarMassivaNoEllevenApiService,
                                     EnviarListaDeAfetadosParaNativeService enviarListaDeAfetadosParaNativeService,
                                     GetAllMassivesService getAllMassivesService, RecuperarTodasAsMassivasPeloBancoService recuperarTodasAsMassivasPeloBancoService, RecuperarPrevisaoMassivaPorContratoService recuperarPrevisaoMassivaPorContratoService, FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService,
-                                    AbrirProtocoloInfraNoEllevenApiService abrirProtocoloInfraNoEllevenApiService) {
+                                    AbrirProtocoloInfraNoEllevenApiService abrirProtocoloInfraNoEllevenApiService,
+                                    MassivaIdempotencyStore idempotencyStore) {
         this.adicionarMassivaNoEllevenService = adicionarMassivaNoEllevenService;
         this.adicionarMassivaNoEllevenApiService = adicionarMassivaNoEllevenApiService;
         this.getAllMassivesService = getAllMassivesService;
@@ -52,6 +55,7 @@ public class MassiveElevenController {
         this.recuperarPrevisaoMassivaPorContratoService = recuperarPrevisaoMassivaPorContratoService;
         this.finalizarMassivaNoEllevenApiService = finalizarMassivaNoEllevenApiService;
         this.abrirProtocoloInfraNoEllevenApiService = abrirProtocoloInfraNoEllevenApiService;
+        this.idempotencyStore = idempotencyStore;
     }
 
     @PostMapping
@@ -136,7 +140,13 @@ public class MassiveElevenController {
 
     @PostMapping({"/save-massive-via-api", "salvar-massiva-via-api"})
     public ResponseEntity<ApiResponse<AberturaRegistroMassivoOutputDTO>> createMassiveIncidentViaApi(
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @Valid @RequestBody AberturaRegistroMassivoInputDTO input) {
+        return idempotencyStore.execute(idempotencyKey, () -> doCreateMassiveIncidentViaApi(input));
+    }
+
+    private ResponseEntity<ApiResponse<AberturaRegistroMassivoOutputDTO>> doCreateMassiveIncidentViaApi(
+            AberturaRegistroMassivoInputDTO input) {
 
         log.info("Starting massive incident creation in ERP via API. [Requester: {}]", input.getPersonId());
 
@@ -169,7 +179,13 @@ public class MassiveElevenController {
 
     @PostMapping({"/open-infra-solicitation-via-api", "abrir-protocolo-infra-via-api"})
     public ResponseEntity<ApiResponse<AberturaRegistroMassivoOutputDTO>> openInfraSolicitationViaApi(
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @Valid @RequestBody AberturaProtocoloInfraInputDTO input) {
+        return idempotencyStore.execute(idempotencyKey, () -> doOpenInfraSolicitationViaApi(input));
+    }
+
+    private ResponseEntity<ApiResponse<AberturaRegistroMassivoOutputDTO>> doOpenInfraSolicitationViaApi(
+            AberturaProtocoloInfraInputDTO input) {
 
         log.info("Starting infrastructure protocol creation in ERP via API. [Type: {}, Requester: {}]",
                 input.getInfraType(), input.getPersonId());
