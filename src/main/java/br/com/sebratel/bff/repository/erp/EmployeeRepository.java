@@ -15,8 +15,17 @@ import java.util.Optional;
 @Repository("erpEmployeeRepository")
 public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
 
+    /**
+     * IDs de pessoa para um e-mail. Retorna LISTA (não Optional) de propósito: o e-mail pode
+     * casar com mais de uma linha — seja porque {@code v_users} tem duplicata do e-mail, seja
+     * porque há mais de um registro em {@code people} com o mesmo e-mail. Com {@code Optional},
+     * o Hibernate lançava {@code NonUniqueResultException} (HTTP 500) nesse caso. O {@code DISTINCT}
+     * colapsa a duplicação vinda do join; o {@code ORDER BY p.id} garante escolha determinística
+     * quando ainda restarem IDs diferentes. A decisão de qual usar (e o log do caso ambíguo)
+     * fica no service.
+     */
     @Query(value = """
-            SELECT
+            SELECT DISTINCT
                 p.id
             FROM
                 v_users vu
@@ -24,8 +33,10 @@ public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
                 people p on vu.email = p.email
             WHERE
                 vu.email = :email
+            ORDER BY
+                p.id
             """, nativeQuery = true)
-    Optional<Long> findPersonIdByEmail(String email);
+    List<Long> findPersonIdsByEmail(String email);
 
     @Query(value = """
         select EXISTS(

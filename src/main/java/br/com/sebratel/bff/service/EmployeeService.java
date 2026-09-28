@@ -28,7 +28,18 @@ public class EmployeeService {
 
     public Long getPersonIdByEmail(String email) {
         log.info("Buscando PersonId para o email: {}", email);
-        return employeeRepository.findPersonIdByEmail(email).orElseThrow(() -> new ResourceNotFoundException("PersonId não encontrado com o email fornecido: " + email ));
+        List<Long> ids = employeeRepository.findPersonIdsByEmail(email);
+        if (ids.isEmpty()) {
+            throw new ResourceNotFoundException("PersonId não encontrado com o email fornecido: " + email);
+        }
+        if (ids.size() > 1) {
+            // Cadastro duplicado no ERP: o mesmo e-mail tem mais de uma pessoa. Não derrubamos a
+            // abertura (evita HTTP 500) — usamos o menor id (registro mais antigo/canônico) e
+            // registramos o aviso para que o duplicado seja tratado no Voalle.
+            log.warn("E-mail com mais de um PersonId no ERP (cadastro duplicado): {} -> {}. Usando o menor id: {}.",
+                    email, ids, ids.getFirst());
+        }
+        return ids.getFirst();
     }
 
     public boolean hasB2BinInput(List<Long> list) {
