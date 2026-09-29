@@ -38,17 +38,33 @@ class EmployeeServiceTest {
     }
 
     @Test
-    void getPersonIdByEmail_ShouldReturnSmallestId_WhenEmailHasDuplicatePeople() {
-        // Arrange — e-mail com cadastro duplicado no ERP (a causa do HTTP 500 anterior).
-        // A query já devolve ordenado por id; o service usa o primeiro (menor) sem estourar.
-        String email = "duplicado@sebratel.com.br";
-        when(repository.findPersonIdsByEmail(email)).thenReturn(List.of(100L, 200L));
+    void getPersonIdByEmail_ShouldReturnFirstOrdered_WhenEmailHasDuplicatePeople() {
+        // Arrange — caso real que causava o HTTP 500: o mesmo e-mail em duas pessoas.
+        // A query devolve o cadastro com CPF primeiro (89822) e o duplicado vazio depois (302328);
+        // o service usa o primeiro sem estourar NonUniqueResultException.
+        String email = "bruno.soares@sebratel.com.br";
+        when(repository.findPersonIdsByEmail(email)).thenReturn(List.of(89822L, 302328L));
 
         // Act
         Long result = service.getPersonIdByEmail(email);
 
         // Assert
-        assertEquals(100L, result);
+        assertEquals(89822L, result);
+        verify(repository, times(1)).findPersonIdsByEmail(email);
+    }
+
+    @Test
+    void getPersonIdByEmail_ShouldCollapseRepeatedSameId_WhenVUsersHasDuplicateRow() {
+        // Arrange — v_users com a linha do e-mail duplicada faz o join repetir o MESMO id.
+        // Não é ambiguidade real de pessoa: deduplicamos e devolvemos o único id.
+        String email = "test@sebratel.com.br";
+        when(repository.findPersonIdsByEmail(email)).thenReturn(List.of(89822L, 89822L));
+
+        // Act
+        Long result = service.getPersonIdByEmail(email);
+
+        // Assert
+        assertEquals(89822L, result);
         verify(repository, times(1)).findPersonIdsByEmail(email);
     }
 

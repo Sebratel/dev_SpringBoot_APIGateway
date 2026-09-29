@@ -28,15 +28,18 @@ public class EmployeeService {
 
     public Long getPersonIdByEmail(String email) {
         log.info("Buscando PersonId para o email: {}", email);
-        List<Long> ids = employeeRepository.findPersonIdsByEmail(email);
+        // A query já vem ordenada (cadastro com CPF primeiro, depois menor id). Deduplicamos
+        // preservando essa ordem — o join pode repetir o mesmo id quando v_users tem a linha
+        // duplicada, e nesse caso NÃO é ambiguidade real de pessoa.
+        List<Long> ids = employeeRepository.findPersonIdsByEmail(email).stream().distinct().toList();
         if (ids.isEmpty()) {
             throw new ResourceNotFoundException("PersonId não encontrado com o email fornecido: " + email);
         }
         if (ids.size() > 1) {
-            // Cadastro duplicado no ERP: o mesmo e-mail tem mais de uma pessoa. Não derrubamos a
-            // abertura (evita HTTP 500) — usamos o menor id (registro mais antigo/canônico) e
-            // registramos o aviso para que o duplicado seja tratado no Voalle.
-            log.warn("E-mail com mais de um PersonId no ERP (cadastro duplicado): {} -> {}. Usando o menor id: {}.",
+            // Cadastro duplicado no ERP: o mesmo e-mail tem mais de uma pessoa DISTINTA. Não
+            // derrubamos a abertura (evita HTTP 500) — usamos o primeiro da ordem (cadastro com
+            // CPF / mais antigo) e registramos o aviso para o duplicado ser tratado no Voalle.
+            log.warn("E-mail com mais de um PersonId no ERP (cadastro duplicado): {} -> {}. Usando: {}.",
                     email, ids, ids.getFirst());
         }
         return ids.getFirst();

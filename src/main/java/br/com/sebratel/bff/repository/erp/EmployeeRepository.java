@@ -19,13 +19,19 @@ public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
      * IDs de pessoa para um e-mail. Retorna LISTA (não Optional) de propósito: o e-mail pode
      * casar com mais de uma linha — seja porque {@code v_users} tem duplicata do e-mail, seja
      * porque há mais de um registro em {@code people} com o mesmo e-mail. Com {@code Optional},
-     * o Hibernate lançava {@code NonUniqueResultException} (HTTP 500) nesse caso. O {@code DISTINCT}
-     * colapsa a duplicação vinda do join; o {@code ORDER BY p.id} garante escolha determinística
-     * quando ainda restarem IDs diferentes. A decisão de qual usar (e o log do caso ambíguo)
-     * fica no service.
+     * o Hibernate lançava {@code NonUniqueResultException} (HTTP 500) nesse caso.
+     *
+     * <p>Ordenação determinística com dois critérios: primeiro o cadastro <b>completo</b> — o que
+     * tem {@code tx_id} (CPF/CNPJ) preenchido — vem antes do duplicado "vazio"; como desempate,
+     * o menor {@code id} (registro mais antigo). Assim o service pega sempre o cadastro real da
+     * pessoa, não um fantasma sem documento. Ex. real: e-mail casou com id 89822 (com CPF) e
+     * 302328 (sem CPF) → escolhe 89822. A deduplicação (o join pode repetir o mesmo id quando
+     * {@code v_users} tem a linha duplicada) e o WARN de ambiguidade ficam no service — não dá
+     * para usar {@code SELECT DISTINCT} aqui porque o Postgres exige que a expressão do
+     * {@code ORDER BY} esteja no SELECT.</p>
      */
     @Query(value = """
-            SELECT DISTINCT
+            SELECT
                 p.id
             FROM
                 v_users vu
@@ -34,6 +40,7 @@ public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
             WHERE
                 vu.email = :email
             ORDER BY
+                (NULLIF(TRIM(p.tx_id), '') IS NULL),
                 p.id
             """, nativeQuery = true)
     List<Long> findPersonIdsByEmail(String email);
