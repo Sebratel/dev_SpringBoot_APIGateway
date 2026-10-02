@@ -50,9 +50,8 @@ public class AbrirGmudNoEllevenApiService {
         String email = user.email();
         String name = user.name();
 
-        // Mesma convenção da massiva: assina a descrição com quem abriu.
-        input.getAssignment().setDescription(
-                input.getAssignment().getDescription() + " - " + name + "(" + email + ")");
+        // A descrição já vem com a máscara estruturada da GMUD (inclui o solicitante);
+        // não anexamos assinatura aqui (diferente da massiva) para não poluir o corpo.
 
         log.info("[GMUD] Usuário {} ({}) abrindo GMUD: '{}'. [incidentTypeId={}, catalogServiceId={}]",
                 name, email, input.getAssignment().getTitle(),
