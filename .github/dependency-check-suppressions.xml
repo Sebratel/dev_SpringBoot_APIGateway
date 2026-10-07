@@ -74,7 +74,7 @@
           CVE:        CVE-2026-47884, CVE-2026-47885, CVE-2026-47886, CVE-2026-47888,
                       CVE-2026-47889, CVE-2026-47890, CVE-2026-47891, CVE-2026-47892,
                       CVE-2026-47893, CVE-2026-59282, CVE-2026-59283, CVE-2026-59313
-          Pacotes:    spring-core / spring-web 6.2.19 (sem versao corrigida na linha 6.2.x)
+          Pacotes:    todos os modulos spring-* 6.2.19 (core, web, webmvc, tx, ...; o NVD associa a CVE ao framework inteiro) (sem versao corrigida na linha 6.2.x)
           Motivo:     cada CVE exige um recurso que este gateway NAO usa (analise do
                       codigo em src/main e do pom.xml; app servlet/Tomcat com
                       @RestController, spring-webflux presente apenas para o WebClient):
@@ -98,7 +98,7 @@
           Revisar em: 2026-11-30 (ou assim que o Spring publicar 6.2.20 / Boot 3.5.x com ele)
           Autor:      israel.barcelos (decisao, urgencia, 2026-10-07); analise: Claude Code
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.springframework/spring-(core|web)@6\.2\.19$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/spring-[a-z0-9-]+@6\.2\.19$</packageUrl>
         <cve>CVE-2026-47884</cve>
         <cve>CVE-2026-47885</cve>
         <cve>CVE-2026-47886</cve>
@@ -116,7 +116,7 @@
     <suppress until="2026-11-30Z">
         <notes><![CDATA[
           CVE:        CVE-2026-47841, CVE-2026-41707, CVE-2026-59270
-          Pacotes:    spring-security-core / -web / -oauth2-resource-server 6.5.11
+          Pacotes:    todos os modulos spring-security-* 6.5.11 (core, web, config, oauth2-*, ...)
                       (corrigido em 6.5.12, ainda nao publicado)
           Motivo:     59270  UnboundIdContainer (servidor LDAP embutido) ... nao usado; sem
                              spring-security-ldap/unboundid
@@ -127,7 +127,7 @@
           Revisar em: 2026-11-30 (ou assim que o Spring Security publicar 6.5.12)
           Autor:      israel.barcelos (decisao, urgencia, 2026-10-07); analise: Claude Code
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.springframework\.security/spring-security-(core|web|oauth2-resource-server)@6\.5\.11$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.springframework\.security/spring-security-[a-z0-9-]+@6\.5\.11$</packageUrl>
         <cve>CVE-2026-47841</cve>
         <cve>CVE-2026-41707</cve>
         <cve>CVE-2026-59270</cve>
