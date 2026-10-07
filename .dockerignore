@@ -6,3 +6,9 @@ mvnw.cmd
 .idea/
 .vscode/
 bin/
+
+# Nao participam do build da imagem; so engordam o contexto enviado ao daemon.
+docs/
+.github/
+.semgrep/
+*.md

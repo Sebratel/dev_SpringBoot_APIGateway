@@ -28,7 +28,21 @@ public class EmployeeService {
 
     public Long getPersonIdByEmail(String email) {
         log.info("Buscando PersonId para o email: {}", email);
-        return employeeRepository.findPersonIdByEmail(email).orElseThrow(() -> new ResourceNotFoundException("PersonId não encontrado com o email fornecido: " + email ));
+        // A query já vem ordenada (cadastro com CPF primeiro, depois menor id). Deduplicamos
+        // preservando essa ordem — o join pode repetir o mesmo id quando v_users tem a linha
+        // duplicada, e nesse caso NÃO é ambiguidade real de pessoa.
+        List<Long> ids = employeeRepository.findPersonIdsByEmail(email).stream().distinct().toList();
+        if (ids.isEmpty()) {
+            throw new ResourceNotFoundException("PersonId não encontrado com o email fornecido: " + email);
+        }
+        if (ids.size() > 1) {
+            // Cadastro duplicado no ERP: o mesmo e-mail tem mais de uma pessoa DISTINTA. Não
+            // derrubamos a abertura (evita HTTP 500) — usamos o primeiro da ordem (cadastro com
+            // CPF / mais antigo) e registramos o aviso para o duplicado ser tratado no Voalle.
+            log.warn("E-mail com mais de um PersonId no ERP (cadastro duplicado): {} -> {}. Usando: {}.",
+                    email, ids, ids.getFirst());
+        }
+        return ids.getFirst();
     }
 
     public boolean hasB2BinInput(List<Long> list) {
@@ -44,8 +58,18 @@ public class EmployeeService {
             throw new ResourceNotFoundException("Cliente não encontrado para o cpf/cnpj fornecido: " + txId);
         }
 
-        InsigniaProjection insigniaProjection = employeeRepository.findInsigniaByTxId(txId)
-                .orElseThrow(() -> new InsigniaNotFoundException("Cliente encontrado, porém sem insígnia cadastrada para o cpf/cnpj: " + txId));
+        // O mesmo cpf/cnpj pode ter varios registros em people (ex.: matriz e filiais), cada um
+        // com sua insignia. A query devolve as insignias distintas; se alguma for corporativa,
+        // o cliente e corporativo.
+        List<InsigniaProjection> insignias = employeeRepository.findInsigniasByTxId(txId);
+        if (insignias.isEmpty()) {
+            throw new InsigniaNotFoundException("Cliente encontrado, porém sem insígnia cadastrada para o cpf/cnpj: " + txId);
+        }
+
+        InsigniaProjection insigniaProjection = insignias.stream()
+                .filter(i -> INSIGNIAS_CORPORATIVAS.contains(i.getTitle()))
+                .findFirst()
+                .orElse(insignias.getFirst());
 
         InsigniaOutputDTO insignia = InsigniaOutputDTO.fromProjection(insigniaProjection);
         boolean corporativo = INSIGNIAS_CORPORATIVAS.contains(insignia.getTitle());

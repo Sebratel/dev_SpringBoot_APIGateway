@@ -10,11 +10,25 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository("erpEmployeeRepository")
 public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
 
+    /**
+     * IDs de pessoa para um e-mail. Retorna LISTA (não Optional) de propósito: o e-mail pode
+     * casar com mais de uma linha — seja porque {@code v_users} tem duplicata do e-mail, seja
+     * porque há mais de um registro em {@code people} com o mesmo e-mail. Com {@code Optional},
+     * o Hibernate lançava {@code NonUniqueResultException} (HTTP 500) nesse caso.
+     *
+     * <p>Ordenação determinística com dois critérios: primeiro o cadastro <b>completo</b> — o que
+     * tem {@code tx_id} (CPF/CNPJ) preenchido — vem antes do duplicado "vazio"; como desempate,
+     * o menor {@code id} (registro mais antigo). Assim o service pega sempre o cadastro real da
+     * pessoa, não um fantasma sem documento. Ex. real: e-mail casou com id 89822 (com CPF) e
+     * 302328 (sem CPF) → escolhe 89822. A deduplicação (o join pode repetir o mesmo id quando
+     * {@code v_users} tem a linha duplicada) e o WARN de ambiguidade ficam no service — não dá
+     * para usar {@code SELECT DISTINCT} aqui porque o Postgres exige que a expressão do
+     * {@code ORDER BY} esteja no SELECT.</p>
+     */
     @Query(value = """
             SELECT
                 p.id
@@ -24,8 +38,11 @@ public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
                 people p on vu.email = p.email
             WHERE
                 vu.email = :email
+            ORDER BY
+                (NULLIF(TRIM(p.tx_id), '') IS NULL),
+                p.id
             """, nativeQuery = true)
-    Optional<Long> findPersonIdByEmail(String email);
+    List<Long> findPersonIdsByEmail(String email);
 
     @Query(value = """
         select EXISTS(
@@ -48,7 +65,7 @@ public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
     boolean hasB2BinInput(@Param("list") List<Long> list);
 
     @Query(value = """
-        SELECT
+        SELECT DISTINCT
                 i.id as id,
                 i.code as code,
                 i.title as title
@@ -58,8 +75,10 @@ public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
                 insignias i ON i.id = p.insignia_id
         WHERE
                 p.tx_id = :txId
+        ORDER BY
+                i.id
     """, nativeQuery = true)
-    Optional<InsigniaProjection> findInsigniaByTxId(@Param("txId") String txId);
+    List<InsigniaProjection> findInsigniasByTxId(@Param("txId") String txId);
 
     @Query(value = """
         SELECT

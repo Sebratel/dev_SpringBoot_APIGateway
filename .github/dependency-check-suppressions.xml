@@ -57,6 +57,98 @@
     </suppress>
 
     <!--
+      ======================================================================
+      CVEs ainda SEM correcao publicada na linha em uso (Boot 3.5.16).
+      Versoes corrigidas anunciadas no NVD: spring-framework 6.2.20,
+      spring-security 6.5.12, reactor-core 3.7.20 (ainda nao publicadas no
+      Maven Central; ultimas: 6.2.19 / 6.5.11 / 3.7.19). Na linha do Spring
+      Framework 6.2.x o GHSA marca "sem patch"; o fix existe so na 7.0.9.
+      As entradas abaixo ficam FIXADAS na versao atual e tem "until": quando a
+      data vence, ou quando a versao subir, a supressao deixa de valer e o gate
+      volta a falhar, forcando a reavaliacao.
+      ======================================================================
+    -->
+
+    <suppress until="2026-11-30Z">
+        <notes><![CDATA[
+          CVE:        CVE-2026-47884, CVE-2026-47885, CVE-2026-47886, CVE-2026-47888,
+                      CVE-2026-47889, CVE-2026-47890, CVE-2026-47891, CVE-2026-47892,
+                      CVE-2026-47893, CVE-2026-59282, CVE-2026-59283, CVE-2026-59313
+          Pacotes:    todos os modulos spring-* 6.2.19 (core, web, webmvc, tx, ...; o NVD associa a CVE ao framework inteiro) (sem versao corrigida na linha 6.2.x)
+          Motivo:     cada CVE exige um recurso que este gateway NAO usa (analise do
+                      codigo em src/main e do pom.xml; app servlet/Tomcat com
+                      @RestController, spring-webflux presente apenas para o WebClient):
+                      47884  XsltView/XsltViewResolver ........ nao usado (so REST/JSON)
+                      47892  WebFlux functional endpoints no DispatcherServlet
+                             (RouterFunction) ................. nao usado
+                      47890  SSE com view fragments ........... nao usado (sem SseEmitter/event-stream)
+                      59313  SSE no functional web framework .. nao usado
+                      47885  PartEventHttpMessageReader (WebFlux server multipart)
+                             ................................. nao usado; WebFlux so como cliente
+                      47891  Aalto XML no WebFlux ............. Aalto nao esta no classpath
+                      47893  WebSocket no WebFlux ............. nao usado
+                      47888  RSocket .......................... nao usado
+                      47889  adaptador Jetty 12 ............... app roda em Tomcat
+                      47886  SpEL com expressao do usuario .... nao ha avaliacao de SpEL com entrada externa
+                      59283  SimpleEvaluationContext + compilador SpEL ... nao usado
+                      59282  data binding com property path do usuario ... todos os parametros dos
+                             controllers usam @RequestBody/@RequestParam/@PathVariable/@RequestHeader
+                             (sem @ModelAttribute/binding implicito de DTO)
+                      Limitacao: analise estatica; nao substitui revisao de seguranca.
+          Revisar em: 2026-11-30 (ou assim que o Spring publicar 6.2.20 / Boot 3.5.x com ele)
+          Autor:      israel.barcelos (decisao, urgencia, 2026-10-07); analise: Claude Code
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/spring-[a-z0-9-]+@6\.2\.19$</packageUrl>
+        <cve>CVE-2026-47884</cve>
+        <cve>CVE-2026-47885</cve>
+        <cve>CVE-2026-47886</cve>
+        <cve>CVE-2026-47888</cve>
+        <cve>CVE-2026-47889</cve>
+        <cve>CVE-2026-47890</cve>
+        <cve>CVE-2026-47891</cve>
+        <cve>CVE-2026-47892</cve>
+        <cve>CVE-2026-47893</cve>
+        <cve>CVE-2026-59282</cve>
+        <cve>CVE-2026-59283</cve>
+        <cve>CVE-2026-59313</cve>
+    </suppress>
+
+    <suppress until="2026-11-30Z">
+        <notes><![CDATA[
+          CVE:        CVE-2026-47841, CVE-2026-41707, CVE-2026-59270
+          Pacotes:    todos os modulos spring-security-* 6.5.11 (core, web, config, oauth2-*, ...)
+                      (corrigido em 6.5.12, ainda nao publicado)
+          Motivo:     59270  UnboundIdContainer (servidor LDAP embutido) ... nao usado; sem
+                             spring-security-ldap/unboundid
+                      47841  suporte a WebAuthn ........................... nao usado
+                      41707  DPoPProofJwtDecoderFactory (replay de prova DPoP) ... nao usado;
+                             o resource server valida JWT Bearer do Google (NimbusJwtDecoder),
+                             sem DPoP
+          Revisar em: 2026-11-30 (ou assim que o Spring Security publicar 6.5.12)
+          Autor:      israel.barcelos (decisao, urgencia, 2026-10-07); analise: Claude Code
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework\.security/spring-security-[a-z0-9-]+@6\.5\.11$</packageUrl>
+        <cve>CVE-2026-47841</cve>
+        <cve>CVE-2026-41707</cve>
+        <cve>CVE-2026-59270</cve>
+    </suppress>
+
+    <suppress until="2026-11-30Z">
+        <notes><![CDATA[
+          CVE:        CVE-2026-47857, CVE-2026-47863
+          Pacote:     reactor-core 3.7.19 (corrigido em 3.7.20, ainda nao publicado)
+          Motivo:     DoS exige Flux.windowTimeout / Flux.bufferTimeout com fairBackpressure.
+                      Nenhum dos dois operadores e usado em src/main (reactor entra so
+                      via WebClient).
+          Revisar em: 2026-11-30 (ou assim que o Reactor publicar 3.7.20)
+          Autor:      israel.barcelos (decisao, urgencia, 2026-10-07); analise: Claude Code
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.projectreactor/reactor-core@3\.7\.19$</packageUrl>
+        <cve>CVE-2026-47857</cve>
+        <cve>CVE-2026-47863</cve>
+    </suppress>
+
+    <!--
       Exemplo desativado, mantido apenas como modelo de preenchimento.
       Remova o comentario e ajuste ao suprimir algo de verdade.
 
