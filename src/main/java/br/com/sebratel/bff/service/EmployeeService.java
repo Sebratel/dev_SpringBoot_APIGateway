@@ -58,8 +58,18 @@ public class EmployeeService {
             throw new ResourceNotFoundException("Cliente não encontrado para o cpf/cnpj fornecido: " + txId);
         }
 
-        InsigniaProjection insigniaProjection = employeeRepository.findInsigniaByTxId(txId)
-                .orElseThrow(() -> new InsigniaNotFoundException("Cliente encontrado, porém sem insígnia cadastrada para o cpf/cnpj: " + txId));
+        // O mesmo cpf/cnpj pode ter varios registros em people (ex.: matriz e filiais), cada um
+        // com sua insignia. A query devolve as insignias distintas; se alguma for corporativa,
+        // o cliente e corporativo.
+        List<InsigniaProjection> insignias = employeeRepository.findInsigniasByTxId(txId);
+        if (insignias.isEmpty()) {
+            throw new InsigniaNotFoundException("Cliente encontrado, porém sem insígnia cadastrada para o cpf/cnpj: " + txId);
+        }
+
+        InsigniaProjection insigniaProjection = insignias.stream()
+                .filter(i -> INSIGNIAS_CORPORATIVAS.contains(i.getTitle()))
+                .findFirst()
+                .orElse(insignias.getFirst());
 
         InsigniaOutputDTO insignia = InsigniaOutputDTO.fromProjection(insigniaProjection);
         boolean corporativo = INSIGNIAS_CORPORATIVAS.contains(insignia.getTitle());
