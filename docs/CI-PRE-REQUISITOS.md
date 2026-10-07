@@ -12,7 +12,7 @@ Sem elas o pipeline não fica verde, e o motivo não é óbvio olhando só o có
 | 2 | **GitHub** | Dependabot alerts + security updates | Recomendado | nada |
 | 3 | **GitHub** | Branch protection com checks obrigatórios | Recomendado | nada |
 | 4 | **Host Docker** | Rede externa `elk_es_network` | Sim, para o APM | subida do container |
-| 4b | **Host Docker** | `chown` do volume `bff-logs` para UID 10001 | Sim, em ambiente existente | gravação de log |
+| 4b | **Host Docker** | `chown` do volume `bff-logs` para UID 10001 | Automatizado pelo serviço `*-logs-init` | gravação de log |
 | 5 | **Proxy reverso** | Rate limiting (finding F-10) | Pendente | nada |
 
 ---
@@ -186,8 +186,13 @@ Deve mostrar `elk-network` com `name: elk_es_network` e `external: true`, manten
 
 ## 4b. Host Docker — propriedade do volume de logs
 
-> **Passo obrigatório no próximo deploy em ambiente que já rodou antes.**
-> Sem ele o container sobe, mas não consegue gravar log.
+> **Automatizado:** `docker-compose.yml` e `docker-compose-stage.yml` têm um serviço
+> `*-logs-init` que roda uma vez como root e faz o `chown` do volume antes da aplicação
+> subir. Nada a fazer a mão em deploys novos. O procedimento abaixo fica como referência
+> e para diagnóstico.
+>
+> Sintoma se o init não rodar: `FileNotFoundException: logs/bff.log (Permission denied)`
+> no startup, o container sobe mas não grava o arquivo de log.
 
 O container passou a rodar como usuário não-root (`bff`, UID **10001**) para atender ao
 achado de SAST `missing-user-entrypoint` — rodar como root significa que uma execução
