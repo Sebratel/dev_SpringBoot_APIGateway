@@ -10,7 +10,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository("erpEmployeeRepository")
 public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
@@ -66,7 +65,7 @@ public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
     boolean hasB2BinInput(@Param("list") List<Long> list);
 
     @Query(value = """
-        SELECT
+        SELECT DISTINCT
                 i.id as id,
                 i.code as code,
                 i.title as title
@@ -76,8 +75,10 @@ public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
                 insignias i ON i.id = p.insignia_id
         WHERE
                 p.tx_id = :txId
+        ORDER BY
+                i.id
     """, nativeQuery = true)
-    Optional<InsigniaProjection> findInsigniaByTxId(@Param("txId") String txId);
+    List<InsigniaProjection> findInsigniasByTxId(@Param("txId") String txId);
 
     @Query(value = """
         SELECT
