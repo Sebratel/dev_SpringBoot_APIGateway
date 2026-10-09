@@ -3,7 +3,11 @@ package br.com.sebratel.bff.controller;
 import br.com.sebratel.bff.dto.ApiResponse;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoInputDTO;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoOutputDTO;
+import br.com.sebratel.bff.dto.massivas.api.FinalizaRegistroMassivoInputDTO;
+import br.com.sebratel.bff.dto.massivas.api.FinalizarRegistroMassivoOutputDTO;
+import br.com.sebratel.bff.dto.massivas.api.EllevenCompleteTaskResponseDTO;
 import br.com.sebratel.bff.service.gmud.AbrirGmudNoEllevenApiService;
+import br.com.sebratel.bff.service.gmud.FinalizarGmudNoEllevenApiService;
 import br.com.sebratel.bff.service.massivas.MassivaIdempotencyStore;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * Abertura de GMUD (Gestão de Mudança de Rede) no Elleven. Endpoint próprio (separado da massiva)
@@ -23,13 +29,16 @@ import org.springframework.web.bind.annotation.*;
 public class GmudEllevenController {
 
     private final AbrirGmudNoEllevenApiService abrirGmudNoEllevenApiService;
+    private final FinalizarGmudNoEllevenApiService finalizarGmudNoEllevenApiService;
     private final MassivaIdempotencyStore idempotencyStore;
 
     @Autowired
     public GmudEllevenController(
             AbrirGmudNoEllevenApiService abrirGmudNoEllevenApiService,
+            FinalizarGmudNoEllevenApiService finalizarGmudNoEllevenApiService,
             MassivaIdempotencyStore idempotencyStore) {
         this.abrirGmudNoEllevenApiService = abrirGmudNoEllevenApiService;
+        this.finalizarGmudNoEllevenApiService = finalizarGmudNoEllevenApiService;
         this.idempotencyStore = idempotencyStore;
     }
 
@@ -72,6 +81,67 @@ public class GmudEllevenController {
         } catch (Exception e) {
             log.error("Error creating GMUD in ERP for requester {}: {}", input.getPersonId(), e.getMessage());
             throw e;
+        }
+    }
+
+    /**
+     * Encerra o protocolo da GMUD no Elleven. Disparado quando a GMUD é marcada como Concluída
+     * (encerramento) ou Negada (cancelamento, incidentStatusId=8). NÃO usa a lógica de protocolos
+     * vinculados da massiva — encerra só o próprio {@code assignmentId}.
+     */
+    @DeleteMapping({"/encerrar-via-api", "finalizar-via-api"})
+    public ResponseEntity<FinalizarRegistroMassivoOutputDTO> encerrarGmudViaApi(
+            @Valid @RequestBody FinalizaRegistroMassivoInputDTO input) {
+        return registrarNoElleven(input, "finalization");
+    }
+
+    /**
+     * Registra um relato no protocolo da GMUD sem encerrá-lo (ex.: reagendamento da janela).
+     * Mesma API do encerramento ({@code createsolicitationreport}); o frontend envia o
+     * {@code incidentStatusId} ATUAL do protocolo, então o status não muda.
+     */
+    @PostMapping({"/relato-via-api", "report-via-api"})
+    public ResponseEntity<FinalizarRegistroMassivoOutputDTO> relatoGmudViaApi(
+            @Valid @RequestBody FinalizaRegistroMassivoInputDTO input) {
+        if (input.getIncidentStatusId() == null || input.getIncidentStatusId().isBlank()) {
+            FinalizarRegistroMassivoOutputDTO badRequest = FinalizarRegistroMassivoOutputDTO.builder()
+                    .success(false)
+                    .messages(List.of(EllevenCompleteTaskResponseDTO.builder()
+                            .message("incidentStatusId (status atual do protocolo) é obrigatório no relato.")
+                            .type("Error")
+                            .build()))
+                    .build();
+            return ResponseEntity.badRequest().body(badRequest);
+        }
+        return registrarNoElleven(input, "report");
+    }
+
+    private ResponseEntity<FinalizarRegistroMassivoOutputDTO> registrarNoElleven(
+            FinalizaRegistroMassivoInputDTO input, String acao) {
+
+        log.info("Starting GMUD {} in ERP via API. [ASSIGNMENT ID: {}]", acao, input.getAssignmentId());
+
+        try {
+            FinalizarRegistroMassivoOutputDTO output = finalizarGmudNoEllevenApiService.executar(input);
+
+            if (output != null && output.isSuccess()) {
+                log.info("GMUD {} successfully registered in ERP. [ASSIGNMENT ID: {}]", acao, input.getAssignmentId());
+                return ResponseEntity.ok(output);
+            }
+
+            log.warn("Error on GMUD {} in ERP. Elleven side ERROR. [ASSIGNMENT ID: {}]", acao, input.getAssignmentId());
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(output);
+        } catch (Exception e) {
+            log.error("Error on GMUD {} SERVER ERROR. ASSIGNMENT: {}: {}", acao, input.getAssignmentId(), e.getMessage());
+
+            FinalizarRegistroMassivoOutputDTO errorOutput = FinalizarRegistroMassivoOutputDTO.builder()
+                    .success(false)
+                    .messages(List.of(EllevenCompleteTaskResponseDTO.builder()
+                            .message("Internal server error on GMUD " + acao + ": " + e.getMessage())
+                            .type("Error")
+                            .build()))
+                    .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorOutput);
         }
     }
 }
