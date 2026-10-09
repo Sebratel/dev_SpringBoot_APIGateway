@@ -4,6 +4,7 @@ import br.com.sebratel.bff.dto.CorporativoOutputDTO;
 import br.com.sebratel.bff.dto.InsigniaOutputDTO;
 import br.com.sebratel.bff.exceptions.InsigniaNotFoundException;
 import br.com.sebratel.bff.exceptions.ResourceNotFoundException;
+import br.com.sebratel.bff.model.Employee;
 import br.com.sebratel.bff.repository.erp.EmployeeRepository;
 import br.com.sebratel.bff.repository.erp.projections.InsigniaProjection;
 import jakarta.validation.Valid;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -43,6 +45,20 @@ public class EmployeeService {
                     email, ids, ids.getFirst());
         }
         return ids.getFirst();
+    }
+
+    /**
+     * Resolve nome e e-mail de uma pessoa do ERP. Usado como contingência quando o JWT não traz as claims.
+     * Retorna vazio se a pessoa não existe ou não tem nome/e-mail cadastrados.
+     */
+    public Optional<Employee> findEmployeeByPersonId(Long personId) {
+        if (personId == null) {
+            return Optional.empty();
+        }
+        return employeeRepository.findContactByPersonId(personId)
+                .filter(c -> c.getName() != null && !c.getName().isBlank()
+                        && c.getEmail() != null && !c.getEmail().isBlank())
+                .map(c -> new Employee(c.getEmail(), c.getName()));
     }
 
     public boolean hasB2BinInput(List<Long> list) {

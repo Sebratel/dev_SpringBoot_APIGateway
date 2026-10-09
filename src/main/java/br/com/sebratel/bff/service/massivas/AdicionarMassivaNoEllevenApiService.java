@@ -47,6 +47,14 @@ public class AdicionarMassivaNoEllevenApiService {
         String email = x.email();
         String name = x.name();
 
+        if (isBlank(name) || isBlank(email)) {
+            Employee fallback = resolverSolicitantePeloPersonId(input.getPersonId());
+            if (fallback != null) {
+                email = fallback.email();
+                name = fallback.name();
+            }
+        }
+
         validarRequisicao(name, email, input);
 
         input.getAssignment().setDescription(input.getAssignment().getDescription() + " - " + name + "("+ email +")");
@@ -99,6 +107,30 @@ public class AdicionarMassivaNoEllevenApiService {
                     input.getAssignment().getTitle(), e.getMessage(), e);
             throw e;
         }
+    }
+
+    /**
+     * Contingência: JWT sem claims 'name'/'email' (ex.: token de integração). Resolve o solicitante
+     * pelo personId informado no corpo. Falha na consulta não derruba o fluxo: a validação recusa em seguida.
+     */
+    private Employee resolverSolicitantePeloPersonId(Long personId) {
+        try {
+            Employee employee = employeeService.findEmployeeByPersonId(personId).orElse(null);
+            if (employee != null) {
+                log.warn("[MASSIVA] JWT sem name/email; solicitante resolvido pelo personId {}: {} ({})",
+                        personId, employee.name(), employee.email());
+            } else {
+                log.warn("[MASSIVA] JWT sem name/email e personId {} sem nome/e-mail no ERP.", personId);
+            }
+            return employee;
+        } catch (Exception e) {
+            log.error("[MASSIVA] Falha ao resolver solicitante pelo personId {}: {}", personId, e.getMessage());
+            return null;
+        }
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     /**
