@@ -6,7 +6,9 @@ import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoOutputDTO;
 import br.com.sebratel.bff.dto.splitters.RecuperarTokenEllevenOutputDTO;
 import br.com.sebratel.bff.exceptions.InvalidMassiveRequestException;
 import br.com.sebratel.bff.model.entity.AffectedUsersEntity;
+import br.com.sebratel.bff.model.Employee;
 import br.com.sebratel.bff.service.EmployeeService;
+import java.util.Optional;
 import br.com.sebratel.bff.service.RecuperarTokenDoUsuarioIntegradorEllevenService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -321,6 +323,63 @@ class AdicionarMassivaNoEllevenApiServiceTest {
 
         assertTrue(ex.getMessage().contains("Usuário solicitante inválido"));
         assertTrue(ex.getMessage().contains("Nenhum protocolo foi aberto no Voalle"));
+        verifyNoInteractions(recuperarTokenService, webClient);
+    }
+
+    @Test
+    void executarComJwtSemClaimsResolveSolicitantePeloPersonId() {
+        when(jwt.getClaim("email")).thenReturn(null);
+        when(jwt.getClaim("name")).thenReturn(null);
+        AberturaRegistroMassivoInputDTO input = inputBase();
+        input.setPersonId(141085L);
+        input.setAffectedUsers(umAfetado());
+        input.setAffectedUsersQuantity(1);
+        when(employeeService.findEmployeeByPersonId(141085L))
+                .thenReturn(Optional.of(new Employee("fulano@sebratel.com.br", "Fulano")));
+        when(employeeService.hasB2BinInput(any())).thenReturn(false);
+        when(recuperarTokenService.executar()).thenReturn(new RecuperarTokenEllevenOutputDTO("fake-token", 3600, "Bearer", "all"));
+
+        WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+        WebClient.RequestBodySpec requestBodySpec = mock(WebClient.RequestBodySpec.class);
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+        when(webClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.header(eq(HttpHeaders.AUTHORIZATION), anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
+        when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(AberturaRegistroMassivoOutputDTO.class)).thenReturn(Mono.just(new AberturaRegistroMassivoOutputDTO()));
+
+        service.executar(input);
+
+        assertTrue(input.getAssignment().getDescription().endsWith("Fulano(fulano@sebratel.com.br)"));
+        verify(webClient).post();
+    }
+
+    @Test
+    void executarComJwtSemClaimsEPersonIdSemCadastroDeveRecusar() {
+        when(jwt.getClaim("email")).thenReturn(null);
+        AberturaRegistroMassivoInputDTO input = inputBase();
+        input.setPersonId(999L);
+        input.setAffectedUsers(umAfetado());
+        input.setAffectedUsersQuantity(1);
+        when(employeeService.findEmployeeByPersonId(999L)).thenReturn(Optional.empty());
+
+        assertThrows(InvalidMassiveRequestException.class, () -> service.executar(input));
+        verifyNoInteractions(recuperarTokenService, webClient);
+    }
+
+    @Test
+    void executarComJwtSemClaimsEFalhaNaConsultaDeveRecusar() {
+        when(jwt.getClaim("email")).thenReturn(null);
+        AberturaRegistroMassivoInputDTO input = inputBase();
+        input.setPersonId(141085L);
+        input.setAffectedUsers(umAfetado());
+        input.setAffectedUsersQuantity(1);
+        when(employeeService.findEmployeeByPersonId(141085L)).thenThrow(new RuntimeException("db down"));
+
+        assertThrows(InvalidMassiveRequestException.class, () -> service.executar(input));
         verifyNoInteractions(recuperarTokenService, webClient);
     }
 

@@ -2,6 +2,7 @@ package br.com.sebratel.bff.repository.erp;
 
 import br.com.sebratel.bff.model.entity.PersonEntity;
 import br.com.sebratel.bff.repository.erp.projections.InsigniaProjection;
+import br.com.sebratel.bff.repository.erp.projections.PersonContactProjection;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository("erpEmployeeRepository")
 public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
@@ -43,6 +45,17 @@ public interface EmployeeRepository extends JpaRepository<PersonEntity, Long> {
                 p.id
             """, nativeQuery = true)
     List<Long> findPersonIdsByEmail(String email);
+
+    @Query(value = """
+            SELECT
+                p.name AS name,
+                p.email AS email
+            FROM
+                people p
+            WHERE
+                p.id = :personId
+            """, nativeQuery = true)
+    Optional<PersonContactProjection> findContactByPersonId(@Param("personId") Long personId);
 
     @Query(value = """
         select EXISTS(
