@@ -4,7 +4,8 @@ import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoAssignmentDTO
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoInputDTO;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoOutputDTO;
 import br.com.sebratel.bff.dto.splitters.RecuperarTokenEllevenOutputDTO;
-import br.com.sebratel.bff.model.Employee;
+import br.com.sebratel.bff.exceptions.InvalidMassiveRequestException;
+import br.com.sebratel.bff.model.entity.AffectedUsersEntity;
 import br.com.sebratel.bff.service.EmployeeService;
 import br.com.sebratel.bff.service.RecuperarTokenDoUsuarioIntegradorEllevenService;
 import org.junit.jupiter.api.AfterEach;
@@ -26,9 +27,11 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -61,8 +64,8 @@ class AdicionarMassivaNoEllevenApiServiceTest {
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(jwt);
-        when(jwt.getClaim("email")).thenReturn("test@sebratel.com.br");
-        when(jwt.getClaim("name")).thenReturn("Test User");
+        lenient().when(jwt.getClaim("email")).thenReturn("test@sebratel.com.br");
+        lenient().when(jwt.getClaim("name")).thenReturn("Test User");
     }
 
     @AfterEach
@@ -78,7 +81,7 @@ class AdicionarMassivaNoEllevenApiServiceTest {
         assignment.setTitle("Test Title");
         assignment.setDescription("Test Description");
         input.setAssignment(assignment);
-        input.setAffectedUsers(new ArrayList<>());
+        input.setAffectedUsers(umAfetado());
         input.setAffectedUsersQuantity(5);
 
         RecuperarTokenEllevenOutputDTO tokenOutput = new RecuperarTokenEllevenOutputDTO("fake-token", 3600, "Bearer", "all");
@@ -118,7 +121,7 @@ class AdicionarMassivaNoEllevenApiServiceTest {
         assignment.setTitle("Test Title");
         assignment.setDescription("Test Description");
         input.setAssignment(assignment);
-        input.setAffectedUsers(new ArrayList<>());
+        input.setAffectedUsers(umAfetado());
         input.setAffectedUsersQuantity(16);
 
         RecuperarTokenEllevenOutputDTO tokenOutput = new RecuperarTokenEllevenOutputDTO("fake-token", 3600, "Bearer", "all");
@@ -157,7 +160,7 @@ class AdicionarMassivaNoEllevenApiServiceTest {
         assignment.setTitle("Test Title");
         assignment.setDescription("Test Description");
         input.setAssignment(assignment);
-        input.setAffectedUsers(new ArrayList<>());
+        input.setAffectedUsers(umAfetado());
         input.setAffectedUsersQuantity(1);
 
         RecuperarTokenEllevenOutputDTO tokenOutput = new RecuperarTokenEllevenOutputDTO("fake-token", 3600, "Bearer", "all");
@@ -196,7 +199,7 @@ class AdicionarMassivaNoEllevenApiServiceTest {
         assignment.setTitle("Test Title");
         assignment.setDescription("Test Description");
         input.setAssignment(assignment);
-        input.setAffectedUsers(new ArrayList<>());
+        input.setAffectedUsers(umAfetado());
         input.setAffectedUsersQuantity(1);
 
         RecuperarTokenEllevenOutputDTO tokenOutput = new RecuperarTokenEllevenOutputDTO("invalid-token", 3600, "Bearer", "all");
@@ -230,7 +233,7 @@ class AdicionarMassivaNoEllevenApiServiceTest {
         assignment.setTitle("Test Title");
         assignment.setDescription("Test Description");
         input.setAssignment(assignment);
-        input.setAffectedUsers(new ArrayList<>());
+        input.setAffectedUsers(umAfetado());
         input.setAffectedUsersQuantity(1);
 
         RecuperarTokenEllevenOutputDTO tokenOutput = new RecuperarTokenEllevenOutputDTO("token", 3600, "Bearer", "all");
@@ -264,7 +267,7 @@ class AdicionarMassivaNoEllevenApiServiceTest {
         assignment.setTitle("Test Title");
         assignment.setDescription("Test Description");
         input.setAssignment(assignment);
-        input.setAffectedUsers(new ArrayList<>());
+        input.setAffectedUsers(umAfetado());
         input.setAffectedUsersQuantity(1);
 
         when(recuperarTokenService.executar()).thenThrow(new RuntimeException("Critical error"));
@@ -273,43 +276,76 @@ class AdicionarMassivaNoEllevenApiServiceTest {
         assertThrows(RuntimeException.class, () -> service.executar(input));
     }
     @Test
-    void executarComAffectedUsersNullDeveTratarComoListaVazia() {
-        // Arrange
+    void executarComAffectedUsersNullDeveRecusarSemChamarElleven() {
+        AberturaRegistroMassivoInputDTO input = inputBase();
+        input.setAffectedUsers(null);
+        input.setAffectedUsersQuantity(0);
+
+        InvalidMassiveRequestException ex = assertThrows(InvalidMassiveRequestException.class, () -> service.executar(input));
+
+        assertTrue(ex.getMessage().contains("Quantidade de usuários afetados inválida"));
+        assertTrue(ex.getMessage().contains("Nenhum protocolo foi aberto no Voalle"));
+        verifyNoInteractions(recuperarTokenService, webClient);
+    }
+
+    @Test
+    void executarComZeroUsuariosAfetadosDeveRecusarSemChamarElleven() {
+        AberturaRegistroMassivoInputDTO input = inputBase();
+        input.setAffectedUsers(new ArrayList<>());
+        input.setAffectedUsersQuantity(0);
+
+        InvalidMassiveRequestException ex = assertThrows(InvalidMassiveRequestException.class, () -> service.executar(input));
+
+        assertTrue(ex.getMessage().contains("affectedUsersQuantity=0"));
+        verifyNoInteractions(recuperarTokenService, webClient);
+    }
+
+    @Test
+    void executarComQuantidadeZeroMasListaPreenchidaDeveRecusar() {
+        AberturaRegistroMassivoInputDTO input = inputBase();
+        input.setAffectedUsers(umAfetado());
+        input.setAffectedUsersQuantity(0);
+
+        assertThrows(InvalidMassiveRequestException.class, () -> service.executar(input));
+        verifyNoInteractions(recuperarTokenService, webClient);
+    }
+
+    @Test
+    void executarComUsuarioSemJwtDeveRecusarSemChamarElleven() {
+        when(authentication.getPrincipal()).thenReturn("anonymous");
+        AberturaRegistroMassivoInputDTO input = inputBase();
+        input.setAffectedUsers(umAfetado());
+        input.setAffectedUsersQuantity(1);
+
+        InvalidMassiveRequestException ex = assertThrows(InvalidMassiveRequestException.class, () -> service.executar(input));
+
+        assertTrue(ex.getMessage().contains("Usuário solicitante inválido"));
+        assertTrue(ex.getMessage().contains("Nenhum protocolo foi aberto no Voalle"));
+        verifyNoInteractions(recuperarTokenService, webClient);
+    }
+
+    @Test
+    void executarComJwtSemEmailDeveRecusar() {
+        when(jwt.getClaim("email")).thenReturn("");
+        AberturaRegistroMassivoInputDTO input = inputBase();
+        input.setAffectedUsers(umAfetado());
+        input.setAffectedUsersQuantity(1);
+
+        assertThrows(InvalidMassiveRequestException.class, () -> service.executar(input));
+        verifyNoInteractions(recuperarTokenService, webClient);
+    }
+
+    private static AberturaRegistroMassivoInputDTO inputBase() {
         AberturaRegistroMassivoInputDTO input = new AberturaRegistroMassivoInputDTO();
         AberturaRegistroMassivoAssignmentDTO assignment = new AberturaRegistroMassivoAssignmentDTO();
         assignment.setTitle("Test Title");
         assignment.setDescription("Test Description");
         input.setAssignment(assignment);
-        input.setAffectedUsers(null); // Forçando nulo
-        input.setAffectedUsersQuantity(0);
+        return input;
+    }
 
-        RecuperarTokenEllevenOutputDTO tokenOutput = new RecuperarTokenEllevenOutputDTO("fake-token", 3600, "Bearer", "all");
-        when(recuperarTokenService.executar()).thenReturn(tokenOutput);
-
-        when(employeeService.hasB2BinInput(any())).thenReturn(false);
-
-        WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
-        WebClient.RequestBodySpec requestBodySpec = mock(WebClient.RequestBodySpec.class);
-        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
-        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
-
-        when(webClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.header(eq(HttpHeaders.AUTHORIZATION), anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
-        when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-
-        AberturaRegistroMassivoOutputDTO expectedOutput = new AberturaRegistroMassivoOutputDTO();
-        when(responseSpec.bodyToMono(AberturaRegistroMassivoOutputDTO.class)).thenReturn(Mono.just(expectedOutput));
-
-        // Act
-        AberturaRegistroMassivoOutputDTO result = service.executar(input);
-
-        // Assert
-        assertEquals(expectedOutput, result);
-        assertEquals(AdicionarMassivaNoEllevenApiService.NORMAL_EVENT_INCIDENT_TYPE_ID, input.getIncidentTypeId());
-        verify(employeeService).hasB2BinInput(argThat(list -> list != null && list.isEmpty()));
+    private static List<AffectedUsersEntity> umAfetado() {
+        return new ArrayList<>(List.of(new AffectedUsersEntity()));
     }
 
 }

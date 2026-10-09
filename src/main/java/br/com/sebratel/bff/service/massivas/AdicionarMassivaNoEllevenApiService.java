@@ -2,6 +2,7 @@ package br.com.sebratel.bff.service.massivas;
 
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoInputDTO;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoOutputDTO;
+import br.com.sebratel.bff.exceptions.InvalidMassiveRequestException;
 import br.com.sebratel.bff.model.Employee;
 import br.com.sebratel.bff.model.entity.AffectedUsersEntity;
 import br.com.sebratel.bff.service.EmployeeService;
@@ -45,6 +46,8 @@ public class AdicionarMassivaNoEllevenApiService {
         Employee x = JwtInformation.retrieveUserData();
         String email = x.email();
         String name = x.name();
+
+        validarRequisicao(name, email, input);
 
         input.getAssignment().setDescription(input.getAssignment().getDescription() + " - " + name + "("+ email +")");
 
@@ -95,6 +98,33 @@ public class AdicionarMassivaNoEllevenApiService {
             log.error("[MASSIVA-ERRO] Falha crítica ao processar massiva. Título: {}. Causa: {}",
                     input.getAssignment().getTitle(), e.getMessage(), e);
             throw e;
+        }
+    }
+
+    /**
+     * Valida antes de qualquer chamada ao Elleven, para não abrir protocolo no Voalle
+     * que depois precisaria ser finalizado com mensagem de erro (e propagada ao Splitters).
+     */
+    private void validarRequisicao(String name, String email, AberturaRegistroMassivoInputDTO input) {
+        if (name == null || name.isBlank() || email == null || email.isBlank()) {
+            log.warn("[MASSIVA] Abertura recusada: usuário não identificado (nome='{}', email='{}'). Título: {}",
+                    name, email, input.getAssignment().getTitle());
+            throw new InvalidMassiveRequestException(
+                    "Usuário solicitante inválido: não foi possível identificar nome e e-mail a partir do token JWT. "
+                            + "A massiva só pode ser aberta por um usuário autenticado com JWT válido (claims 'name' e 'email'). "
+                            + "Nenhum protocolo foi aberto no Voalle.");
+        }
+
+        int quantidade = input.getAffectedUsersQuantity();
+        int listados = input.getAffectedUsers() != null ? input.getAffectedUsers().size() : 0;
+        if (quantidade <= 0 || listados == 0) {
+            log.warn("[MASSIVA] Abertura recusada: sem usuários afetados (affectedUsersQuantity={}, affectedUsers={}). Título: {}",
+                    quantidade, listados, input.getAssignment().getTitle());
+            throw new InvalidMassiveRequestException(
+                    "Quantidade de usuários afetados inválida: informado affectedUsersQuantity=" + quantidade
+                            + " e " + listados + " item(ns) em affectedUsers. "
+                            + "É necessário ao menos 1 usuário afetado para abrir a massiva. "
+                            + "Nenhum protocolo foi aberto no Voalle.");
         }
     }
 
