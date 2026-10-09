@@ -37,6 +37,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request, null);
     }
 
+    @ExceptionHandler(InvalidMassiveRequestException.class)
+    public ResponseEntity<ApiError> handleInvalidMassiveRequest(InvalidMassiveRequestException ex, HttpServletRequest request) {
+        log.warn("Invalid massive request: {}", ex.getMessage());
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request, null);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGenericException(Exception ex, HttpServletRequest request) {
         log.error("Internal server error: {}", ex.getMessage(), ex);

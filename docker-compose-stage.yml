@@ -1,12 +1,29 @@
 version: "3.8"
 
 services:
+  # Corrige a propriedade do volume de logs antes da aplicacao subir.
+  # O container roda como UID 10001 (nao-root), mas um volume nomeado que ja existia
+  # pertence a root e o Docker so copia o dono da imagem em volume NOVO; sem isto o
+  # logback falha com "logs/bff.log (Permission denied)" a cada subida.
+  # Roda uma vez, como root, e termina. Idempotente.
+  gateway-logs-init:
+    image: alpine:3.20
+    container_name: bff-logs-init-stage
+    user: "0:0"
+    restart: "no"
+    command: ["chown", "-R", "10001:10001", "/logs"]
+    volumes:
+      - bff-logs:/logs
+
   gateway-app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: bff-java-service-stage
     restart: unless-stopped
+    depends_on:
+      gateway-logs-init:
+        condition: service_completed_successfully
     ports:
       - "8082:8085"
     networks:
