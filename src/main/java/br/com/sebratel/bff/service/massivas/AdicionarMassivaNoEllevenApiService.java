@@ -147,9 +147,13 @@ public class AdicionarMassivaNoEllevenApiService {
                             + "Nenhum protocolo foi aberto no Voalle.");
         }
 
+        // Só a QUANTIDADE é obrigatória na abertura. A plataforma (paridade com o app Flutter)
+        // abre em duas etapas: este POST vai com affectedUsers vazio + affectedUsersQuantity, e os
+        // afetados são enviados depois no POST de afetados. Exigir a lista aqui recusava toda
+        // massiva aberta pela plataforma.
         int quantidade = input.getAffectedUsersQuantity();
         int listados = input.getAffectedUsers() != null ? input.getAffectedUsers().size() : 0;
-        if (quantidade <= 0 || listados == 0) {
+        if (quantidade <= 0) {
             log.warn("[MASSIVA] Abertura recusada: sem usuários afetados (affectedUsersQuantity={}, affectedUsers={}). Título: {}",
                     quantidade, listados, input.getAssignment().getTitle());
             throw new InvalidMassiveRequestException(
