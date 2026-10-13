@@ -313,6 +313,34 @@ class AdicionarMassivaNoEllevenApiServiceTest {
     }
 
     @Test
+    void executarComQuantidadeInformadaEListaVaziaDeveAbrir() {
+        // Fluxo da plataforma: abre só com a quantidade; os afetados vão depois no POST de afetados.
+        AberturaRegistroMassivoInputDTO input = inputBase();
+        input.setAffectedUsers(new ArrayList<>());
+        input.setAffectedUsersQuantity(3);
+
+        RecuperarTokenEllevenOutputDTO tokenOutput = new RecuperarTokenEllevenOutputDTO("fake-token", 3600, "Bearer", "all");
+        when(recuperarTokenService.executar()).thenReturn(tokenOutput);
+
+        WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+        WebClient.RequestBodySpec requestBodySpec = mock(WebClient.RequestBodySpec.class);
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+        when(webClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.header(eq(HttpHeaders.AUTHORIZATION), anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
+        when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        AberturaRegistroMassivoOutputDTO expectedOutput = new AberturaRegistroMassivoOutputDTO();
+        when(responseSpec.bodyToMono(AberturaRegistroMassivoOutputDTO.class)).thenReturn(Mono.just(expectedOutput));
+
+        AberturaRegistroMassivoOutputDTO result = service.executar(input);
+
+        assertEquals(expectedOutput, result);
+    }
+
+    @Test
     void executarComUsuarioSemJwtDeveRecusarSemChamarElleven() {
         when(authentication.getPrincipal()).thenReturn("anonymous");
         AberturaRegistroMassivoInputDTO input = inputBase();
