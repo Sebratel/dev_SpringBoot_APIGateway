@@ -72,7 +72,13 @@ public class AbrirGmudNoEllevenApiService {
                     .block();
             long duration = System.currentTimeMillis() - startTime;
 
-            log.info("[GMUD] Sucesso! GMUD criada no Elleven em {}ms. Resposta: {}", duration, response);
+            if (response == null || !response.isSuccess()) {
+                // Elleven respondeu HTTP 200 mas recusou (success=false) — loga o motivo para diagnóstico.
+                log.warn("[GMUD-ERRO] Elleven recusou a abertura (success=false) em {}ms. Mensagens: {}. Resposta completa: {}",
+                        duration, response != null ? response.getMessages() : null, response);
+            } else {
+                log.info("[GMUD] Sucesso! GMUD criada no Elleven em {}ms. Resposta: {}", duration, response);
+            }
             return response;
 
         } catch (WebClientResponseException.Unauthorized e) {
