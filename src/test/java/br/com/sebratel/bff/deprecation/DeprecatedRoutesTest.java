@@ -23,8 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DeprecatedRoutesTest {
 
     private static final Path USAGE = Path.of("docs", "uso-endpoints-elk.csv");
-    private static final Path MANIFEST =
-            Path.of("platform", "contract-tests", "src", "test", "resources", "manifest.json");
+    private static final Path MANIFEST = Path.of("docs", "contract", "manifest.json");
 
     private final DeprecatedRoutes routes = new DeprecatedRoutes();
 
