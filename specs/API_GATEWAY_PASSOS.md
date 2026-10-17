@@ -20,7 +20,7 @@ e é reversível. Referência de rotas: [API_GATEWAY_ENDPOINTS.md](API_GATEWAY_E
 1. Criar os repositórios (`dev_SpringBoot_Gateway`, `dev_SpringBoot_<Servico>Service` x6 e `dev_Maven_Commons`), cada um com o esqueleto, o CI e os templates do `sebratel-parent`. **Feito em 2026-10-17.**
 2. O monólito **não muda de lugar**: continua em `dev_SpringBoot_APIGateway` e faz o papel de `legacy-bff` até a fase 4.
 3. Extrair para `dev_Maven_Commons` o que é compartilhado (`ApiResponse`, `ApiError`, `GlobalExceptionHandler`, `JacksonConfig`, JWT validator, `GetToken`, `JwtInformation`, cliente Elleven) e publicar no GitHub Packages. Serviços e gateway passam a depender dele quando houver código a usar.
-4. O CI de cada repositório lê o parent (`sebratel-java-parent`, de `dev_Maven_JavaParent`) com o `GITHUB_TOKEN`: o repositório e os pacotes são **públicos** porque a organização só permite a um owner mudar a visibilidade e conceder acesso a pacotes privados. Os `common-*` (`dev_Maven_Commons`, hoje privado) precisarão do mesmo tratamento quando um serviço passar a depender deles.
+4. O CI de cada repositório lê o parent (`sebratel-java-parent`, de `dev_Maven_JavaParent`) com o `GITHUB_TOKEN`. Por isso **todos os repositórios são públicos**: a organização só permite a um owner mudar a visibilidade ou conceder acesso a pacotes privados, então os repositórios foram recriados como públicos e as cópias privadas anteriores ficaram arquivadas com o sufixo `-privado-antigo` (um owner pode excluí-las).
 
 **Saída:** os 8 repositórios constroem no CI (verde em 2026-10-17); o monólito segue verde e publicado como hoje.
 
