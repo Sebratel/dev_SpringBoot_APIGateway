@@ -19,7 +19,7 @@ spring:
       - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
 
 server:
-  port: ${SERVER_PORT:8107}
+  port: ${SERVER_PORT:8106}
   tomcat:
     connection-timeout: 600000
 

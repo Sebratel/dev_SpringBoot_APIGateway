@@ -56,15 +56,15 @@ nem drivers JDBC.
  Apps / n8n / chatbot
           │  (mesmas URLs de hoje)
           ▼
- ┌────────────────────────────────────────────────┐
- │ api-gateway  (Spring Cloud Gateway)            │
- │  auth · CORS · rate-limit · CB · retry         │
- │  request-id · audit · swagger agregado         │
- └──┬─────┬─────┬─────┬─────┬─────┬─────┬─────────┘
-    ▼     ▼     ▼     ▼     ▼     ▼     ▼
-  MAS    SPL   COM   CTR   RAD   EST   PES   ← serviços Spring Boot independentes
-   │      │     │     │     │     │     │
- Afet.  Elleven ERP  ERP  Radius ERP   ERP
+ ┌────────────────────────────────────────────┐
+ │ api-gateway  (Spring Cloud Gateway)        │
+ │  auth · CORS · rate-limit · CB · retry     │
+ │  request-id · audit · swagger agregado     │
+ └──┬─────┬─────┬─────┬─────┬─────┬───────────┘
+    ▼     ▼     ▼     ▼     ▼     ▼
+  MAS    SPL   COM   RAD   EST   PES   ← serviços Spring Boot independentes
+   │      │     │     │     │     │
+ Afet.  Elleven ERP  Radius ERP   ERP
  +ERP   +ERP
  +Elleven/Native
 ```
@@ -90,11 +90,10 @@ só coincidem em prefixo de URL ou no banco ERP ficam em serviços separados.
 |---|---|---|---|---|---|
 | MAS | `massivas-service` | Usuários afetados, massivas (Elleven/ERP/Native), histórico de massivas, Matrix, sites de autenticação; `service/massivas/*`, `MassivaIdempotencyStore` | Afetados DB, ERP, Elleven, Native | 8101 | 68 |
 | SPL | `splitters-service` | Splitters, OLTs, conexões, solicitações de cliente, alertas de protocolo pendente (`SplittersMapper`) | Elleven, ERP | 8102 | 8 |
-| COM | `comercial-service` | Vendedores ativos, pedidos de aquisição, primeiro pagante mensal, relatório semanal de apoio; `dto/comercial` | ERP | 8103 | 18 |
-| CTR | `contratos-service` | Contratos bloqueados, ativação, ativação c/ fatura pendente, sem fatura, primeiro pagamento, clientes com nome duplicado | ERP | 8104 | 27 |
-| RAD | `radius-service` | Consumo alto, última conexão, primeira autenticação, calling-station e prefixo duplicados | Radius DB (+ leitura de plano no ERP) | 8105 | 14 |
-| EST | `estoque-service` | Estoque por técnico, movimentação, patrimônio pendente | ERP | 8106 | 8 |
-| PES | `pessoas-service` | Colaborador por token/email/CPF/contrato, corporativo, QR Code do funcionário (chaves RSA) | ERP | 8107 | 7 |
+| COM | `comercial-service` | Vendas (vendedores ativos, aquisição, primeiro pagante mensal, relatório semanal de apoio) e contratos (bloqueados, ativação, ativação c/ fatura pendente, sem fatura, primeiro pagamento, clientes com nome duplicado); `dto/comercial` | ERP | 8103 | 45 |
+| RAD | `radius-service` | Consumo alto, última conexão, primeira autenticação, calling-station e prefixo duplicados | Radius DB (+ leitura de plano no ERP) | 8104 | 14 |
+| EST | `estoque-service` | Estoque por técnico, movimentação, patrimônio pendente | ERP | 8105 | 8 |
+| PES | `pessoas-service` | Colaborador por token/email/CPF/contrato, corporativo, QR Code do funcionário (chaves RSA) | ERP | 8106 | 7 |
 
 Módulos compartilhados (bibliotecas, sem endpoints): `common-web` (envelope/erros), `common-security`
 (JWT, `GetToken`, `JwtInformation`) e `common-elleven` (cliente Elleven, token, `@TokenRetry`; usado por
@@ -103,7 +102,7 @@ Módulos compartilhados (bibliotecas, sem endpoints): `common-web` (envelope/err
 ### Separações feitas por falta de coesão
 | Antes (agrupamento óbvio) | Decisão | Motivo |
 |---|---|---|
-| “Comercial” com tudo que lê contrato | **Dividido** em `COM` (vendas) e `CTR` (contrato) | Vendedor/aquisição/primeiro pagante/apoio semanal respondem ao time de vendas; bloqueado/ativação/fatura/pagamento/duplicados respondem a faturamento e cadastro. Mudam por motivos distintos |
+| “Comercial” e “Contratos” como serviços separados | **Unidos** em `COM` | `WeeklyReportService` (vendas) e `ContractActivationService` (contrato) compartilham o `ContractDataService`; separar duplicaria a regra ou criaria chamada entre serviços. Ambos são só leitura do ERP |
 | `/api/v1/sites` junto de pessoas | **`MAS`** | É lookup de POP/DC consumido na abertura de massiva (`authenticationSiteCode`) |
 | `QrCode` junto de relatórios | **`PES`** | Identidade do funcionário e chaves RSA; nada a ver com relatórios |
 | `last-connections` sob `/contracts` | **`RAD`** | Dado vem do Radius; o prefixo `/contracts` é só herança de URL |
@@ -112,9 +111,7 @@ Módulos compartilhados (bibliotecas, sem endpoints): `common-web` (envelope/err
 | Elleven duplicado em dois serviços | **`common-elleven`** | `MAS` e `SPL` compartilham cliente/token em vez de copiar |
 
 Pontos a validar na fase 0 (spike):
-- `MatrixService` usa `PersonRepository` + `AffectedUserService`; `WeeklyReportService` usa `ContractDataService`
-  (`ContractActivationRepository`), que também alimenta `CTR`. Se a consulta de contrato for idêntica, extrair
-  para `common-erp` (leitura) ou expor via HTTP de `CTR` para `COM`; **não** duplicar regra.
+- `MatrixService` usa `PersonRepository` + `AffectedUserService` (só `MAS` os usa). `ContractDataService` é usado só dentro de `COM`, o que confirma a união. `PlanoRepository` (ERP) é usado só pelo `ConsumoService`, em `RAD`: leitura, sem serviço compartilhado.
 - `MAS` fala com **dois** bancos (Afetados e ERP) e com Elleven; mantê-los no mesmo serviço evita transação distribuída.
 - Entidades/repositórios ERP usados por mais de um serviço (`PersonRepository`, `ContractProjection`) ficam em módulo de leitura, nunca com escrita compartilhada.
 - `application.properties` documenta Afetados como MariaDB e Radius como PostgreSQL, enquanto `specs/TEMPLATE.md` diz o contrário. **Verificar** e corrigir o template.
@@ -136,11 +133,10 @@ platform/
 └── services/
     ├── massivas-service/           8101
     ├── splitters-service/          8102
-    ├── comercial-service/          8103
-    ├── contratos-service/          8104
-    ├── radius-service/             8105
-    ├── estoque-service/            8106
-    └── pessoas-service/            8107
+    ├── comercial-service/          8103   (vendas + contratos)
+    ├── radius-service/             8104
+    ├── estoque-service/            8105
+    └── pessoas-service/            8106
 ```
 
 Ainda a criar: `contract-tests/` (paridade das 150 rotas), `legacy-bff/` (monólito movido na fase 1),
@@ -152,10 +148,10 @@ Cada serviço mantém o layout atual (`controller → service → repository`, D
 ## 7. Exemplo de configuração de rota
 
 ```yaml
-# gateway/src/main/resources/routes/contratos.yml
+# gateway/src/main/resources/routes/comercial.yml
 spring.cloud.gateway.routes:
   - id: contratos-bloqueados
-    uri: ${CONTRATOS_URL:http://contratos-service:8104}
+    uri: ${COMERCIAL_URL:http://comercial-service:8103}
     predicates:
       - Method=GET
       - Path=/api/v1/{base:contracts|contratos|contrato-bloqueado}/{sufixo:blocked|bloqueados}
@@ -163,7 +159,7 @@ spring.cloud.gateway.routes:
       response-timeout: 600000
     filters:
       - name: CircuitBreaker
-        args: { name: contratos, fallbackUri: forward:/fallback/contratos }
+        args: { name: comercial, fallbackUri: forward:/fallback/comercial }
       - name: Retry
         args: { retries: 2, methods: GET, statuses: BAD_GATEWAY, backoff: { firstBackoff: 200ms } }
 ```

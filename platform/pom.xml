@@ -23,7 +23,6 @@
         <module>services/massivas-service</module>
         <module>services/splitters-service</module>
         <module>services/comercial-service</module>
-        <module>services/contratos-service</module>
         <module>services/radius-service</module>
         <module>services/estoque-service</module>
         <module>services/pessoas-service</module>

@@ -6,11 +6,11 @@ mesmo método, mesmo path, mesmos parâmetros, mesmo status e mesmo formato de c
 
 Como o Spring combina o `@RequestMapping` da classe com o do método, cada linha com várias
 bases e vários sufixos gera o **produto cartesiano** (ex.: 3 bases × 2 sufixos = 6 rotas).
-Total: **150 rotas HTTP**, em 23 controllers e 7 serviços de destino.
+Total: **150 rotas HTTP**, em 23 controllers e 6 serviços de destino.
 
 Legenda de autenticação: 🔒 JWT Google (`@sebratel.com.br`) ou Basic · 🌐 `permitAll`.
-Legenda de destino: `MAS` massivas-service (68) · `SPL` splitters-service (8) · `COM` comercial-service (18) ·
-`CTR` contratos-service (27) · `RAD` radius-service (14) · `EST` estoque-service (8) · `PES` pessoas-service (7).
+Legenda de destino: `MAS` massivas-service (68) · `SPL` splitters-service (8) · `COM` comercial-service (45) ·
+`RAD` radius-service (14) · `EST` estoque-service (8) · `PES` pessoas-service (7).
 
 ## 1. Usuários afetados — destino `MAS`
 Bases (3): `/api/v1/impacted-users`, `/api/v1/usuario-afetado`, `/api/v1/afetados`
@@ -65,7 +65,11 @@ Base: `/api/v1/splitters`
 | GET | `/solicitacoes/cliente/{clientId}` | path |
 | POST | `/alertas-protocolo-pendente` | body `{ "pppoes": [...] }` |
 
-## 6. Comercial (vendas) — destino `COM`
+## 6. Comercial: vendas, contratos e relatórios do ERP — destino `COM`
+
+Vendas (vendedores, aquisição, primeiro pagante, apoio semanal) e ciclo de vida do contrato (bloqueio, ativação, fatura, pagamento, duplicados) ficam juntos: `WeeklyReportService` e `ContractActivationService` compartilham o `ContractDataService`.
+
+### 6a. Vendas
 | Método | Bases | Sufixo(s) | Rotas |
 |---|---|---|---|
 | GET | `/api/v1/acquisitions` · `/api/v1/aquisicoes` | `/recover-acquisition-orders` · `/recuperar-pedidos-de-aquisicao` | 4 |
@@ -73,7 +77,7 @@ Base: `/api/v1/splitters`
 | GET | `/api/v1/reports` · `/api/v1/primeiro-pagante-mensal` · `/api/v1/relatorios` | `/first-monthly-payer` · `/primeiro-pagante-mensal` | 6 |
 | GET | `/api/v1/weekly-reports` · `/api/v1/apoio-semanal` | `/vendedor` — **body** `ActiveSellersInputDTO` | 2 |
 
-## 6b. Contratos (ciclo de vida e qualidade do cadastro) — destino `CTR`
+### 6b. Contratos e qualidade do cadastro
 | Método | Bases | Sufixo(s) | Rotas |
 |---|---|---|---|
 | GET | `/api/v1/contracts` · `/api/v1/contrato-bloqueado` · `/api/v1/contratos` | `/blocked` · `/bloqueados` | 6 |
@@ -129,8 +133,8 @@ Lookup usado ao abrir massivas (o `title` vira `authenticationSiteCode`), por is
 ## Armadilhas de compatibilidade (o gateway precisa tratá-las)
 1. **GET com corpo**: `/api/v1/matrix`, `/api/v1/weekly-reports/vendedor` (e `apoio-semanal`) e
    `/api/v1/qr-code/gerar`. O proxy não pode descartar o body nem converter o método.
-2. **Colisão de prefixo entre domínios**: `/api/v1/contracts` e `/api/v1/contratos` misturam `CTR` e `RAD`
-   (`last-connections`); `/api/v1/reports` e `/api/v1/relatorios` misturam `COM` (`first-monthly-payer`) e `CTR` (`duplicate-client-names`). O
+2. **Colisão de prefixo entre domínios**: `/api/v1/contracts` e `/api/v1/contratos` misturam `COM` e `RAD`
+   (`last-connections`); `/api/v1/reports` e `/api/v1/relatorios` ficam inteiros em `COM`. O
    roteamento tem que ser por **path + sufixo**, nunca só por prefixo.
 3. **Mesmo prefixo, serviços diferentes**: `/api/v1/massivas-splitters` é `MAS`, enquanto
    `/api/v1/splitters` é `SPL`. Não rotear por `*splitters*`.

@@ -10,7 +10,7 @@
     </parent>
     <artifactId>comercial-service</artifactId>
     <name>comercial-service</name>
-    <description>Vendas: vendedores ativos, pedidos de aquisicao, primeiro pagante mensal e relatorio semanal de apoio</description>
+    <description>Comercial e contratos (ERP, somente leitura): vendedores, aquisicao, primeiro pagante, relatorio semanal, contratos bloqueados/ativacao/fatura/pagamento e clientes duplicados</description>
 
     <dependencies>
         <dependency>

@@ -5,7 +5,6 @@ gateway:
     massivas: ${MASSIVAS_URL:http://massivas-service:8101}
     splitters: ${SPLITTERS_URL:http://splitters-service:8102}
     comercial: ${COMERCIAL_URL:http://comercial-service:8103}
-    contratos: ${CONTRATOS_URL:http://contratos-service:8104}
-    radius: ${RADIUS_URL:http://radius-service:8105}
-    estoque: ${ESTOQUE_URL:http://estoque-service:8106}
-    pessoas: ${PESSOAS_URL:http://pessoas-service:8107}
+    radius: ${RADIUS_URL:http://radius-service:8104}
+    estoque: ${ESTOQUE_URL:http://estoque-service:8105}
+    pessoas: ${PESSOAS_URL:http://pessoas-service:8106}

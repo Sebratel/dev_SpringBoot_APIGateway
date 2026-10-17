@@ -14,7 +14,7 @@ e é reversível. Referência de rotas: [API_GATEWAY_ENDPOINTS.md](API_GATEWAY_E
 **Saída:** teste de contrato verde contra o monólito; mapa de dependências aprovado.
 
 ## Fase 1 — Esqueleto multi-módulo
-1. O esqueleto já existe em `platform/` (parent, `common/*`, `gateway`, 7 serviços; build verde). Esta fase move o monólito para `legacy-bff/` e o inclui no agregador.
+1. O esqueleto já existe em `platform/` (parent, `common/*`, `gateway`, 6 serviços; build verde). Esta fase move o monólito para `legacy-bff/` e o inclui no agregador.
 2. Mover o código atual inteiro para `legacy-bff/` (`git mv`, sem alterações de código). O build e os testes continuam verdes.
 3. Extrair para `common-web` / `common-security` / `common-erp` o que é compartilhado (`ApiResponse`, `ApiError`, `GlobalExceptionHandler`, `JacksonConfig`, JWT validator, `GetToken`, `JwtInformation`, entidades ERP). `legacy-bff` passa a depender deles.
 4. Ajustar `Dockerfile`, `deploy.sh` e os `docker-compose*.yml` para o novo layout.
@@ -43,15 +43,14 @@ Para **cada** serviço, na ordem abaixo:
 
 | Ordem | Serviço | Por quê nesta posição | Rotas |
 |---|---|---|---|
-| 3.1 | `contratos-service` | Só leitura sobre o ERP, sem integração externa, risco baixo | 27 |
-| 3.2 | `comercial-service` | Só leitura; depende da consulta de contrato (`ContractDataService`), então vem depois de `contratos` | 18 |
-| 3.3 | `estoque-service` | Pequeno, só consulta | 8 |
-| 3.4 | `pessoas-service` | Identidade/QR Code; as chaves RSA saem do repositório | 7 |
-| 3.5 | `radius-service` | Banco próprio, consultas pesadas (isola o pool) | 14 |
-| 3.6 | `splitters-service` | Primeiro uso do `common-elleven` + `@TokenRetry` | 8 |
-| 3.7 | `massivas-service` | O mais crítico: escrita, idempotência, Elleven, Native, 2 bancos. Por último, com mais observação | 68 |
+| 3.1 | `comercial-service` | Só leitura sobre o ERP, sem integração externa, risco baixo | 45 |
+| 3.2 | `estoque-service` | Pequeno, só consulta | 8 |
+| 3.3 | `pessoas-service` | Identidade/QR Code; as chaves RSA saem do repositório | 7 |
+| 3.4 | `radius-service` | Banco próprio, consultas pesadas (isola o pool) | 14 |
+| 3.5 | `splitters-service` | Primeiro uso do `common-elleven` + `@TokenRetry` | 8 |
+| 3.6 | `massivas-service` | O mais crítico: escrita, idempotência, Elleven, Native, 2 bancos. Por último, com mais observação | 68 |
 
-Contagem de rotas por destino (27 + 18 + 8 + 7 + 14 + 8 + 68 = 150), conferir contra o manifesto na fase 0.
+Contagem de rotas por destino (45 + 8 + 7 + 14 + 8 + 68 = 150), conferir contra o manifesto na fase 0.
 
 ## Fase 4 — Limpeza e endurecimento
 1. Remover `legacy-bff` quando não restar nenhuma rota apontando para ele.
@@ -83,6 +82,6 @@ Descontinuar aliases PT/EN com aviso, introduzir `/api/v2`, cache no gateway par
 |---|---|---|
 | Fase 1 | `3.4.3` | Reestruturação multi-módulo, sem mudança de comportamento (PATCH) |
 | Fase 2 | `3.5.0` | Gateway na frente do monólito: CB, rate limit, request-id (MINOR) |
-| Fase 3.1–3.6 | `3.5.x` | Cada serviço extraído (PATCH, mesmo contrato) |
-| Fase 3.7 | `3.6.0` | Massivas extraído; monólito sem rotas de negócio (MINOR) |
+| Fase 3.1–3.5 | `3.5.x` | Cada serviço extraído (PATCH, mesmo contrato) |
+| Fase 3.6 | `3.6.0` | Massivas extraído; monólito sem rotas de negócio (MINOR) |
 | Fase 4 | `3.7.0` | Remoção do `legacy-bff`, limpeza de segurança (MINOR; MAJOR só se algum endpoint for removido) |
