@@ -568,6 +568,72 @@
   "headers" : [ ],
   "body" : "InventoryRequestDTO"
 }, {
+  "method" : "POST",
+  "path" : "/api/v1/gmud/abrir-via-api",
+  "service" : "massivas",
+  "auth" : "authenticated",
+  "safe" : false,
+  "handler" : "GmudEllevenController#abrirGmudViaApi",
+  "pathVariables" : [ ],
+  "queryParams" : [ ],
+  "headers" : [ "Idempotency-Key" ],
+  "body" : "AberturaRegistroMassivoInputDTO"
+}, {
+  "method" : "DELETE",
+  "path" : "/api/v1/gmud/encerrar-via-api",
+  "service" : "massivas",
+  "auth" : "authenticated",
+  "safe" : false,
+  "handler" : "GmudEllevenController#encerrarGmudViaApi",
+  "pathVariables" : [ ],
+  "queryParams" : [ ],
+  "headers" : [ ],
+  "body" : "FinalizaRegistroMassivoInputDTO"
+}, {
+  "method" : "DELETE",
+  "path" : "/api/v1/gmud/finalizar-via-api",
+  "service" : "massivas",
+  "auth" : "authenticated",
+  "safe" : false,
+  "handler" : "GmudEllevenController#encerrarGmudViaApi",
+  "pathVariables" : [ ],
+  "queryParams" : [ ],
+  "headers" : [ ],
+  "body" : "FinalizaRegistroMassivoInputDTO"
+}, {
+  "method" : "POST",
+  "path" : "/api/v1/gmud/open-via-api",
+  "service" : "massivas",
+  "auth" : "authenticated",
+  "safe" : false,
+  "handler" : "GmudEllevenController#abrirGmudViaApi",
+  "pathVariables" : [ ],
+  "queryParams" : [ ],
+  "headers" : [ "Idempotency-Key" ],
+  "body" : "AberturaRegistroMassivoInputDTO"
+}, {
+  "method" : "POST",
+  "path" : "/api/v1/gmud/relato-via-api",
+  "service" : "massivas",
+  "auth" : "authenticated",
+  "safe" : false,
+  "handler" : "GmudEllevenController#relatoGmudViaApi",
+  "pathVariables" : [ ],
+  "queryParams" : [ ],
+  "headers" : [ ],
+  "body" : "FinalizaRegistroMassivoInputDTO"
+}, {
+  "method" : "POST",
+  "path" : "/api/v1/gmud/report-via-api",
+  "service" : "massivas",
+  "auth" : "authenticated",
+  "safe" : false,
+  "handler" : "GmudEllevenController#relatoGmudViaApi",
+  "pathVariables" : [ ],
+  "queryParams" : [ ],
+  "headers" : [ ],
+  "body" : "FinalizaRegistroMassivoInputDTO"
+}, {
   "method" : "GET",
   "path" : "/api/v1/high-consumption",
   "service" : "radius",

@@ -5,10 +5,10 @@ e é reversível. Referência de rotas: [API_GATEWAY_ENDPOINTS.md](API_GATEWAY_E
 
 ## Fase 0 — Preparação e rede de segurança
 
-> **Estado:** itens 2 e 4 prontos (manifesto das 150 rotas gerado do código e guardado por teste; harness em `platform/contract-tests`). Falta: golden files (item 3, exigem stage), item 1, spike (5) e topologia de bancos (6).
+> **Estado:** itens 2 e 4 prontos (manifesto das 156 rotas gerado do código e guardado por teste; harness em `platform/contract-tests`). Falta: golden files (item 3, exigem stage), item 1, spike (5) e topologia de bancos (6).
 
 1. Responder as questões em aberto (§13 da spec) e fechar as decisões D1–D8.
-2. **Gerar o manifesto de rotas**: exportar `/v3/api-docs` do monólito atual para `contract-tests/manifest.json` e conferir contra o inventário (150 rotas). Qualquer diferença corrige o inventário.
+2. **Gerar o manifesto de rotas**: exportar `/v3/api-docs` do monólito atual para `contract-tests/manifest.json` e conferir contra o inventário (156 rotas). Qualquer diferença corrige o inventário.
 3. **Gravar golden files**: capturar requisição/resposta reais (stage) de cada rota, anonimizadas, em `contract-tests/golden/`.
 4. Escrever o **teste de contrato** que executa o manifesto e os golden files contra uma URL base (hoje o monólito). Deve passar 100 % antes de qualquer mudança: é a linha de base.
 5. Spike: dependências cruzadas (`MatrixService` → `AffectedUserService`/`ContractDataService`, `ContractProjection`, `PersonRepository`) e quais classes vão para `common-*`.
@@ -32,7 +32,7 @@ e é reversível. Referência de rotas: [API_GATEWAY_ENDPOINTS.md](API_GATEWAY_E
 5. Rodar o teste de contrato **via gateway**. Deve passar 100 %.
 6. Apontar um consumidor de baixo risco (ex.: planilhas/relatórios) para o gateway em stage; depois em produção.
 
-**Saída:** 150 rotas verdes via gateway; consumidores trocam só o host/porta. Gateway já traz CB, rate limit e métricas sobre o monólito.
+**Saída:** 156 rotas verdes via gateway; consumidores trocam só o host/porta. Gateway já traz CB, rate limit e métricas sobre o monólito.
 
 ## Fase 3 — Extração dos serviços (um por vez)
 Para **cada** serviço, na ordem abaixo:
@@ -51,9 +51,9 @@ Para **cada** serviço, na ordem abaixo:
 | 3.3 | `pessoas-service` | Identidade/QR Code; as chaves RSA saem do repositório | 7 |
 | 3.4 | `radius-service` | Banco próprio, consultas pesadas (isola o pool) | 14 |
 | 3.5 | `splitters-service` | Primeiro uso do `common-elleven` + `@TokenRetry` | 8 |
-| 3.6 | `massivas-service` | O mais crítico: escrita, idempotência, Elleven, Native, 2 bancos. Por último, com mais observação | 68 |
+| 3.6 | `massivas-service` | O mais crítico: escrita, idempotência, Elleven, Native, 2 bancos. Por último, com mais observação. Inclui o GMUD | 74 |
 
-Contagem de rotas por destino (45 + 8 + 7 + 14 + 8 + 68 = 150), conferir contra o manifesto na fase 0.
+Contagem de rotas por destino (45 + 8 + 7 + 14 + 8 + 74 = 156), conferir contra o manifesto na fase 0.
 
 ## Fase 4 — Limpeza e endurecimento
 1. Remover `legacy-bff` quando não restar nenhuma rota apontando para ele.

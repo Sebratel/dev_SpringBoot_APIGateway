@@ -22,7 +22,7 @@ formato dos seus payloads de requisição e resposta. Portanto:
 - Especificação da transformação do BFF em API Gateway: `specs/API_GATEWAY.md`
   (arquitetura, decisões, estrutura de pastas, riscos), `specs/API_GATEWAY_PASSOS.md`
   (fases, ordem de extração, checklist) e `specs/API_GATEWAY_ENDPOINTS.md` (inventário
-  das 150 rotas que devem permanecer idênticas). Somente documentação; nenhum
+  das 156 rotas que devem permanecer idênticas). Somente documentação; nenhum
   comportamento mudou.
 - Esqueleto do novo projeto em `platform/`: parent (Spring Boot 3.5.16, Java 21, Spring Cloud
   2025.0.0), `common-web`, `common-security`, `common-elleven`, `api-gateway` e os serviços
@@ -33,11 +33,16 @@ formato dos seus payloads de requisição e resposta. Portanto:
   Checkstyle e JaCoCo (cobertura mínima 0.50) agora vêm do parent. Resolver o parent exige
   `<server><id>github</id>` no `~/.m2/settings.xml` com token `read:packages`.
 
-- Fase 0 da migração: `RouteManifestTest` no monólito gera por reflexão o manifesto das 150
+- Fase 0 da migração: `RouteManifestTest` no monólito gera por reflexão o manifesto das 156
   rotas (`platform/contract-tests/src/test/resources/manifest.json`) e falha se uma rota mudar
   sem o manifesto ser atualizado. Novo módulo `platform/contract-tests` com checagens de
   sanidade do manifesto e um `LiveContractTest` que roda contra qualquer URL base (monólito ou
   gateway): 401 sem token, rota encaminhada e golden files de status/estrutura.
+
+- `apigateway` incorpora `origin/staging` (GMUD: `/api/v1/gmud/*`, 6 rotas, em uso e fora do inventário
+  inicial); o manifesto passa a ter **156 rotas** (`massivas` 74), com o `GmudEllevenController` no
+  `massivas-service`.
+- `docs/USO-ENDPOINTS-ELK.md` e `docs/uso-endpoints-elk.csv`: uso dos endpoints no Kibana (ago a out/2026).
 
 ### Planejado (ver `specs/API_GATEWAY_PASSOS.md`)
 - `3.4.3` — reestruturação multi-módulo, sem mudança de comportamento.

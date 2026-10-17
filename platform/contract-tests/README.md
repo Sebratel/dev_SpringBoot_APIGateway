@@ -1,15 +1,15 @@
 # contract-tests
 
-Garante que as **150 rotas HTTP** do BFF continuam idênticas depois da migração para o gateway
+Garante que as **156 rotas HTTP** do BFF continuam idênticas depois da migração para o gateway
 (`specs/API_GATEWAY.md`). O mesmo teste roda contra o monólito (linha de base) e contra o gateway.
 
 ## Peças
 
 | Peça | Onde | O que faz |
 |---|---|---|
-| Manifesto | `src/test/resources/manifest.json` | Lista das 150 rotas: método, path (com todos os aliases), serviço de destino, auth, se é segura, parâmetros e corpo |
+| Manifesto | `src/test/resources/manifest.json` | Lista das 156 rotas: método, path (com todos os aliases), serviço de destino, auth, se é segura, parâmetros e corpo |
 | Gerador/guarda | `src/test/java/.../bff/contract/RouteManifestTest` (no monólito, raiz do repo) | Gera o manifesto por reflexão nos controllers, sem banco. **Falha se uma rota do monólito mudar sem o manifesto ser atualizado** |
-| `ManifestSanityTest` | este módulo | Confere 150 rotas únicas, contagem por serviço (68/45/14/8/8/7), só 2 rotas públicas, 4 GET com corpo |
+| `ManifestSanityTest` | este módulo | Confere 156 rotas únicas, contagem por serviço (74/45/14/8/8/7), só 2 rotas públicas, 4 GET com corpo |
 | `*ContractTest` (um por serviço) + `PublicRoutesContractTest` | este módulo | Exercitam as rotas contra uma URL base (ver abaixo). Rodam **em paralelo** |
 
 ## Atualizar o manifesto (quando o monólito mudar de propósito)
@@ -49,7 +49,7 @@ O que é verificado:
 - Cada requisição imprime uma linha `[servico] METODO path -> status (ms)`, para acompanhar o progresso.
 
 ### Segurança dos testes
-Rotas que **alteram dados** (`safe=false`, 34 rotas: afetados POST/DELETE/PATCH, massivas POST/DELETE, histórico PATCH)
+Rotas que **alteram dados** (`safe=false`, 40 rotas: afetados POST/DELETE/PATCH, massivas e GMUD POST/DELETE, histórico PATCH)
 **nunca são chamadas autenticadas**. Para elas só se confere o 401 sem token, que não tem efeito colateral.
 Mesmo assim, **grave os golden files em stage**, nunca em produção, e sem dados reais no repositório.
 

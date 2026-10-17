@@ -1,15 +1,15 @@
 # Inventário de endpoints — contrato que o Gateway deve preservar
 
-Levantado do código em `src/main/java/br/com/sebratel/bff/controller` (branch `main`,
+Levantado do código em `src/main/java/br/com/sebratel/bff/controller` (`main` + `staging`, com o GMUD;
 versão `3.4.3-SNAPSHOT`). **Toda rota abaixo deve responder igual depois da migração**:
 mesmo método, mesmo path, mesmos parâmetros, mesmo status e mesmo formato de corpo.
 
 Como o Spring combina o `@RequestMapping` da classe com o do método, cada linha com várias
 bases e vários sufixos gera o **produto cartesiano** (ex.: 3 bases × 2 sufixos = 6 rotas).
-Total: **150 rotas HTTP**, em 23 controllers e 6 serviços de destino.
+Total: **156 rotas HTTP**, em 24 controllers e 6 serviços de destino.
 
 Legenda de autenticação: 🔒 JWT Google (`@sebratel.com.br`) ou Basic · 🌐 `permitAll`.
-Legenda de destino: `MAS` massivas-service (68) · `SPL` splitters-service (8) · `COM` comercial-service (45) ·
+Legenda de destino: `MAS` massivas-service (74) · `SPL` splitters-service (8) · `COM` comercial-service (45) ·
 `RAD` radius-service (14) · `EST` estoque-service (8) · `PES` pessoas-service (7).
 
 ## 1. Usuários afetados — destino `MAS`
@@ -37,6 +37,16 @@ Bases (3): `/api/v1/massive-incidents`, `/api/v1/massivas-eleven`, `/api/v1/mass
 | POST | `/save-massive-via-api` · `/salvar-massiva-via-api` | header `Idempotency-Key` (opcional) + body `AberturaRegistroMassivoInputDTO` | 6 |
 | POST | `/open-infra-solicitation-via-api` · `/abrir-protocolo-infra-via-api` | header `Idempotency-Key` (opcional) + body `AberturaProtocoloInfraInputDTO` | 6 |
 | DELETE | `/finalize-ticket-via-api` · `/finalizar-chamado-via-api` | body `FinalizaRegistroMassivoInputDTO` | 6 |
+
+## 2b. GMUD (Elleven) — destino `MAS`
+Base: `/api/v1/gmud`. Mesma regra de idempotência e cliente Elleven das massivas, por isso fica no `massivas-service`.
+Veio da branch `staging` (`GmudEllevenController`), não existia na `main`.
+
+| Método | Sufixo(s) | Entrada | Rotas |
+|---|---|---|---|
+| POST | `/abrir-via-api` · `/open-via-api` | header `Idempotency-Key` (opcional) + body `AberturaRegistroMassivoInputDTO` | 2 |
+| DELETE | `/encerrar-via-api` · `/finalizar-via-api` | body `FinalizaRegistroMassivoInputDTO` | 2 |
+| POST | `/relato-via-api` · `/report-via-api` | body `FinalizaRegistroMassivoInputDTO` | 2 |
 
 ## 3. Histórico de massivas — destino `MAS`
 Bases (2): `/api/v1/massivas-history`, `/api/v1/massivas-splitters`

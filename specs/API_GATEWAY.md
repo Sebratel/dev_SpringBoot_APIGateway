@@ -8,7 +8,7 @@
 
 ## 1. Problema
 
-Hoje o `bff` é um monólito: 23 controllers, 150 rotas, 3 datasources (ERP, Afetados, Radius),
+Hoje o `bff` é um monólito: 24 controllers, 156 rotas, 3 datasources (ERP, Afetados, Radius),
 integrações com Elleven/Native e a regra de negócio de todos os domínios no mesmo deploy.
 Ele se chama gateway, mas executa a lógica. Consequências:
 
@@ -21,7 +21,7 @@ Ele se chama gateway, mas executa a lógica. Consequências:
 
 1. Mover **toda** a lógica de domínio para serviços independentes.
 2. Deixar o projeto atual **apenas** como API Gateway: roteamento, autenticação, políticas transversais e observabilidade.
-3. Manter os **150 endpoints atuais** idênticos para os consumidores (apps, n8n, chatbot, planilhas), sem mudança de URL, payload ou status.
+3. Manter os **156 endpoints atuais** idênticos para os consumidores (apps, n8n, chatbot, planilhas), sem mudança de URL, payload ou status.
 
 ### Não-objetivos
 - Redesenhar a API, remover aliases PT/EN ou versionar para `v2` (fica para uma fase posterior, com depreciação).
@@ -88,7 +88,7 @@ só coincidem em prefixo de URL ou no banco ERP ficam em serviços separados.
 
 | Sigla | Serviço | Conteúdo (origem no código atual) | Dados / integrações | Porta | Rotas |
 |---|---|---|---|---|---|
-| MAS | `massivas-service` | Usuários afetados, massivas (Elleven/ERP/Native), histórico de massivas, Matrix, sites de autenticação; `service/massivas/*`, `MassivaIdempotencyStore` | Afetados DB, ERP, Elleven, Native | 8101 | 68 |
+| MAS | `massivas-service` | Usuários afetados, massivas (Elleven/ERP/Native), histórico de massivas, GMUD, Matrix, sites de autenticação; `service/massivas/*`, `MassivaIdempotencyStore` | Afetados DB, ERP, Elleven, Native | 8101 | 74 |
 | SPL | `splitters-service` | Splitters, OLTs, conexões, solicitações de cliente, alertas de protocolo pendente (`SplittersMapper`) | Elleven, ERP | 8102 | 8 |
 | COM | `comercial-service` | Vendas (vendedores ativos, aquisição, primeiro pagante mensal, relatório semanal de apoio) e contratos (bloqueados, ativação, ativação c/ fatura pendente, sem fatura, primeiro pagamento, clientes com nome duplicado); `dto/comercial` | ERP | 8103 | 45 |
 | RAD | `radius-service` | Consumo alto, última conexão, primeira autenticação, calling-station e prefixo duplicados | Radius DB (+ leitura de plano no ERP) | 8104 | 14 |
@@ -139,7 +139,7 @@ platform/
     └── pessoas-service/            8106
 ```
 
-Ainda a criar: `contract-tests/` (paridade das 150 rotas), `legacy-bff/` (monólito movido na fase 1),
+Ainda a criar: `contract-tests/` (paridade das 156 rotas), `legacy-bff/` (monólito movido na fase 1),
 `deploy/` (compose com rede interna) e `common-erp` (se o spike confirmar entidades ERP compartilhadas).
 
 Cada serviço mantém o layout atual (`controller → service → repository`, DTOs, projections) para que o
@@ -171,7 +171,7 @@ verificadas pelo teste de contrato; nada é roteado por prefixo amplo (ver armad
 ## 8. Requisitos e critérios de aceite
 
 **Paridade de contrato (bloqueante)**
-- RF1. As 150 rotas do inventário respondem no gateway com o mesmo status e corpo que no monólito, para um conjunto de requisições gravadas (golden files).
+- RF1. As 156 rotas do inventário respondem no gateway com o mesmo status e corpo que no monólito, para um conjunto de requisições gravadas (golden files).
 - RF2. GET com corpo funciona (`matrix`, `weekly-reports/vendedor`, `qr-code/gerar`).
 - RF3. `Idempotency-Key` é respeitado: duas chamadas iguais pelo gateway resultam em uma execução no `MAS`.
 - RF4. `permitAll` continua restrito a `GET /api/v1/afetados/contract/**` e `GET /api/v1/matrix`.
@@ -198,7 +198,7 @@ verificadas pelo teste de contrato; nada é roteado por prefixo amplo (ver armad
 ## 10. Riscos
 | Risco | Impacto | Mitigação |
 |---|---|---|
-| Quebra silenciosa de rota/alias (150 rotas, muitos aliases) | Apps/n8n param | Gerar rotas a partir do inventário + teste de contrato em CI; comparar com `/v3/api-docs` do monólito |
+| Quebra silenciosa de rota/alias (156 rotas, muitos aliases) | Apps/n8n param | Gerar rotas a partir do inventário + teste de contrato em CI; comparar com `/v3/api-docs` do monólito |
 | Proxy perde corpo em GET | Matrix/QR/relatório semanal quebram | Teste dedicado (RF2); fallback de `RouteLocator` Java |
 | Timeouts curtos do gateway | Relatórios pesados falham | Timeout por rota ≥ 600 s onde hoje é assim |
 | Divisão errada dos domínios (Matrix cruza afetados + contratos) | Dependência circular | Spike da fase 0; `MatrixService` fica no `MAS` |

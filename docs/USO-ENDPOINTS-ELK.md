@@ -8,13 +8,13 @@ A lista completa, do menos para o mais usado, está em [`uso-endpoints-elk.csv`]
   Requisições recusadas com 401 **não** entram na conta.
 - **Janela real: 2026-08-19 a 2026-10-17 (~2 meses), não 3.** Os logs do container só existem no Elasticsearch desde 19/08.
   O APM do serviço `api-gateway` só existe desde 07/10 (só 10 dias), por isso não serve para os 3 meses.
-- **Agrupamento:** cada caminho foi casado com o manifesto das 150 rotas (`platform/contract-tests/.../manifest.json`),
-  trocando os ids por `{variavel}`. Total casado: **226.054 requisições**; 15 ficaram fora do manifesto (abaixo).
+- **Agrupamento:** cada caminho foi casado com o manifesto das 156 rotas (`platform/contract-tests/.../manifest.json`, agora com 156 rotas incluindo o GMUD),
+  trocando os ids por `{variavel}`. Total casado: **226.064 requisições**; 5 ficaram fora do manifesto (abaixo).
 - O ambiente consultado é o do Kibana do stage; o APM mostra que o serviço `api-gateway` reporta só o ambiente `production`.
   Confirme com o time se esse `bff-java-service` é de fato o stage ou a produção antes de decidir qualquer remoção.
 
 ## Resumo
-- **17 das 150 rotas** receberam tráfego. **133 rotas, 89%, não tiveram nenhuma requisição.**
+- **20 das 156 rotas** receberam tráfego. **136 rotas, 87%, não tiveram nenhuma requisição.**
 - **4 rotas concentram 92%** do tráfego: `matrix` (93.547), `is-corporativo` (56.650), `massivas/recuperar-pelo-banco` (44.669) e `afetados/contract/{id}` (13.542).
 - Cada rota usada o foi por **um único alias**. Nenhum consumidor usa `impacted-users`, `usuario-afetado`, `massive-incidents`, `massivas-eleven`,
   `contrato-*`, `contratos`, `reports`, `vendedores`, etc.
@@ -22,7 +22,10 @@ A lista completa, do menos para o mais usado, está em [`uso-endpoints-elk.csv`]
 ## Rotas usadas, do menos para o mais usado
 | Requisições | Serviço | Rota |
 |---:|---|---|
+| 1 | massivas | `DELETE /api/v1/gmud/encerrar-via-api` |
 | 3 | comercial | `GET /api/v1/relatorios/clientes-nomes-duplicados` |
+| 3 | massivas | `POST /api/v1/gmud/relato-via-api` |
+| 6 | massivas | `POST /api/v1/gmud/abrir-via-api` |
 | 9 | radius | `GET /api/v1/radius/duplicate-calling-stations` |
 | 9 | radius | `GET /api/v1/radius/duplicate-prefixes` |
 | 64 | massivas | `GET /api/v1/sites/search` |
@@ -40,23 +43,17 @@ A lista completa, do menos para o mais usado, está em [`uso-endpoints-elk.csv`]
 | 56.650 | pessoas | `GET /api/v1/employee/is-corporativo` |
 | 93.547 | massivas | `GET /api/v1/matrix` |
 
-## Fora do manifesto (15 requisições)
+## Fora do manifesto (5 requisições)
 | Requisições | Rota | Observação |
 |---:|---|---|
 | 1 | `GET /api/v1/auto_login` | sondagem de scanner |
 | 1 | `POST /api/v1/auto_login` | sondagem de scanner |
-| 1 | `DELETE /api/v1/gmud/encerrar-via-api` | GMUD (branch staging, fora do manifesto) |
 | 3 | `GET /api/v1/.env` | sondagem de scanner |
-| 3 | `POST /api/v1/gmud/relato-via-api` | GMUD (branch staging, fora do manifesto) |
-| 6 | `POST /api/v1/gmud/abrir-via-api` | GMUD (branch staging, fora do manifesto) |
 
-- **GMUD existe e está em uso, mas não está no inventário.** `GmudEllevenController` (`/api/v1/gmud/abrir-via-api`, `relato-via-api`,
-  `encerrar-via-api`, mais os aliases `open-via-api`, `report-via-api`, `finalizar-via-api`) está nas branches `origin/staging` e
-  `origin/feat/gmud`, **não** na `main` de onde a branch `apigateway` foi criada. São **6 rotas a mais** (156 no total) e a migração precisa
-  incluí-las: rebasear a `apigateway` sobre a `staging` e regenerar o manifesto.
 - `/api/v1/auto_login` e `/api/v1/.env` são sondagens de scanner; nenhum consumidor legítimo.
+- O **GMUD** (`/api/v1/gmud/*`, 10 requisições) estava fora do inventário original e agora está no manifesto (via `staging`), no `massivas-service`.
 
-## Rotas sem nenhuma requisição (133)
+## Rotas sem nenhuma requisição (136)
 Agrupadas por serviço de destino; dentro de cada grupo, em ordem alfabética.
 
 
@@ -123,6 +120,9 @@ Agrupadas por serviço de destino; dentro de cada grupo, em ordem alfabética.
 - `GET /api/v1/afetados`
 - `GET /api/v1/afetados/pppoe/{pppoe}`
 - `GET /api/v1/afetados/protocol/{protocol}`
+- `DELETE /api/v1/gmud/finalizar-via-api`
+- `POST /api/v1/gmud/open-via-api`
+- `POST /api/v1/gmud/report-via-api`
 - `GET /api/v1/impacted-users`
 - `POST /api/v1/impacted-users`
 - `GET /api/v1/impacted-users/contract/{contractId}`
@@ -212,10 +212,10 @@ Agrupadas por serviço de destino; dentro de cada grupo, em ordem alfabética.
 - `GET /api/v1/splitters/{splitterId}`
 
 ## O que fazer com isso
-1. **Não remover nada agora.** O gateway deve manter as 150 rotas (decisão da spec), porque 2 meses sem uso não provam que nunca serão chamadas
+1. **Não remover nada agora.** O gateway deve manter as 156 rotas (decisão da spec), porque 2 meses sem uso não provam que nunca serão chamadas
    (relatórios mensais, scripts de planilha, n8n). Mas dá para **priorizar**: a extração e o teste de contrato devem começar pelas 17 rotas usadas.
-2. **Aliases sem uso** são os candidatos naturais à depreciação (fase 5 da spec): as demais variantes de URL das rotas usadas não tiveram tráfego.
-3. **Incluir o GMUD** no inventário antes de extrair o `massivas-service`.
+2. **Aliases sem uso** são os candidatos naturais à depreciação (fase 5 da spec): por rota usada há de 2 a 6 aliases sem tráfego.
+3. **GMUD** já incluído no manifesto; só a rota principal de cada par de alias teve tráfego.
 4. As 18 rotas lentas conhecidas (consumo, última conexão, primeiro pagante) **também têm 0 uso**: reforça que o tratamento de timeout longo
    não é urgente e pode ficar para depois.
 

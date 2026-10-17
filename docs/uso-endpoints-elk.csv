@@ -54,6 +54,9 @@ requisicoes,servico,metodo,rota
 0,massivas,GET,/api/v1/afetados
 0,massivas,GET,/api/v1/afetados/pppoe/{pppoe}
 0,massivas,GET,/api/v1/afetados/protocol/{protocol}
+0,massivas,DELETE,/api/v1/gmud/finalizar-via-api
+0,massivas,POST,/api/v1/gmud/open-via-api
+0,massivas,POST,/api/v1/gmud/report-via-api
 0,massivas,GET,/api/v1/impacted-users
 0,massivas,POST,/api/v1/impacted-users
 0,massivas,GET,/api/v1/impacted-users/contract/{contractId}
@@ -132,7 +135,10 @@ requisicoes,servico,metodo,rota
 0,splitters,GET,/api/v1/splitters/listarSplitters-paginado
 0,splitters,GET,/api/v1/splitters/recuperarToken
 0,splitters,GET,/api/v1/splitters/{splitterId}
+1,massivas,DELETE,/api/v1/gmud/encerrar-via-api
 3,comercial,GET,/api/v1/relatorios/clientes-nomes-duplicados
+3,massivas,POST,/api/v1/gmud/relato-via-api
+6,massivas,POST,/api/v1/gmud/abrir-via-api
 9,radius,GET,/api/v1/radius/duplicate-calling-stations
 9,radius,GET,/api/v1/radius/duplicate-prefixes
 64,massivas,GET,/api/v1/sites/search
@@ -151,7 +157,4 @@ requisicoes,servico,metodo,rota
 93547,massivas,GET,/api/v1/matrix
 1,fora-do-manifesto,GET,/api/v1/auto_login
 1,fora-do-manifesto,POST,/api/v1/auto_login
-1,fora-do-manifesto,DELETE,/api/v1/gmud/encerrar-via-api
 3,fora-do-manifesto,GET,/api/v1/.env
-3,fora-do-manifesto,POST,/api/v1/gmud/relato-via-api
-6,fora-do-manifesto,POST,/api/v1/gmud/abrir-via-api
