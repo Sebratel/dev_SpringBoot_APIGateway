@@ -31,6 +31,7 @@ CONTRACT_BASE_URL=http://localhost:8085 CONTRACT_TOKEN=<id token google> ../mvnw
 |---|---|
 | `CONTRACT_BASE_URL` | Obrigatória; sem ela o `LiveContractTest` é ignorado |
 | `CONTRACT_TOKEN` | ID token Google válido. Sem ele só roda a checagem de autenticação |
+| `CONTRACT_BASIC_AUTH` | Alternativa ao token: header completo, ex.: `Basic xxxx`. Só em stage e só na variável de ambiente; tem precedência sobre `CONTRACT_TOKEN` |
 | `CONTRACT_RECORD=true` | Grava as respostas em `golden/` (status + formato do corpo) em vez de comparar |
 | `CONTRACT_GOLDEN_DIR` | Pasta dos golden files (padrão `golden`) |
 

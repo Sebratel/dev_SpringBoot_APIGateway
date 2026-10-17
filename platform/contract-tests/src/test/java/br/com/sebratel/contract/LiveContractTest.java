@@ -28,7 +28,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Variaveis de ambiente:
  * <ul>
  *   <li>{@code CONTRACT_BASE_URL}: obrigatoria; sem ela o teste e ignorado (ex.: {@code http://localhost:8085}).</li>
- *   <li>{@code CONTRACT_TOKEN}: ID token Google valido. Sem ele, so a checagem de autenticacao (401) roda.</li>
+ *   <li>{@code CONTRACT_TOKEN}: ID token Google valido (enviado como Bearer).</li>
+ *   <li>{@code CONTRACT_BASIC_AUTH}: alternativa ao token, valor completo do header, ex.: {@code Basic xxxx}.
+ *       Use so em stage, e so na variavel de ambiente: nunca em arquivo versionado.</li>
+ *   <li>Sem token nem Basic, so a checagem de autenticacao (401) roda.</li>
  *   <li>{@code CONTRACT_RECORD=true}: grava as respostas em {@code golden/} em vez de comparar.</li>
  *   <li>{@code CONTRACT_GOLDEN_DIR}: pasta dos golden files (padrao {@code golden}).</li>
  * </ul>
@@ -43,7 +46,7 @@ class LiveContractTest {
     private static final Set<Integer> ROUTING_FAILURES = Set.of(405, 502, 503, 504);
 
     private final String baseUrl = System.getenv("CONTRACT_BASE_URL").replaceAll("/+$", "");
-    private final String token = System.getenv("CONTRACT_TOKEN");
+    private final String authorization = resolveAuthorization();
     private final boolean record = "true".equalsIgnoreCase(System.getenv("CONTRACT_RECORD"));
     private final GoldenStore goldens = new GoldenStore(
             Path.of(Optional.ofNullable(System.getenv("CONTRACT_GOLDEN_DIR")).orElse("golden")));
@@ -72,12 +75,12 @@ class LiveContractTest {
 
     @TestFactory
     Stream<DynamicTest> authenticatedSafeCallsMatchTheGoldenFiles() {
-        if (token == null || token.isBlank()) {
+        if (authorization == null) {
             return Stream.empty();
         }
         return routes.stream().filter(Route::safe).map(route ->
                 DynamicTest.dynamicTest(route.label(), () -> {
-                    HttpResponse<String> response = call(route, token);
+                    HttpResponse<String> response = call(route, authorization);
                     assertFalse(ROUTING_FAILURES.contains(response.statusCode()),
                             "rota nao encaminhada ou servico indisponivel: " + response.statusCode());
                     Golden actual = new Golden(response.statusCode(), List.copyOf(ShapeExtractor.of(response.body())));
@@ -92,7 +95,17 @@ class LiveContractTest {
                 }));
     }
 
-    private HttpResponse<String> call(Route route, String bearer) throws IOException, InterruptedException {
+    /** Header Authorization vindo do ambiente: Basic tem precedencia sobre Bearer; nenhum dos dois = null. */
+    private static String resolveAuthorization() {
+        String basic = System.getenv("CONTRACT_BASIC_AUTH");
+        if (basic != null && !basic.isBlank()) {
+            return basic;
+        }
+        String token = System.getenv("CONTRACT_TOKEN");
+        return token == null || token.isBlank() ? null : "Bearer " + token;
+    }
+
+    private HttpResponse<String> call(Route route, String authorizationHeader) throws IOException, InterruptedException {
         HttpRequest.BodyPublisher body = route.hasBody()
                 ? HttpRequest.BodyPublishers.ofString(SampleValues.body(route))
                 : HttpRequest.BodyPublishers.noBody();
@@ -103,8 +116,8 @@ class LiveContractTest {
         if (route.hasBody()) {
             request.header("Content-Type", "application/json");
         }
-        if (bearer != null) {
-            request.header("Authorization", "Bearer " + bearer);
+        if (authorizationHeader != null) {
+            request.header("Authorization", authorizationHeader);
         }
         assertTrue(route.path().startsWith("/"), route.label());
         return client.send(request.build(), HttpResponse.BodyHandlers.ofString());
