@@ -119,7 +119,7 @@ Pontos a validar na fase 0 (spike):
 ## 6. Repositórios e estrutura
 
 Cada componente vive no **seu próprio repositório** (decisão D5, revista em 2026-10-17). Todos são privados, herdam
-de `br.com.sebratel:sebratel-parent` (`Sebratel/dev_Maven_Parent`) e seguem os mesmos templates de repositório.
+de `br.com.sebratel:sebratel-java-parent` (`Sebratel/dev_Maven_JavaParent`, público) e seguem os mesmos templates de repositório.
 
 | Repositório | Conteúdo | Porta |
 |---|---|---|
@@ -133,7 +133,7 @@ de `br.com.sebratel:sebratel-parent` (`Sebratel/dev_Maven_Parent`) e seguem os m
 | `dev_SpringBoot_PessoasService` | `pessoas-service` | 8106 |
 | `dev_Maven_Commons` | Bibliotecas `common-web`, `common-security` e `common-elleven`, publicadas no GitHub Packages | n/a |
 
-Fluxo de dependência: `dev_Maven_Parent` → `dev_Maven_Commons` → serviços e gateway. Os serviços só passam a depender
+Fluxo de dependência: `dev_Maven_JavaParent` → `dev_Maven_Commons` → serviços e gateway. Os serviços só passam a depender
 dos `common-*` quando houver código a compartilhar (hoje são esqueletos sem lógica).
 
 Cada serviço mantém o layout atual (`controller → service → repository`, DTOs, projections). Pacote base:
