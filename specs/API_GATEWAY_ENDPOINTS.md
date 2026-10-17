@@ -6,11 +6,11 @@ mesmo método, mesmo path, mesmos parâmetros, mesmo status e mesmo formato de c
 
 Como o Spring combina o `@RequestMapping` da classe com o do método, cada linha com várias
 bases e vários sufixos gera o **produto cartesiano** (ex.: 3 bases × 2 sufixos = 6 rotas).
-Total: **150 rotas HTTP**, em 23 controllers e 6 serviços de destino.
+Total: **150 rotas HTTP**, em 23 controllers e 7 serviços de destino.
 
 Legenda de autenticação: 🔒 JWT Google (`@sebratel.com.br`) ou Basic · 🌐 `permitAll`.
-Legenda de destino: `MAS` massivas-service · `SPL` splitters-service · `COM` comercial-service ·
-`RAD` radius-service · `EST` estoque-service · `PES` pessoas-service.
+Legenda de destino: `MAS` massivas-service (68) · `SPL` splitters-service (8) · `COM` comercial-service (18) ·
+`CTR` contratos-service (27) · `RAD` radius-service (14) · `EST` estoque-service (8) · `PES` pessoas-service (7).
 
 ## 1. Usuários afetados — destino `MAS`
 Bases (3): `/api/v1/impacted-users`, `/api/v1/usuario-afetado`, `/api/v1/afetados`
@@ -65,19 +65,23 @@ Base: `/api/v1/splitters`
 | GET | `/solicitacoes/cliente/{clientId}` | path |
 | POST | `/alertas-protocolo-pendente` | body `{ "pppoes": [...] }` |
 
-## 6. Comercial / contratos / relatórios — destino `COM`
+## 6. Comercial (vendas) — destino `COM`
 | Método | Bases | Sufixo(s) | Rotas |
 |---|---|---|---|
 | GET | `/api/v1/acquisitions` · `/api/v1/aquisicoes` | `/recover-acquisition-orders` · `/recuperar-pedidos-de-aquisicao` | 4 |
 | GET | `/api/v1/sellers` · `/api/v1/vendedores` | `/active` · `/ativos` · `/vendedores-ativos` | 6 |
+| GET | `/api/v1/reports` · `/api/v1/primeiro-pagante-mensal` · `/api/v1/relatorios` | `/first-monthly-payer` · `/primeiro-pagante-mensal` | 6 |
+| GET | `/api/v1/weekly-reports` · `/api/v1/apoio-semanal` | `/vendedor` — **body** `ActiveSellersInputDTO` | 2 |
+
+## 6b. Contratos (ciclo de vida e qualidade do cadastro) — destino `CTR`
+| Método | Bases | Sufixo(s) | Rotas |
+|---|---|---|---|
 | GET | `/api/v1/contracts` · `/api/v1/contrato-bloqueado` · `/api/v1/contratos` | `/blocked` · `/bloqueados` | 6 |
 | GET | `/api/v1/contract-activations` · `/api/v1/contratos` | `/report` | 2 |
 | GET | `/api/v1/contracts` · `/api/v1/contrato-ativacao-fatura` · `/api/v1/contratos` | `/pending-activation-invoice` · `/ativacao-pendente-fatura` | 6 |
-| GET | `/api/v1/contract-payments` | `/first-activation` | 1 |
 | GET | `/api/v1/contracts` · `/api/v1/contrato-sem-fatura` · `/api/v1/contratos` | `/without-invoice` · `/sem-fatura` | 6 |
+| GET | `/api/v1/contract-payments` | `/first-activation` | 1 |
 | GET | `/api/v1/reports` · `/api/v1/relatorio-cliente-nome-duplicado` · `/api/v1/relatorios` | `/duplicate-client-names` · `/clientes-nomes-duplicados` | 6 |
-| GET | `/api/v1/reports` · `/api/v1/primeiro-pagante-mensal` · `/api/v1/relatorios` | `/first-monthly-payer` · `/primeiro-pagante-mensal` | 6 |
-| GET | `/api/v1/weekly-reports` · `/api/v1/apoio-semanal` | `/vendedor` — **body** `ActiveSellersInputDTO` | 2 |
 
 ## 7. Radius — destino `RAD`
 | Método | Path / bases | Entrada | Rotas |
@@ -96,7 +100,7 @@ Base: `/api/v1/splitters`
 | GET | `/api/v1/estoque/movimentacao` | — | 1 |
 | GET | `/api/v1/assets` · `/api/v1/patrimonio-pendente` · `/api/v1/patrimonios` + (`/pending` · `/pendentes`) | — | 6 |
 
-## 9. Pessoas / cadastro — destino `PES`
+## 9. Pessoas / identidade — destino `PES`
 | Método | Path | Entrada | Rotas |
 |---|---|---|---|
 | GET | `/api/v1/employee/get-user-by-token` | JWT | 1 |
@@ -104,10 +108,16 @@ Base: `/api/v1/splitters`
 | GET | `/api/v1/employee/get-person-name-by-cpf` | query `txId` | 1 |
 | GET | `/api/v1/employee/get-cpf-by-contract` | query `contract` | 1 |
 | GET | `/api/v1/employee/is-corporativo` | query `txId` | 1 |
-| GET | `/api/v1/sites` | query `title` | 1 |
-| GET | `/api/v1/sites/search` | query `q` | 1 |
 | GET | `/api/v1/qr-code/gerar` | **body** `QrCodeInputDTO` (GET com corpo) | 1 |
 | POST | `/api/v1/qr-code/recuperar` | body `QrCodeInputDTO` | 1 |
+
+## 9b. Sites de autenticação (POP/DC) — destino `MAS`
+Lookup usado ao abrir massivas (o `title` vira `authenticationSiteCode`), por isso fica junto das massivas e não com pessoas.
+
+| Método | Path | Entrada | Rotas |
+|---|---|---|---|
+| GET | `/api/v1/sites` | query `title` | 1 |
+| GET | `/api/v1/sites/search` | query `q` | 1 |
 
 ## 10. Rotas de infraestrutura (hoje no BFF)
 | Path | Auth | Observação |
@@ -119,8 +129,8 @@ Base: `/api/v1/splitters`
 ## Armadilhas de compatibilidade (o gateway precisa tratá-las)
 1. **GET com corpo**: `/api/v1/matrix`, `/api/v1/weekly-reports/vendedor` (e `apoio-semanal`) e
    `/api/v1/qr-code/gerar`. O proxy não pode descartar o body nem converter o método.
-2. **Colisão de prefixo entre domínios**: `/api/v1/contracts`, `/api/v1/contratos`,
-   `/api/v1/reports` e `/api/v1/relatorios` misturam `COM` e `RAD` (`last-connections`). O
+2. **Colisão de prefixo entre domínios**: `/api/v1/contracts` e `/api/v1/contratos` misturam `CTR` e `RAD`
+   (`last-connections`); `/api/v1/reports` e `/api/v1/relatorios` misturam `COM` (`first-monthly-payer`) e `CTR` (`duplicate-client-names`). O
    roteamento tem que ser por **path + sufixo**, nunca só por prefixo.
 3. **Mesmo prefixo, serviços diferentes**: `/api/v1/massivas-splitters` é `MAS`, enquanto
    `/api/v1/splitters` é `SPL`. Não rotear por `*splitters*`.

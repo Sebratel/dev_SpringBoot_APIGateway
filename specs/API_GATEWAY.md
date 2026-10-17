@@ -56,15 +56,15 @@ nem drivers JDBC.
  Apps / n8n / chatbot
           │  (mesmas URLs de hoje)
           ▼
- ┌───────────────────────────────────────────┐
- │ api-gateway  (Spring Cloud Gateway)       │
- │  auth · CORS · rate-limit · CB · retry    │
- │  request-id · audit · swagger agregado    │
- └──┬─────┬──────┬──────┬──────┬──────┬──────┘
-    ▼     ▼      ▼      ▼      ▼      ▼
-  MAS    SPL    COM    RAD    EST    PES      ← serviços Spring Boot independentes
-   │      │      │      │      │      │
- Afet.  Elleven  ERP   Radius  ERP    ERP
+ ┌────────────────────────────────────────────────┐
+ │ api-gateway  (Spring Cloud Gateway)            │
+ │  auth · CORS · rate-limit · CB · retry         │
+ │  request-id · audit · swagger agregado         │
+ └──┬─────┬─────┬─────┬─────┬─────┬─────┬─────────┘
+    ▼     ▼     ▼     ▼     ▼     ▼     ▼
+  MAS    SPL   COM   CTR   RAD   EST   PES   ← serviços Spring Boot independentes
+   │      │     │     │     │     │     │
+ Afet.  Elleven ERP  ERP  Radius ERP   ERP
  +ERP   +ERP
  +Elleven/Native
 ```
@@ -76,65 +76,75 @@ nem drivers JDBC.
 | D2 | Rotas **declarativas em YAML**, com um `RouteLocator` Java só para casos especiais | Rota nova vira configuração, não código | Tudo em Java |
 | D3 | Serviços **também validam o JWT** (resource server) | Os serviços usam claims do token (solicitante por `personId`, `GetToken`/`JwtInformation`); evita confiar cegamente na rede interna | Header interno confiável: quebra a resolução de solicitante e é frágil |
 | D4 | Serviços **só acessíveis pela rede interna** do Docker (sem porta publicada) | O gateway é o único ponto de entrada | Portas expostas por serviço |
-| D5 | **Um repositório multi-módulo Maven** na fase 1 (`gateway` + `services/*` + `common`) | Move o código sem multiplicar repos/CI de uma vez; separa em repos quando estabilizar | N repositórios desde o início |
+| D5 | **Um repositório multi-módulo Maven** em `platform/` (`gateway` + `services/*` + `common/*`), ao lado do monólito, que só é movido para `legacy-bff` na fase 1 | Move o código sem multiplicar repos/CI de uma vez; separa em repos quando estabilizar | N repositórios desde o início |
 | D6 | **Strangler**: gateway nasce com *todas* as rotas apontando para o monólito, que é migrado domínio a domínio trocando apenas o `uri` da rota | Rollback = reverter 1 linha de config; sem big-bang | Reescrita e virada única |
 | D7 | Cada serviço mantém o **mesmo envelope de erro** (`ApiError`/`ApiResponse`) em módulo `common` | Contrato de erro idêntico | Cada serviço com seu formato |
 | D8 | Gateway **reativo (WebFlux)**: não há JPA nele, então não há bloqueio | Requisito do Spring Cloud Gateway padrão | Gateway MVC: aceito se a equipe preferir, mas ainda menos maduro |
 
 ## 5. Decomposição em serviços
 
-| Sigla | Serviço | Conteúdo (origem no código atual) | Dados / integrações | Porta interna |
-|---|---|---|---|---|
-| MAS | `massivas-service` | `AffectedUser*`, `MassiveEleven*`, `MassivaHistory*`, `Matrix*`, `service/massivas/*`, `MassivaIdempotencyStore`, `TokenRetry*` | Afetados DB, ERP, Elleven, Native | 8101 |
-| SPL | `splitters-service` | `SplittersController`, `Listar{Splitters,Olts}`, `GetConnections`, `ProtocolosEmAndamento`, `RecuperarSolicitacoes…`, `RecuperarToken…`, `SplittersMapper` | Elleven, ERP | 8102 |
-| COM | `comercial-service` | Aquisição, Vendedores, Contratos (bloqueado/ativação/fatura/sem fatura/pagamento), RelatorioClienteNomeDuplicado, PrimeiroPaganteMensal, WeeklyReport, `dto/comercial` | ERP | 8103 |
-| RAD | `radius-service` | `Consumo`, `UltimaConexao`, `DuplicateCallingStation`, `DuplicatePrefix`, `FirstAuthentication` | Radius DB (+ ERP para nome, se houver join) | 8104 |
-| EST | `estoque-service` | `Inventory*`, `PatrimonioPendente`, `MovimentacaoEstoque` | ERP | 8105 |
-| PES | `pessoas-service` | `Employee*`, `AuthenticationSites*`, `QrCode*`, `Person*` | ERP | 8106 |
+Critério: um serviço só reúne endpoints que **compartilham dado, regra e motivo para mudar**. Endpoints que
+só coincidem em prefixo de URL ou no banco ERP ficam em serviços separados.
 
-Pontos a decidir na fase 0 (spike), pois afetam o desenho:
-- `MatrixService` hoje chama `AffectedUserService` e `ContractDataService`: confirmar se o `ContractDataService` (ERP) vira dependência de `MAS` via biblioteca `common` ou via chamada HTTP a `PES`/`COM`. **Recomendado:** consulta direta ao ERP dentro do `MAS` (somente leitura), evitando chamada entre serviços.
-- `MAS` fala com **dois** bancos (Afetados e ERP) e com Elleven. Mantê-los no mesmo serviço evita transação distribuída.
-- Entidades/repositórios do ERP compartilhados por vários serviços (`PersonRepository`, `ContractProjection`) ficam em `common-erp` (módulo de leitura), nunca com escrita compartilhada.
+| Sigla | Serviço | Conteúdo (origem no código atual) | Dados / integrações | Porta | Rotas |
+|---|---|---|---|---|---|
+| MAS | `massivas-service` | Usuários afetados, massivas (Elleven/ERP/Native), histórico de massivas, Matrix, sites de autenticação; `service/massivas/*`, `MassivaIdempotencyStore` | Afetados DB, ERP, Elleven, Native | 8101 | 68 |
+| SPL | `splitters-service` | Splitters, OLTs, conexões, solicitações de cliente, alertas de protocolo pendente (`SplittersMapper`) | Elleven, ERP | 8102 | 8 |
+| COM | `comercial-service` | Vendedores ativos, pedidos de aquisição, primeiro pagante mensal, relatório semanal de apoio; `dto/comercial` | ERP | 8103 | 18 |
+| CTR | `contratos-service` | Contratos bloqueados, ativação, ativação c/ fatura pendente, sem fatura, primeiro pagamento, clientes com nome duplicado | ERP | 8104 | 27 |
+| RAD | `radius-service` | Consumo alto, última conexão, primeira autenticação, calling-station e prefixo duplicados | Radius DB (+ leitura de plano no ERP) | 8105 | 14 |
+| EST | `estoque-service` | Estoque por técnico, movimentação, patrimônio pendente | ERP | 8106 | 8 |
+| PES | `pessoas-service` | Colaborador por token/email/CPF/contrato, corporativo, QR Code do funcionário (chaves RSA) | ERP | 8107 | 7 |
+
+Módulos compartilhados (bibliotecas, sem endpoints): `common-web` (envelope/erros), `common-security`
+(JWT, `GetToken`, `JwtInformation`) e `common-elleven` (cliente Elleven, token, `@TokenRetry`; usado por
+`MAS` e `SPL`, que são os únicos que falam com o Elleven).
+
+### Separações feitas por falta de coesão
+| Antes (agrupamento óbvio) | Decisão | Motivo |
+|---|---|---|
+| “Comercial” com tudo que lê contrato | **Dividido** em `COM` (vendas) e `CTR` (contrato) | Vendedor/aquisição/primeiro pagante/apoio semanal respondem ao time de vendas; bloqueado/ativação/fatura/pagamento/duplicados respondem a faturamento e cadastro. Mudam por motivos distintos |
+| `/api/v1/sites` junto de pessoas | **`MAS`** | É lookup de POP/DC consumido na abertura de massiva (`authenticationSiteCode`) |
+| `QrCode` junto de relatórios | **`PES`** | Identidade do funcionário e chaves RSA; nada a ver com relatórios |
+| `last-connections` sob `/contracts` | **`RAD`** | Dado vem do Radius; o prefixo `/contracts` é só herança de URL |
+| `/massivas-splitters` perto de splitters | **`MAS`** | É o histórico de massivas (banco de afetados); só o nome do alias lembra splitters |
+| `consumo` (Radius + plano do ERP) | **`RAD`** | Fonte principal é Radius; o ERP entra só como leitura de plano |
+| Elleven duplicado em dois serviços | **`common-elleven`** | `MAS` e `SPL` compartilham cliente/token em vez de copiar |
+
+Pontos a validar na fase 0 (spike):
+- `MatrixService` usa `PersonRepository` + `AffectedUserService`; `WeeklyReportService` usa `ContractDataService`
+  (`ContractActivationRepository`), que também alimenta `CTR`. Se a consulta de contrato for idêntica, extrair
+  para `common-erp` (leitura) ou expor via HTTP de `CTR` para `COM`; **não** duplicar regra.
+- `MAS` fala com **dois** bancos (Afetados e ERP) e com Elleven; mantê-los no mesmo serviço evita transação distribuída.
+- Entidades/repositórios ERP usados por mais de um serviço (`PersonRepository`, `ContractProjection`) ficam em módulo de leitura, nunca com escrita compartilhada.
 - `application.properties` documenta Afetados como MariaDB e Radius como PostgreSQL, enquanto `specs/TEMPLATE.md` diz o contrário. **Verificar** e corrigir o template.
 
-## 6. Estrutura de pastas proposta
+## 6. Estrutura de pastas
+
+Já criada em `platform/` (build verde com Spring Boot 3.5.16 e Spring Cloud 2025.0.0). O monólito
+(`src/` e `pom.xml` da raiz) segue intacto até a fase 1.
 
 ```
-api-gateway/                          (raiz do repositório)
-├── pom.xml                           (parent / agregador, Spring Boot 3.5.x, Java 21)
+platform/
+├── pom.xml                         parent (Spring Boot 3.5.16, Java 21, versões do BFF atual)
 ├── common/
-│   ├── common-web/                   ApiResponse, ApiError, GlobalExceptionHandler, JacksonConfig
-│   ├── common-security/              JwtValidator (issuer+domínio), GetToken, JwtInformation
-│   └── common-erp/                   entidades/repositórios ERP compartilhados (só leitura)
-├── gateway/
-│   ├── pom.xml
-│   └── src/main/
-│       ├── java/br/com/sebratel/gateway/
-│       │   ├── GatewayApplication.java
-│       │   ├── config/               SecurityConfig, CorsConfig, RateLimiterConfig, OpenApiAggregatorConfig
-│       │   ├── filter/               RequestIdFilter, AuthAuditFilter, ErrorNormalizationFilter
-│       │   ├── route/                SpecialRoutes (GET com corpo etc.)
-│       │   └── fallback/             FallbackController (503 padronizado)
-│       └── resources/
-│           ├── application.yml
-│           └── routes/               massivas.yml · splitters.yml · comercial.yml · radius.yml · estoque.yml · pessoas.yml
-├── services/
-│   ├── massivas-service/             controller · service · repository · dto · config (Afetados+ERP+Elleven)
-│   ├── splitters-service/
-│   ├── comercial-service/
-│   ├── radius-service/
-│   ├── estoque-service/
-│   └── pessoas-service/
-├── contract-tests/                   verifica as 150 rotas contra o gateway (ver §8)
-├── legacy-bff/                       o monólito atual, congelado, removido ao fim da migração
-├── deploy/
-│   ├── docker-compose.yml            gateway + 6 serviços + rede interna
-│   ├── docker-compose-stage.yml
-│   └── deploy.sh
-├── docs/                             APM, auditoria de segurança, SQL, n8n (hoje em docs/)
-└── specs/                            esta spec e as demais
+│   ├── common-web/                 ApiResponse, ApiError, GlobalExceptionHandler, Jackson
+│   ├── common-security/            validador JWT (issuer + domínio), GetToken, JwtInformation
+│   └── common-elleven/             cliente Elleven, token, @TokenRetry
+├── gateway/                        api-gateway (porta 8085, a mesma do BFF)
+│   └── src/main/{java/.../gateway, resources/{application.yml, routes/}}
+└── services/
+    ├── massivas-service/           8101
+    ├── splitters-service/          8102
+    ├── comercial-service/          8103
+    ├── contratos-service/          8104
+    ├── radius-service/             8105
+    ├── estoque-service/            8106
+    └── pessoas-service/            8107
 ```
+
+Ainda a criar: `contract-tests/` (paridade das 150 rotas), `legacy-bff/` (monólito movido na fase 1),
+`deploy/` (compose com rede interna) e `common-erp` (se o spike confirmar entidades ERP compartilhadas).
 
 Cada serviço mantém o layout atual (`controller → service → repository`, DTOs, projections) para que o
 `git mv` preserve o histórico. Pacote base: `br.com.sebratel.<servico>`.
@@ -142,10 +152,10 @@ Cada serviço mantém o layout atual (`controller → service → repository`, D
 ## 7. Exemplo de configuração de rota
 
 ```yaml
-# gateway/src/main/resources/routes/comercial.yml
+# gateway/src/main/resources/routes/contratos.yml
 spring.cloud.gateway.routes:
-  - id: comercial-contratos
-    uri: ${COMERCIAL_URL:http://comercial-service:8103}
+  - id: contratos-bloqueados
+    uri: ${CONTRATOS_URL:http://contratos-service:8104}
     predicates:
       - Method=GET
       - Path=/api/v1/{base:contracts|contratos|contrato-bloqueado}/{sufixo:blocked|bloqueados}
@@ -153,7 +163,7 @@ spring.cloud.gateway.routes:
       response-timeout: 600000
     filters:
       - name: CircuitBreaker
-        args: { name: comercial, fallbackUri: forward:/fallback/comercial }
+        args: { name: contratos, fallbackUri: forward:/fallback/contratos }
       - name: Retry
         args: { retries: 2, methods: GET, statuses: BAD_GATEWAY, backoff: { firstBackoff: 200ms } }
 ```

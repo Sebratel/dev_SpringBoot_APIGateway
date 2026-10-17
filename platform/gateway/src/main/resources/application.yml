@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: api-gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
+          issuer-uri: https://accounts.google.com
+  cloud:
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            response-timeout: 600s
+  config:
+    import: optional:classpath:routes/routes.yml
+
+server:
+  port: ${SERVER_PORT:8085}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

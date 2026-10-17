@@ -24,12 +24,16 @@ formato dos seus payloads de requisição e resposta. Portanto:
   (fases, ordem de extração, checklist) e `specs/API_GATEWAY_ENDPOINTS.md` (inventário
   das 150 rotas que devem permanecer idênticas). Somente documentação; nenhum
   comportamento mudou.
+- Esqueleto do novo projeto em `platform/`: parent (Spring Boot 3.5.16, Java 21, Spring Cloud
+  2025.0.0), `common-web`, `common-security`, `common-elleven`, `api-gateway` e os serviços
+  `massivas`, `splitters`, `comercial`, `contratos`, `radius`, `estoque` e `pessoas`. Ainda sem
+  lógica de domínio e sem rotas; o monólito não foi alterado.
 
 ### Planejado (ver `specs/API_GATEWAY_PASSOS.md`)
 - `3.4.3` — reestruturação multi-módulo, sem mudança de comportamento.
 - `3.5.0` — gateway à frente do monólito (circuit breaker, rate limit, request-id).
-- `3.5.x`/`3.6.0` — extração de `comercial`, `estoque`, `pessoas`, `radius`, `splitters`
-  e `massivas` para serviços próprios, mantendo as mesmas URLs e payloads.
+- `3.5.x`/`3.6.0` — extração de `contratos`, `comercial`, `estoque`, `pessoas`, `radius`,
+  `splitters` e `massivas` para serviços próprios, mantendo as mesmas URLs e payloads.
 - `3.7.0` — remoção do `legacy-bff` e endurecimento de segurança (F-03).
 
 ## [3.4.2] - 2026-07-30
