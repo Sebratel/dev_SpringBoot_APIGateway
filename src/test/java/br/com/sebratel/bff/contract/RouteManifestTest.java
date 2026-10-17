@@ -39,11 +39,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Sem argumentos, o teste COMPARA o manifesto gerado com o versionado e falha se divergirem: rota nova
  * ou alterada no monolito obriga a atualizar o manifesto. Para regenerar:
- * {@code ./mvnw test -Dtest=RouteManifestTest -Dmanifest.write=true}.
+ * {@code ./mvnw test -Dtest=RouteManifestTest -Dmanifest.write=true}. O manifesto e o contrato que
+ * o gateway (repositorio dev_SpringBoot_Gateway) precisa preservar; copie-o para la apos regenerar.
  */
 class RouteManifestTest {
 
-    private static final Path MANIFEST = Path.of("platform", "contract-tests", "src", "test", "resources", "manifest.json");
+    private static final Path MANIFEST = Path.of("docs", "contract", "manifest.json");
     private static final int EXPECTED_ROUTES = 156;
 
     /** Rotas liberadas em SecurityConfig (permitAll), todas GET. */

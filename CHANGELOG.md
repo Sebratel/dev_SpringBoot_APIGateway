@@ -40,20 +40,11 @@ formato dos seus payloads de requisição e resposta. Portanto:
   (fases, ordem de extração, checklist) e `specs/API_GATEWAY_ENDPOINTS.md` (inventário
   das 156 rotas que devem permanecer idênticas). Somente documentação; nenhum
   comportamento mudou.
-- Esqueleto do novo projeto em `platform/`: parent (Spring Boot 3.5.16, Java 21, Spring Cloud
-  2025.0.0), `common-web`, `common-security`, `common-elleven`, `api-gateway` e os serviços
-  `massivas`, `splitters`, `comercial` (vendas + contratos), `radius`, `estoque` e `pessoas`. Ainda sem
-  lógica de domínio e sem rotas; o monólito não foi alterado.
-- `platform/` passa a herdar de `br.com.sebratel:sebratel-parent:1.0.0` (repositório
-  `Sebratel/dev_Maven_Parent`, GitHub Packages): Java 21, versões de segurança, enforcer,
-  Checkstyle e JaCoCo (cobertura mínima 0.50) agora vêm do parent. Resolver o parent exige
-  `<server><id>github</id>` no `~/.m2/settings.xml` com token `read:packages`.
-
-- Fase 0 da migração: `RouteManifestTest` no monólito gera por reflexão o manifesto das 156
-  rotas (`platform/contract-tests/src/test/resources/manifest.json`) e falha se uma rota mudar
-  sem o manifesto ser atualizado. Novo módulo `platform/contract-tests` com checagens de
-  sanidade do manifesto e um `LiveContractTest` que roda contra qualquer URL base (monólito ou
-  gateway): 401 sem token, rota encaminhada e golden files de status/estrutura.
+- Fase 0 da migração: `RouteManifestTest` no monólito gera por reflexão o manifesto das 156 rotas
+  (`docs/contract/manifest.json`) e falha se uma rota mudar sem o manifesto ser atualizado. O manifesto é o
+  contrato que o gateway precisa preservar (ver `docs/contract/README.md`).
+- O gateway e cada serviço de domínio vivem em **repositórios próprios** (lista em `specs/API_GATEWAY.md`, seção 6);
+  este repositório continua sendo o monólito. Nenhum comportamento do monólito mudou.
 
 - `apigateway` incorpora `origin/staging` (GMUD: `/api/v1/gmud/*`, 6 rotas, em uso e fora do inventário
   inicial); o manifesto passa a ter **156 rotas** (`massivas` 74), com o `GmudEllevenController` no

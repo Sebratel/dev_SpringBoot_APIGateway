@@ -76,7 +76,7 @@ nem drivers JDBC.
 | D2 | Rotas **declarativas em YAML**, com um `RouteLocator` Java só para casos especiais | Rota nova vira configuração, não código | Tudo em Java |
 | D3 | Serviços **também validam o JWT** (resource server) | Os serviços usam claims do token (solicitante por `personId`, `GetToken`/`JwtInformation`); evita confiar cegamente na rede interna | Header interno confiável: quebra a resolução de solicitante e é frágil |
 | D4 | Serviços **só acessíveis pela rede interna** do Docker (sem porta publicada) | O gateway é o único ponto de entrada | Portas expostas por serviço |
-| D5 | **Um repositório multi-módulo Maven** em `platform/` (`gateway` + `services/*` + `common/*`), ao lado do monólito, que só é movido para `legacy-bff` na fase 1 | Move o código sem multiplicar repos/CI de uma vez; separa em repos quando estabilizar | N repositórios desde o início |
+| D5 | **Um repositório por componente** (gateway, cada serviço, bibliotecas comuns) | Ciclo de release, deploy, permissões e CI independentes por serviço; o monólito segue no repositório atual | Monorepo multi-módulo (era a decisão original, abandonada em 2026-10-17) |
 | D6 | **Strangler**: gateway nasce com *todas* as rotas apontando para o monólito, que é migrado domínio a domínio trocando apenas o `uri` da rota | Rollback = reverter 1 linha de config; sem big-bang | Reescrita e virada única |
 | D7 | Cada serviço mantém o **mesmo envelope de erro** (`ApiError`/`ApiResponse`) em módulo `common` | Contrato de erro idêntico | Cada serviço com seu formato |
 | D8 | Gateway **reativo (WebFlux)**: não há JPA nele, então não há bloqueio | Requisito do Spring Cloud Gateway padrão | Gateway MVC: aceito se a equipe preferir, mas ainda menos maduro |
@@ -116,34 +116,32 @@ Pontos a validar na fase 0 (spike):
 - Entidades/repositórios ERP usados por mais de um serviço (`PersonRepository`, `ContractProjection`) ficam em módulo de leitura, nunca com escrita compartilhada.
 - `application.properties` documenta Afetados como MariaDB e Radius como PostgreSQL, enquanto `specs/TEMPLATE.md` diz o contrário. **Verificar** e corrigir o template.
 
-## 6. Estrutura de pastas
+## 6. Repositórios e estrutura
 
-Já criada em `platform/` (build verde com Spring Boot 3.5.16 e Spring Cloud 2025.0.0). O monólito
-(`src/` e `pom.xml` da raiz) segue intacto até a fase 1.
+Cada componente vive no **seu próprio repositório** (decisão D5, revista em 2026-10-17). Todos são privados, herdam
+de `br.com.sebratel:sebratel-parent` (`Sebratel/dev_Maven_Parent`) e seguem os mesmos templates de repositório.
 
-```
-platform/
-├── pom.xml                         herda de br.com.sebratel:sebratel-parent:1.0.0 (Sebratel/dev_Maven_Parent)
-├── common/
-│   ├── common-web/                 ApiResponse, ApiError, GlobalExceptionHandler, Jackson
-│   ├── common-security/            validador JWT (issuer + domínio), GetToken, JwtInformation
-│   └── common-elleven/             cliente Elleven, token, @TokenRetry
-├── gateway/                        api-gateway (porta 8085, a mesma do BFF)
-│   └── src/main/{java/.../gateway, resources/{application.yml, routes/}}
-└── services/
-    ├── massivas-service/           8101
-    ├── splitters-service/          8102
-    ├── comercial-service/          8103   (vendas + contratos)
-    ├── radius-service/             8104
-    ├── estoque-service/            8105
-    └── pessoas-service/            8106
-```
+| Repositório | Conteúdo | Porta |
+|---|---|---|
+| `dev_SpringBoot_APIGateway` (este) | O **monólito atual** (`legacy-bff`), as specs da migração e o manifesto das rotas (`docs/contract/manifest.json`) | 8085 |
+| `dev_SpringBoot_Gateway` | `api-gateway` (Spring Cloud Gateway) e o módulo `contract-tests` | 8085 |
+| `dev_SpringBoot_MassivasService` | `massivas-service` (nome sem sufixo já era usado por outro repositório) | 8101 |
+| `dev_SpringBoot_SplittersService` | `splitters-service` | 8102 |
+| `dev_SpringBoot_ComercialService` | `comercial-service` (vendas + contratos) | 8103 |
+| `dev_SpringBoot_RadiusService` | `radius-service` | 8104 |
+| `dev_SpringBoot_EstoqueService` | `estoque-service` | 8105 |
+| `dev_SpringBoot_PessoasService` | `pessoas-service` | 8106 |
+| `dev_Maven_Commons` | Bibliotecas `common-web`, `common-security` e `common-elleven`, publicadas no GitHub Packages | n/a |
 
-Ainda a criar: `contract-tests/` (paridade das 156 rotas), `legacy-bff/` (monólito movido na fase 1),
-`deploy/` (compose com rede interna) e `common-erp` (se o spike confirmar entidades ERP compartilhadas).
+Fluxo de dependência: `dev_Maven_Parent` → `dev_Maven_Commons` → serviços e gateway. Os serviços só passam a depender
+dos `common-*` quando houver código a compartilhar (hoje são esqueletos sem lógica).
 
-Cada serviço mantém o layout atual (`controller → service → repository`, DTOs, projections) para que o
-`git mv` preserve o histórico. Pacote base: `br.com.sebratel.<servico>`.
+Cada serviço mantém o layout atual (`controller → service → repository`, DTOs, projections). Pacote base:
+`br.com.sebratel.<servico>`. O arquivo `contract/routes.json` de cada repositório lista as rotas que ele deve atender,
+extraídas do manifesto.
+
+Ainda a criar: `legacy-bff` como alias do monólito, `deploy/` (compose com rede interna) e `common-erp` (se o spike
+confirmar entidades ERP compartilhadas).
 
 ## 7. Exemplo de configuração de rota
 
