@@ -5,7 +5,7 @@ e é reversível. Referência de rotas: [API_GATEWAY_ENDPOINTS.md](API_GATEWAY_E
 
 ## Fase 0 — Preparação e rede de segurança
 
-> **Estado:** itens 2 e 4 prontos (manifesto das 156 rotas gerado do código e guardado por teste; harness em `platform/contract-tests`). Falta: golden files (item 3, exigem stage), item 1, spike (5) e topologia de bancos (6).
+> **Estado:** itens 2 e 4 prontos (manifesto das 156 rotas gerado do código e guardado por teste; harness no módulo `contract-tests` do repositório `dev_SpringBoot_Gateway`). Falta: golden files (item 3, exigem stage), item 1, spike (5) e topologia de bancos (6).
 
 1. Responder as questões em aberto (§13 da spec) e fechar as decisões D1–D8.
 2. **Gerar o manifesto de rotas**: exportar `/v3/api-docs` do monólito atual para `contract-tests/manifest.json` e conferir contra o inventário (156 rotas). Qualquer diferença corrige o inventário.
@@ -16,13 +16,13 @@ e é reversível. Referência de rotas: [API_GATEWAY_ENDPOINTS.md](API_GATEWAY_E
 
 **Saída:** teste de contrato verde contra o monólito; mapa de dependências aprovado.
 
-## Fase 1 — Esqueleto multi-módulo
-1. O esqueleto já existe em `platform/` (parent, `common/*`, `gateway`, 6 serviços; build verde). Esta fase move o monólito para `legacy-bff/` e o inclui no agregador.
-2. Mover o código atual inteiro para `legacy-bff/` (`git mv`, sem alterações de código). O build e os testes continuam verdes.
-3. Extrair para `common-web` / `common-security` / `common-erp` o que é compartilhado (`ApiResponse`, `ApiError`, `GlobalExceptionHandler`, `JacksonConfig`, JWT validator, `GetToken`, `JwtInformation`, entidades ERP). `legacy-bff` passa a depender deles.
-4. Ajustar `Dockerfile`, `deploy.sh` e os `docker-compose*.yml` para o novo layout.
+## Fase 1 — Repositórios e base compartilhada
+1. Criar os repositórios (`dev_SpringBoot_Gateway`, `dev_SpringBoot_<Servico>Service` x6 e `dev_Maven_Commons`), cada um com o esqueleto, o CI e os templates do `sebratel-parent`. **Feito em 2026-10-17.**
+2. O monólito **não muda de lugar**: continua em `dev_SpringBoot_APIGateway` e faz o papel de `legacy-bff` até a fase 4.
+3. Extrair para `dev_Maven_Commons` o que é compartilhado (`ApiResponse`, `ApiError`, `GlobalExceptionHandler`, `JacksonConfig`, JWT validator, `GetToken`, `JwtInformation`, cliente Elleven) e publicar no GitHub Packages. Serviços e gateway passam a depender dele quando houver código a usar.
+4. Garantir que o CI de cada repositório lê os pacotes privados (`sebratel-parent` e `common-*`): conceder acesso do pacote ao repositório ou usar um segredo com `read:packages`.
 
-**Saída:** build único verde; imagem do `legacy-bff` idêntica em comportamento; CI passando.
+**Saída:** os 8 repositórios constroem no CI; o monólito segue verde e publicado como hoje.
 
 ## Fase 2 — Gateway “transparente”
 1. Criar o módulo `gateway` (Spring Cloud Gateway) com **uma rota coringa para o `legacy-bff`**: tudo passa, nada muda.

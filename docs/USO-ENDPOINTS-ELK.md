@@ -8,7 +8,7 @@ A lista completa, do menos para o mais usado, está em [`uso-endpoints-elk.csv`]
   Requisições recusadas com 401 **não** entram na conta.
 - **Janela real: 2026-08-19 a 2026-10-17 (~2 meses), não 3.** Os logs do container só existem no Elasticsearch desde 19/08.
   O APM do serviço `api-gateway` só existe desde 07/10 (só 10 dias), por isso não serve para os 3 meses.
-- **Agrupamento:** cada caminho foi casado com o manifesto das 156 rotas (`platform/contract-tests/.../manifest.json`, agora com 156 rotas incluindo o GMUD),
+- **Agrupamento:** cada caminho foi casado com o manifesto das 156 rotas (`docs/contract/manifest.json`, com 156 rotas incluindo o GMUD),
   trocando os ids por `{variavel}`. Total casado: **226.064 requisições**; 5 ficaram fora do manifesto (abaixo).
 - O ambiente consultado é o do Kibana do stage; o APM mostra que o serviço `api-gateway` reporta só o ambiente `production`.
   Confirme com o time se esse `bff-java-service` é de fato o stage ou a produção antes de decidir qualquer remoção.
