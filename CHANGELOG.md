@@ -30,7 +30,9 @@ formato dos seus payloads de requisição e resposta. Portanto:
   para localizar consumidores esquecidos antes de qualquer remoção.
 - `Deprecation`, `Sunset` e `Link` passam a ser expostos no CORS, para o front poder lê-los.
 - Propriedades opcionais: `deprecation.since` (data ISO; vira `Deprecation: @epoch`) e `deprecation.sunset`
-  (data ISO; emite o header `Sunset`). Sem elas, só `Deprecation: true`. Nenhuma data de remoção foi definida.
+  (data ISO; emite o header `Sunset`). Padrão: **`deprecation.since=2026-10-17`** e **`deprecation.sunset=2027-01-17`**
+  (3 meses depois), ajustáveis por `DEPRECATION_SINCE` / `DEPRECATION_SUNSET` nos `docker-compose*.yml`. A rota só pode ser
+  removida depois do `Sunset`, e uma remoção é MAJOR.
 
 ### Adicionado
 - Especificação da transformação do BFF em API Gateway: `specs/API_GATEWAY.md`
