@@ -8,7 +8,7 @@
 
 ## 1. Problema
 
-Hoje o `bff` é um monólito: 24 controllers, 156 rotas, 3 datasources (ERP, Afetados, Radius),
+Hoje o `bff` é um monólito: 23 controllers, 154 rotas, 3 datasources (ERP, Afetados, Radius),
 integrações com Elleven/Native e a regra de negócio de todos os domínios no mesmo deploy.
 Ele se chama gateway, mas executa a lógica. Consequências:
 
@@ -21,7 +21,7 @@ Ele se chama gateway, mas executa a lógica. Consequências:
 
 1. Mover **toda** a lógica de domínio para serviços independentes.
 2. Deixar o projeto atual **apenas** como API Gateway: roteamento, autenticação, políticas transversais e observabilidade.
-3. Manter os **156 endpoints atuais** idênticos para os consumidores (apps, n8n, chatbot, planilhas), sem mudança de URL, payload ou status.
+3. Manter os **154 endpoints atuais** idênticos para os consumidores (apps, n8n, chatbot, planilhas), sem mudança de URL, payload ou status.
 
 ### Não-objetivos
 - Redesenhar a API, remover aliases PT/EN ou versionar para `v2` (fica para uma fase posterior, com depreciação).
@@ -93,7 +93,7 @@ só coincidem em prefixo de URL ou no banco ERP ficam em serviços separados.
 | COM | `comercial-service` | Vendas (vendedores ativos, aquisição, primeiro pagante mensal, relatório semanal de apoio) e contratos (bloqueados, ativação, ativação c/ fatura pendente, sem fatura, primeiro pagamento, clientes com nome duplicado); `dto/comercial` | ERP | 8103 | 45 |
 | RAD | `radius-service` | Consumo alto, última conexão, primeira autenticação, calling-station e prefixo duplicados | Radius DB (+ leitura de plano no ERP) | 8104 | 14 |
 | EST | `estoque-service` | Estoque por técnico, movimentação, patrimônio pendente | ERP | 8105 | 8 |
-| PES | `pessoas-service` | Colaborador por token/email/CPF/contrato, corporativo, QR Code do funcionário (chaves RSA) | ERP | 8106 | 7 |
+| PES | `pessoas-service` | Colaborador por token/email/CPF/contrato, corporativo | ERP | 8106 | 5 |
 
 Módulos compartilhados (bibliotecas, sem endpoints): `common-web` (envelope/erros), `common-security`
 (JWT, `GetToken`, `JwtInformation`) e `common-elleven` (cliente Elleven, token, `@TokenRetry`; usado por
@@ -104,7 +104,7 @@ Módulos compartilhados (bibliotecas, sem endpoints): `common-web` (envelope/err
 |---|---|---|
 | “Comercial” e “Contratos” como serviços separados | **Unidos** em `COM` | `WeeklyReportService` (vendas) e `ContractActivationService` (contrato) compartilham o `ContractDataService`; separar duplicaria a regra ou criaria chamada entre serviços. Ambos são só leitura do ERP |
 | `/api/v1/sites` junto de pessoas | **`MAS`** | É lookup de POP/DC consumido na abertura de massiva (`authenticationSiteCode`) |
-| `QrCode` junto de relatórios | **`PES`** | Identidade do funcionário e chaves RSA; nada a ver com relatórios |
+| `QrCode` junto de relatórios | removido (2026-10-17) | O endpoint de QR Code e a chave RSA foram removidos; sobram 5 rotas em `PES` |
 | `last-connections` sob `/contracts` | **`RAD`** | Dado vem do Radius; o prefixo `/contracts` é só herança de URL |
 | `/massivas-splitters` perto de splitters | **`MAS`** | É o histórico de massivas (banco de afetados); só o nome do alias lembra splitters |
 | `consumo` (Radius + plano do ERP) | **`RAD`** | Fonte principal é Radius; o ERP entra só como leitura de plano |
@@ -169,8 +169,8 @@ verificadas pelo teste de contrato; nada é roteado por prefixo amplo (ver armad
 ## 8. Requisitos e critérios de aceite
 
 **Paridade de contrato (bloqueante)**
-- RF1. As 156 rotas do inventário respondem no gateway com o mesmo status e corpo que no monólito, para um conjunto de requisições gravadas (golden files).
-- RF2. GET com corpo funciona (`matrix`, `weekly-reports/vendedor`, `qr-code/gerar`).
+- RF1. As 154 rotas do inventário respondem no gateway com o mesmo status e corpo que no monólito, para um conjunto de requisições gravadas (golden files).
+- RF2. GET com corpo funciona (`matrix`, `weekly-reports/vendedor`).
 - RF3. `Idempotency-Key` é respeitado: duas chamadas iguais pelo gateway resultam em uma execução no `MAS`.
 - RF4. `permitAll` continua restrito a `GET /api/v1/afetados/contract/**` e `GET /api/v1/matrix`.
 - RF5. Rota inexistente no inventário retorna 404 (não é repassada ao acaso).
@@ -189,14 +189,14 @@ verificadas pelo teste de contrato; nada é roteado por prefixo amplo (ver armad
 ## 9. Segurança
 - O finding **F-03** (`aud` do JWT não validada, ver `docs/AUDITORIA-SEGURANCA.md`) continua pendente: na migração a validação de JWT passa para `common-security`; **não** corrigir F-03 na mesma entrega do refactor para não derrubar front-ends sem o levantamento de client IDs. Registrar como item seguinte.
 - Segredos (`SECURITY_USER/PASSWORD`, `ELLEVEN_*`, `GOOGLE_*`, credenciais de banco) são distribuídos **por serviço**, só o que cada um usa; o gateway fica sem credenciais de banco/Elleven.
-- `src/main/resources/id_rsa_*.pem` estão versionados no repositório; migrar para `pessoas-service` (QR Code) e tirar do controle de versão em seguida (segredo).
+- `id_rsa_*.pem` foram **removidos** da árvore em 2026-10-17 junto com o endpoint de QR Code; a chave privada continua no histórico do Git (F-01): rotacionar e, se desejado, limpar o histórico.
 - `CORS: *` é mantido por compatibilidade na primeira fase, e centralizado só no gateway.
 - Basic auth legado permanece até o `AuthAuditFilter` mostrar que nenhum consumidor o usa.
 
 ## 10. Riscos
 | Risco | Impacto | Mitigação |
 |---|---|---|
-| Quebra silenciosa de rota/alias (156 rotas, muitos aliases) | Apps/n8n param | Gerar rotas a partir do inventário + teste de contrato em CI; comparar com `/v3/api-docs` do monólito |
+| Quebra silenciosa de rota/alias (154 rotas, muitos aliases) | Apps/n8n param | Gerar rotas a partir do inventário + teste de contrato em CI; comparar com `/v3/api-docs` do monólito |
 | Proxy perde corpo em GET | Matrix/QR/relatório semanal quebram | Teste dedicado (RF2); fallback de `RouteLocator` Java |
 | Timeouts curtos do gateway | Relatórios pesados falham | Timeout por rota ≥ 600 s onde hoje é assim |
 | Divisão errada dos domínios (Matrix cruza afetados + contratos) | Dependência circular | Spike da fase 0; `MatrixService` fica no `MAS` |
