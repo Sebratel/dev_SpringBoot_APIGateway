@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RouteManifestTest {
 
     private static final Path MANIFEST = Path.of("docs", "contract", "manifest.json");
-    private static final int EXPECTED_ROUTES = 156;
+    private static final int EXPECTED_ROUTES = 154;
 
     /** Rotas liberadas em SecurityConfig (permitAll), todas GET. */
     private static final List<String> PUBLIC_GET_PATTERNS = List.of("/api/v1/afetados/contract/**", "/api/v1/matrix");
@@ -53,7 +53,6 @@ class RouteManifestTest {
     /** POSTs que so consultam dados: podem ser exercitados autenticados sem efeito colateral. */
     private static final Set<String> READ_ONLY_NON_GET = Set.of(
             "InventoryController#getInventory",
-            "QrCodeController#recuperarQrCode",
             "SplittersController#alertasProtocoloPendente");
 
     /** Servico de destino de cada controller (specs/API_GATEWAY.md, secao 5). */
@@ -83,8 +82,7 @@ class RouteManifestTest {
             Map.entry("InventoryController", "estoque"),
             Map.entry("InventoryMovesController", "estoque"),
             Map.entry("PendingAssetController", "estoque"),
-            Map.entry("EmployeeController", "pessoas"),
-            Map.entry("QrCodeController", "pessoas"));
+            Map.entry("EmployeeController", "pessoas"));
 
     private final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 

@@ -18,6 +18,12 @@ formato dos seus payloads de requisição e resposta. Portanto:
 
 ## [Não lançado]
 
+### Removido
+- **Endpoint de QR Code** (`GET /api/v1/qr-code/gerar` e `POST /api/v1/qr-code/recuperar`), o serviço, os DTOs, a
+  dependência `zxing` e o par de chaves RSA (`id_rsa_private.pem` e `id_rsa_public.pem`) de `src/main/resources`.
+  Eram 2 das 156 rotas, ambas sem nenhuma requisição no período levantado (Kibana, 2026-08-19 a 2026-10-17). Mudança
+  **MAJOR** pelo contrato acima. A chave privada continua no histórico do Git (finding F-01): rotacionar.
+
 ### Adicionado
 - Especificação da transformação do BFF em API Gateway: `specs/API_GATEWAY.md`
   (arquitetura, decisões, estrutura de pastas, riscos), `specs/API_GATEWAY_PASSOS.md`

@@ -6,7 +6,7 @@ mesmo método, mesmo path, mesmos parâmetros, mesmo status e mesmo formato de c
 
 Como o Spring combina o `@RequestMapping` da classe com o do método, cada linha com várias
 bases e vários sufixos gera o **produto cartesiano** (ex.: 3 bases × 2 sufixos = 6 rotas).
-Total: **156 rotas HTTP**, em 24 controllers e 6 serviços de destino.
+Total: **154 rotas HTTP**, em 23 controllers e 6 serviços de destino.
 
 Legenda de autenticação: 🔒 JWT Google (`@sebratel.com.br`) ou Basic · 🌐 `permitAll`.
 Legenda de destino: `MAS` massivas-service (74) · `SPL` splitters-service (8) · `COM` comercial-service (45) ·
@@ -122,8 +122,6 @@ Vendas (vendedores, aquisição, primeiro pagante, apoio semanal) e ciclo de vid
 | GET | `/api/v1/employee/get-person-name-by-cpf` | query `txId` | 1 |
 | GET | `/api/v1/employee/get-cpf-by-contract` | query `contract` | 1 |
 | GET | `/api/v1/employee/is-corporativo` | query `txId` | 1 |
-| GET | `/api/v1/qr-code/gerar` | **body** `QrCodeInputDTO` (GET com corpo) | 1 |
-| POST | `/api/v1/qr-code/recuperar` | body `QrCodeInputDTO` | 1 |
 
 ## 9b. Sites de autenticação (POP/DC) — destino `MAS`
 Lookup usado ao abrir massivas (o `title` vira `authenticationSiteCode`), por isso fica junto das massivas e não com pessoas.
@@ -141,8 +139,7 @@ Lookup usado ao abrir massivas (o `title` vira `authenticationSiteCode`), por is
 | `/api/v1/token/google` | 🔒 | Há regra no `SecurityConfig`, mas **não existe controller**: rota morta; confirmar com os consumidores antes de descartar |
 
 ## Armadilhas de compatibilidade (o gateway precisa tratá-las)
-1. **GET com corpo**: `/api/v1/matrix`, `/api/v1/weekly-reports/vendedor` (e `apoio-semanal`) e
-   `/api/v1/qr-code/gerar`. O proxy não pode descartar o body nem converter o método.
+1. **GET com corpo**: `/api/v1/matrix`, `/api/v1/weekly-reports/vendedor` (e `apoio-semanal`). O proxy não pode descartar o body nem converter o método.
 2. **Colisão de prefixo entre domínios**: `/api/v1/contracts` e `/api/v1/contratos` misturam `COM` e `RAD`
    (`last-connections`); `/api/v1/reports` e `/api/v1/relatorios` ficam inteiros em `COM`. O
    roteamento tem que ser por **path + sufixo**, nunca só por prefixo.
