@@ -18,6 +18,36 @@ formato dos seus payloads de requisição e resposta. Portanto:
 
 ## [Não lançado]
 
+### Removido
+- **Endpoint de QR Code** (`GET /api/v1/qr-code/gerar` e `POST /api/v1/qr-code/recuperar`), o serviço, os DTOs, a
+  dependência `zxing` e o par de chaves RSA (`id_rsa_private.pem` e `id_rsa_public.pem`) de `src/main/resources`.
+  Eram 2 das 156 rotas, ambas sem nenhuma requisição no período levantado (Kibana, 2026-08-19 a 2026-10-17). Mudança
+  **MAJOR** pelo contrato acima. A chave privada continua no histórico do Git (finding F-01): rotacionar.
+
+### Adicionado
+- Especificação da transformação do BFF em API Gateway: `specs/API_GATEWAY.md`
+  (arquitetura, decisões, estrutura de pastas, riscos), `specs/API_GATEWAY_PASSOS.md`
+  (fases, ordem de extração, checklist) e `specs/API_GATEWAY_ENDPOINTS.md` (inventário
+  das 156 rotas que devem permanecer idênticas). Somente documentação; nenhum
+  comportamento mudou.
+- Fase 0 da migração: `RouteManifestTest` no monólito gera por reflexão o manifesto das 156 rotas
+  (`docs/contract/manifest.json`) e falha se uma rota mudar sem o manifesto ser atualizado. O manifesto é o
+  contrato que o gateway precisa preservar (ver `docs/contract/README.md`).
+- O gateway e cada serviço de domínio vivem em **repositórios próprios** (lista em `specs/API_GATEWAY.md`, seção 6);
+  este repositório continua sendo o monólito. Nenhum comportamento do monólito mudou.
+
+- `apigateway` incorpora `origin/staging` (GMUD: `/api/v1/gmud/*`, 6 rotas, em uso e fora do inventário
+  inicial); o manifesto passa a ter **156 rotas** (`massivas` 74), com o `GmudEllevenController` no
+  `massivas-service`.
+- `docs/USO-ENDPOINTS-ELK.md` e `docs/uso-endpoints-elk.csv`: uso dos endpoints no Kibana (ago a out/2026).
+
+### Planejado (ver `specs/API_GATEWAY_PASSOS.md`)
+- `3.4.3` — reestruturação multi-módulo, sem mudança de comportamento.
+- `3.5.0` — gateway à frente do monólito (circuit breaker, rate limit, request-id).
+- `3.5.x`/`3.6.0` — extração de `comercial`, `estoque`, `pessoas`, `radius`,
+  `splitters` e `massivas` para serviços próprios, mantendo as mesmas URLs e payloads.
+- `3.7.0` — remoção do `legacy-bff` e endurecimento de segurança (F-03).
+
 ## [3.4.2] - 2026-07-30
 
 ### Modificado
