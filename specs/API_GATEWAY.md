@@ -43,7 +43,7 @@ Ele se chama gateway, mas executa a lógica. Consequências:
 | Observabilidade | Logs estruturados com request-id, métricas por rota, tracing, healthcheck agregado |
 | Auditoria | Porta o `AuthAuditFilter` atual |
 | Documentação | Agrega os OpenAPI dos serviços em `/v3/api-docs` e `/swagger-ui.html` |
-| Compatibilidade | Preserva GET com corpo, `Idempotency-Key` e timeouts longos |
+| Compatibilidade | Preserva GET com corpo, `Idempotency-Key`, timeouts longos e os headers `Deprecation`, `Sunset` e `Link` das rotas obsoletas (`deprecated-routes.txt`) |
 
 ### 3.2 O que o Gateway **não** faz
 Nenhum acesso a banco, nenhum `WebClient` para Elleven/ERP, nenhum DTO de domínio, nenhuma

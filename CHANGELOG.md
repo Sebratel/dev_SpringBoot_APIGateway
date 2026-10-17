@@ -18,6 +18,22 @@ formato dos seus payloads de requisição e resposta. Portanto:
 
 ## [Não lançado]
 
+### Obsoleto
+- **134 das 154 rotas** passam a responder com o header `Deprecation: true` (RFC 9745), mais
+  `Link: <rota-sucessora>; rel="successor-version"` quando o mesmo handler tem um alias em uso (36
+  rotas), e aparecem como `deprecated` no Swagger/OpenAPI. São as rotas **sem nenhuma requisição** em
+  staging no Kibana (2026-08-19 a 2026-10-17: os logs do BFF só existem desde 19/08, cerca de 2 meses, e
+  não 3). Nenhuma rota foi removida e nenhum status ou corpo mudou. A lista está em
+  `src/main/resources/deprecated-routes.txt` e um teste garante que ela é exatamente o conjunto de rotas
+  com 0 requisições em `docs/uso-endpoints-elk.csv`.
+- Cada chamada a uma rota obsoleta gera uma linha no log `DEPRECATED_ROUTE` (método, rota, sucessora),
+  para localizar consumidores esquecidos antes de qualquer remoção.
+- `Deprecation`, `Sunset` e `Link` passam a ser expostos no CORS, para o front poder lê-los.
+- Propriedades opcionais: `deprecation.since` (data ISO; vira `Deprecation: @epoch`) e `deprecation.sunset`
+  (data ISO; emite o header `Sunset`). Padrão: **`deprecation.since=2026-10-17`** e **`deprecation.sunset=2027-01-17`**
+  (3 meses depois), ajustáveis por `DEPRECATION_SINCE` / `DEPRECATION_SUNSET` nos `docker-compose*.yml`. A rota só pode ser
+  removida depois do `Sunset`, e uma remoção é MAJOR.
+
 ### Removido
 - **Endpoint de QR Code** (`GET /api/v1/qr-code/gerar` e `POST /api/v1/qr-code/recuperar`), o serviço, os DTOs, a
   dependência `zxing` e o par de chaves RSA (`id_rsa_private.pem` e `id_rsa_public.pem`) de `src/main/resources`.
