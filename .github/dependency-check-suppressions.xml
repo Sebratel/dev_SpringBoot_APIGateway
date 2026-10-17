@@ -165,4 +165,25 @@
     </suppress>
     -->
 
+
+    <suppress>
+        <notes><![CDATA[
+          CVE:        CVE-2026-93879
+          Motivo:     nao explorevel neste projeto. A CVE (injecao de EL por parametro
+                      de mensagem {duplicates} sem escape, DoS) so ocorre no
+                      UniqueElementsValidator, a unica classe do hibernate-validator
+                      8.0.3.Final que referencia o parametro "duplicates" (conferido
+                      no jar). O projeto nao usa @UniqueElements (grep em src/ sem
+                      ocorrencias), entao esse caminho nunca e executado. Nao ha versao
+                      corrigida upstream (Red Hat Bugzilla 2540892 em NEW, "Fixed In
+                      Version" vazio), por isso nao da para corrigir subindo a versao.
+                      Reabrir se algum DTO passar a usar @UniqueElements, ou assim que
+                      sair uma versao corrigida (ai, subir o hibernate-validator e
+                      remover esta supressao).
+          Revisar em: 2026-12-17
+          Autor:      israel.barcelos (proposta do Claude Code no PR 92; confirmar na revisao)
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.hibernate\.validator/hibernate-validator@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-93879</vulnerabilityName>
+    </suppress>
 </suppressions>
