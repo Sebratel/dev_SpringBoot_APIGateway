@@ -1,0 +1,136 @@
+# Inventário de endpoints — contrato que o Gateway deve preservar
+
+Levantado do código em `src/main/java/br/com/sebratel/bff/controller` (branch `main`,
+versão `3.4.3-SNAPSHOT`). **Toda rota abaixo deve responder igual depois da migração**:
+mesmo método, mesmo path, mesmos parâmetros, mesmo status e mesmo formato de corpo.
+
+Como o Spring combina o `@RequestMapping` da classe com o do método, cada linha com várias
+bases e vários sufixos gera o **produto cartesiano** (ex.: 3 bases × 2 sufixos = 6 rotas).
+Total: **150 rotas HTTP**, em 23 controllers e 6 serviços de destino.
+
+Legenda de autenticação: 🔒 JWT Google (`@sebratel.com.br`) ou Basic · 🌐 `permitAll`.
+Legenda de destino: `MAS` massivas-service · `SPL` splitters-service · `COM` comercial-service ·
+`RAD` radius-service · `EST` estoque-service · `PES` pessoas-service.
+
+## 1. Usuários afetados — destino `MAS`
+Bases (3): `/api/v1/impacted-users`, `/api/v1/usuario-afetado`, `/api/v1/afetados`
+
+| Método | Sufixo | Entrada | Auth | Rotas |
+|---|---|---|---|---|
+| GET | `` | — | 🔒 | 3 |
+| POST | `` | body `CreateImpactedUsersInputDTO` | 🔒 | 3 |
+| GET | `/pppoe/{pppoe}` | path | 🔒 | 3 |
+| GET | `/contract/{contractId}` | path | 🌐 só em `/api/v1/afetados/contract/**`; nas outras 2 bases 🔒 | 3 |
+| GET | `/protocol/{protocol}` | path | 🔒 | 3 |
+| DELETE | `/protocol/{protocol}` | path | 🔒 | 3 |
+| PATCH | `/protocol/{protocol}` | query `finishDate` (LocalDateTime) | 🔒 | 3 |
+
+## 2. Massivas (Elleven + ERP) — destino `MAS`
+Bases (3): `/api/v1/massive-incidents`, `/api/v1/massivas-eleven`, `/api/v1/massivas`
+
+| Método | Sufixo(s) | Entrada | Rotas |
+|---|---|---|---|
+| POST | `` | body `CriacaoDeMassivaInputDTO` | 3 |
+| GET | `/getAllMassives` | — | 3 |
+| GET | `/recover-via-database` · `/recuperar-pelo-banco` | — | 6 |
+| GET | `/estimated-end/contract/{contractNumber}` · `/previsao-finalizacao/contrato/{contractNumber}` | path | 6 |
+| POST | `/save-massive-via-api` · `/salvar-massiva-via-api` | header `Idempotency-Key` (opcional) + body `AberturaRegistroMassivoInputDTO` | 6 |
+| POST | `/open-infra-solicitation-via-api` · `/abrir-protocolo-infra-via-api` | header `Idempotency-Key` (opcional) + body `AberturaProtocoloInfraInputDTO` | 6 |
+| DELETE | `/finalize-ticket-via-api` · `/finalizar-chamado-via-api` | body `FinalizaRegistroMassivoInputDTO` | 6 |
+
+## 3. Histórico de massivas — destino `MAS`
+Bases (2): `/api/v1/massivas-history`, `/api/v1/massivas-splitters`
+
+| Método | Sufixo(s) | Entrada | Rotas |
+|---|---|---|---|
+| GET | `/recover-via-database` · `/recuperar-pelo-banco` | — | 4 |
+| PATCH | `/{protocol}/finalize` · `/{protocol}/encerrar` | path + body opcional `MassivaHistoryEncerramentoInputDTO` | 4 |
+
+## 4. Matrix — destino `MAS`
+| Método | Path | Entrada | Auth |
+|---|---|---|---|
+| GET | `/api/v1/matrix` | **body** `MatrixMassiveInputDTO` (GET com corpo) | 🌐 |
+
+## 5. Splitters / OLTs (Elleven) — destino `SPL`
+Base: `/api/v1/splitters`
+
+| Método | Sufixo | Entrada |
+|---|---|---|
+| GET | `/recuperarToken` | — |
+| GET | `/listarConnections` | — |
+| GET | `/listarSplitters` | — |
+| GET | `/{splitterId}` | path |
+| GET | `/listarSplitters-paginado` | query `inicio`=0, `quantidade`=20 |
+| GET | `/listarOlts` | — |
+| GET | `/solicitacoes/cliente/{clientId}` | path |
+| POST | `/alertas-protocolo-pendente` | body `{ "pppoes": [...] }` |
+
+## 6. Comercial / contratos / relatórios — destino `COM`
+| Método | Bases | Sufixo(s) | Rotas |
+|---|---|---|---|
+| GET | `/api/v1/acquisitions` · `/api/v1/aquisicoes` | `/recover-acquisition-orders` · `/recuperar-pedidos-de-aquisicao` | 4 |
+| GET | `/api/v1/sellers` · `/api/v1/vendedores` | `/active` · `/ativos` · `/vendedores-ativos` | 6 |
+| GET | `/api/v1/contracts` · `/api/v1/contrato-bloqueado` · `/api/v1/contratos` | `/blocked` · `/bloqueados` | 6 |
+| GET | `/api/v1/contract-activations` · `/api/v1/contratos` | `/report` | 2 |
+| GET | `/api/v1/contracts` · `/api/v1/contrato-ativacao-fatura` · `/api/v1/contratos` | `/pending-activation-invoice` · `/ativacao-pendente-fatura` | 6 |
+| GET | `/api/v1/contract-payments` | `/first-activation` | 1 |
+| GET | `/api/v1/contracts` · `/api/v1/contrato-sem-fatura` · `/api/v1/contratos` | `/without-invoice` · `/sem-fatura` | 6 |
+| GET | `/api/v1/reports` · `/api/v1/relatorio-cliente-nome-duplicado` · `/api/v1/relatorios` | `/duplicate-client-names` · `/clientes-nomes-duplicados` | 6 |
+| GET | `/api/v1/reports` · `/api/v1/primeiro-pagante-mensal` · `/api/v1/relatorios` | `/first-monthly-payer` · `/primeiro-pagante-mensal` | 6 |
+| GET | `/api/v1/weekly-reports` · `/api/v1/apoio-semanal` | `/vendedor` — **body** `ActiveSellersInputDTO` | 2 |
+
+## 7. Radius — destino `RAD`
+| Método | Path / bases | Entrada | Rotas |
+|---|---|---|---|
+| GET | `/api/v1/radius/duplicate-calling-stations` | — | 1 |
+| GET | `/api/v1/radius/duplicate-prefixes` | — | 1 |
+| GET | `/api/v1/radius/first-authentications` | — | 1 |
+| GET | `/api/v1` + (`/high-consumption` · `/consumo` · `/consumo-alto`) | — | 3 |
+| GET | `/api/v1` + (`/high-consumption-paged` · `/consumo-alto-paginado`) | query `page`=0, `size`=20 | 2 |
+| GET | `/api/v1/contracts` · `/api/v1/ultima-conexao` · `/api/v1/contratos` + (`/last-connections` · `/ultimas-conexoes`) | — | 6 |
+
+## 8. Estoque / patrimônio — destino `EST`
+| Método | Path / bases | Entrada | Rotas |
+|---|---|---|---|
+| POST | `/api/v1/estoque/tecnico` | body `InventoryRequestDTO` | 1 |
+| GET | `/api/v1/estoque/movimentacao` | — | 1 |
+| GET | `/api/v1/assets` · `/api/v1/patrimonio-pendente` · `/api/v1/patrimonios` + (`/pending` · `/pendentes`) | — | 6 |
+
+## 9. Pessoas / cadastro — destino `PES`
+| Método | Path | Entrada | Rotas |
+|---|---|---|---|
+| GET | `/api/v1/employee/get-user-by-token` | JWT | 1 |
+| GET | `/api/v1/employee/get-person-id-by-email` | query `email` | 1 |
+| GET | `/api/v1/employee/get-person-name-by-cpf` | query `txId` | 1 |
+| GET | `/api/v1/employee/get-cpf-by-contract` | query `contract` | 1 |
+| GET | `/api/v1/employee/is-corporativo` | query `txId` | 1 |
+| GET | `/api/v1/sites` | query `title` | 1 |
+| GET | `/api/v1/sites/search` | query `q` | 1 |
+| GET | `/api/v1/qr-code/gerar` | **body** `QrCodeInputDTO` (GET com corpo) | 1 |
+| POST | `/api/v1/qr-code/recuperar` | body `QrCodeInputDTO` | 1 |
+
+## 10. Rotas de infraestrutura (hoje no BFF)
+| Path | Auth | Observação |
+|---|---|---|
+| `/v3/api-docs/**`, `/swagger-ui/**`, `/swagger-ui.html` | 🔒 | O gateway deve **agregar** a documentação dos serviços |
+| `/error` | 🌐 | Interno do Spring, não é rota de negócio |
+| `/api/v1/token/google` | 🔒 | Há regra no `SecurityConfig`, mas **não existe controller**: rota morta; confirmar com os consumidores antes de descartar |
+
+## Armadilhas de compatibilidade (o gateway precisa tratá-las)
+1. **GET com corpo**: `/api/v1/matrix`, `/api/v1/weekly-reports/vendedor` (e `apoio-semanal`) e
+   `/api/v1/qr-code/gerar`. O proxy não pode descartar o body nem converter o método.
+2. **Colisão de prefixo entre domínios**: `/api/v1/contracts`, `/api/v1/contratos`,
+   `/api/v1/reports` e `/api/v1/relatorios` misturam `COM` e `RAD` (`last-connections`). O
+   roteamento tem que ser por **path + sufixo**, nunca só por prefixo.
+3. **Mesmo prefixo, serviços diferentes**: `/api/v1/massivas-splitters` é `MAS`, enquanto
+   `/api/v1/splitters` é `SPL`. Não rotear por `*splitters*`.
+4. `Idempotency-Key` precisa chegar intacto ao `MAS` (o `MassivaIdempotencyStore` fica lá).
+5. Sufixos declarados sem barra (`salvar-massiva-via-api`, `abrir-protocolo-infra-via-api`,
+   `finalizar-chamado-via-api`, `movimentacao`) e base `api/v1/sites` sem barra inicial: o
+   Spring normaliza; o gateway deve aceitar o path com `/`.
+6. Timeout atual de **600 s** (`spring.mvc.async.request-timeout`, `server.tomcat.connection-timeout`):
+   relatórios pesados dependem disso. O gateway deve manter o timeout por rota, não um global baixo.
+7. Respostas de erro vêm do `GlobalExceptionHandler` (`ApiError`) e algumas usam o envelope
+   `ApiResponse`; o gateway repassa status e corpo sem reescrever.
+8. `permitAll` em `GET /api/v1/afetados/contract/**` e `GET /api/v1/matrix` (consumo sem token,
+   p.ex. chatbot) deve continuar valendo, só nessas bases.

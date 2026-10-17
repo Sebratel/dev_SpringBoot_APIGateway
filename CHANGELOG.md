@@ -18,6 +18,20 @@ formato dos seus payloads de requisição e resposta. Portanto:
 
 ## [Não lançado]
 
+### Adicionado
+- Especificação da transformação do BFF em API Gateway: `specs/API_GATEWAY.md`
+  (arquitetura, decisões, estrutura de pastas, riscos), `specs/API_GATEWAY_PASSOS.md`
+  (fases, ordem de extração, checklist) e `specs/API_GATEWAY_ENDPOINTS.md` (inventário
+  das 150 rotas que devem permanecer idênticas). Somente documentação; nenhum
+  comportamento mudou.
+
+### Planejado (ver `specs/API_GATEWAY_PASSOS.md`)
+- `3.4.3` — reestruturação multi-módulo, sem mudança de comportamento.
+- `3.5.0` — gateway à frente do monólito (circuit breaker, rate limit, request-id).
+- `3.5.x`/`3.6.0` — extração de `comercial`, `estoque`, `pessoas`, `radius`, `splitters`
+  e `massivas` para serviços próprios, mantendo as mesmas URLs e payloads.
+- `3.7.0` — remoção do `legacy-bff` e endurecimento de segurança (F-03).
+
 ## [3.4.2] - 2026-07-30
 
 ### Modificado
