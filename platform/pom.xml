@@ -19,6 +19,7 @@
         <module>common/common-web</module>
         <module>common/common-security</module>
         <module>common/common-elleven</module>
+        <module>contract-tests</module>
         <module>gateway</module>
         <module>services/massivas-service</module>
         <module>services/splitters-service</module>

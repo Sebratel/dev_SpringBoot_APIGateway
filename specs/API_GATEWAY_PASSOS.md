@@ -4,6 +4,9 @@ Complementa [API_GATEWAY.md](API_GATEWAY.md). Cada fase termina com um critério
 e é reversível. Referência de rotas: [API_GATEWAY_ENDPOINTS.md](API_GATEWAY_ENDPOINTS.md).
 
 ## Fase 0 — Preparação e rede de segurança
+
+> **Estado:** itens 2 e 4 prontos (manifesto das 150 rotas gerado do código e guardado por teste; harness em `platform/contract-tests`). Falta: golden files (item 3, exigem stage), item 1, spike (5) e topologia de bancos (6).
+
 1. Responder as questões em aberto (§13 da spec) e fechar as decisões D1–D8.
 2. **Gerar o manifesto de rotas**: exportar `/v3/api-docs` do monólito atual para `contract-tests/manifest.json` e conferir contra o inventário (150 rotas). Qualquer diferença corrige o inventário.
 3. **Gravar golden files**: capturar requisição/resposta reais (stage) de cada rota, anonimizadas, em `contract-tests/golden/`.

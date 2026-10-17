@@ -33,6 +33,12 @@ formato dos seus payloads de requisição e resposta. Portanto:
   Checkstyle e JaCoCo (cobertura mínima 0.50) agora vêm do parent. Resolver o parent exige
   `<server><id>github</id>` no `~/.m2/settings.xml` com token `read:packages`.
 
+- Fase 0 da migração: `RouteManifestTest` no monólito gera por reflexão o manifesto das 150
+  rotas (`platform/contract-tests/src/test/resources/manifest.json`) e falha se uma rota mudar
+  sem o manifesto ser atualizado. Novo módulo `platform/contract-tests` com checagens de
+  sanidade do manifesto e um `LiveContractTest` que roda contra qualquer URL base (monólito ou
+  gateway): 401 sem token, rota encaminhada e golden files de status/estrutura.
+
 ### Planejado (ver `specs/API_GATEWAY_PASSOS.md`)
 - `3.4.3` — reestruturação multi-módulo, sem mudança de comportamento.
 - `3.5.0` — gateway à frente do monólito (circuit breaker, rate limit, request-id).
