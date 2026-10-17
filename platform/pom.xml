@@ -3,9 +3,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.16</version>
+        <groupId>br.com.sebratel</groupId>
+        <artifactId>sebratel-parent</artifactId>
+        <version>1.0.0</version>
         <relativePath/>
     </parent>
     <groupId>br.com.sebratel</groupId>
@@ -29,17 +29,25 @@
         <module>services/pessoas-service</module>
     </modules>
 
+    <!--
+      sebratel-parent vem do GitHub Packages (privado). Exige um <server><id>github</id> no
+      ~/.m2/settings.xml com token read:packages. Ver README do Sebratel/dev_Maven_Parent.
+    -->
+    <repositories>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/Sebratel/dev_Maven_Parent</url>
+        </repository>
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/Sebratel/dev_Maven_Parent</url>
+        </pluginRepository>
+    </pluginRepositories>
+
     <properties>
-        <java.version>21</java.version>
-        <!-- Versoes herdadas do pom do BFF (raiz do repositorio); manter alinhadas ate a fase 4. -->
-        <lombok.version>1.18.42</lombok.version>
-        <netty.version>4.1.139.Final</netty.version>
-        <postgresql.version>42.7.13</postgresql.version>
-        <tomcat.version>10.1.59</tomcat.version>
-        <log4j2.version>2.26.1</log4j2.version>
-        <jackson-bom.version>2.22.3</jackson-bom.version>
-        <logback.version>1.5.38</logback.version>
-        <springdoc.version>2.8.17</springdoc.version>
+        <!-- Java 21, Lombok, overrides de CVE, springdoc e logstash vem do sebratel-parent. -->
         <zxing.version>3.5.3</zxing.version>
         <!-- Linha de release do Spring Cloud compativel com Spring Boot 3.5.x. -->
         <spring-cloud.version>2025.0.0</spring-cloud.version>
@@ -53,11 +61,6 @@
                 <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-                <version>${springdoc.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.zxing</groupId>
@@ -86,36 +89,4 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <configuration>
-                        <annotationProcessorPaths>
-                            <path>
-                                <groupId>org.projectlombok</groupId>
-                                <artifactId>lombok</artifactId>
-                                <version>${lombok.version}</version>
-                            </path>
-                        </annotationProcessorPaths>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-maven-plugin</artifactId>
-                    <configuration>
-                        <excludes>
-                            <exclude>
-                                <groupId>org.projectlombok</groupId>
-                                <artifactId>lombok</artifactId>
-                            </exclude>
-                        </excludes>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
 </project>

@@ -28,6 +28,10 @@ formato dos seus payloads de requisição e resposta. Portanto:
   2025.0.0), `common-web`, `common-security`, `common-elleven`, `api-gateway` e os serviços
   `massivas`, `splitters`, `comercial`, `contratos`, `radius`, `estoque` e `pessoas`. Ainda sem
   lógica de domínio e sem rotas; o monólito não foi alterado.
+- `platform/` passa a herdar de `br.com.sebratel:sebratel-parent:1.0.0` (repositório
+  `Sebratel/dev_Maven_Parent`, GitHub Packages): Java 21, versões de segurança, enforcer,
+  Checkstyle e JaCoCo (cobertura mínima 0.50) agora vêm do parent. Resolver o parent exige
+  `<server><id>github</id>` no `~/.m2/settings.xml` com token `read:packages`.
 
 ### Planejado (ver `specs/API_GATEWAY_PASSOS.md`)
 - `3.4.3` — reestruturação multi-módulo, sem mudança de comportamento.

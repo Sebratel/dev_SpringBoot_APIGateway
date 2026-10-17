@@ -126,7 +126,7 @@ Já criada em `platform/` (build verde com Spring Boot 3.5.16 e Spring Cloud 202
 
 ```
 platform/
-├── pom.xml                         parent (Spring Boot 3.5.16, Java 21, versões do BFF atual)
+├── pom.xml                         herda de br.com.sebratel:sebratel-parent:1.0.0 (Sebratel/dev_Maven_Parent)
 ├── common/
 │   ├── common-web/                 ApiResponse, ApiError, GlobalExceptionHandler, Jackson
 │   ├── common-security/            validador JWT (issuer + domínio), GetToken, JwtInformation
