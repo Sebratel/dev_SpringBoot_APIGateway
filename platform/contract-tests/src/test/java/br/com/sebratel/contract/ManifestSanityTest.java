@@ -81,4 +81,12 @@ class ManifestSanityTest {
             }
         }
     }
+
+    @Test
+    void knownSlowRoutesExistAndAreSafe() {
+        Set<String> safeLabels = routes.stream().filter(Route::safe).map(Route::label).collect(Collectors.toSet());
+        for (String label : KnownSlowRoutes.load().labels()) {
+            assertTrue(safeLabels.contains(label), "rota lenta conhecida nao existe no manifesto ou nao e segura: " + label);
+        }
+    }
 }

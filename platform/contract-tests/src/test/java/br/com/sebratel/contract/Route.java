@@ -31,6 +31,12 @@ public record Route(
         return method + " " + path;
     }
 
+    /** Nome legivel no relatorio dos testes parametrizados. */
+    @Override
+    public String toString() {
+        return label();
+    }
+
     /** Parametro de query declarado no controller. */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record QueryParam(String name, String type, boolean required, @JsonProperty("default") String defaultValue) {
