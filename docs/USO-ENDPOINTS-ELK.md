@@ -1,5 +1,8 @@
 # Uso dos endpoints do BFF em staging (Kibana)
 
+> **Atualização de 2026-10-17:** as 2 rotas de QR Code (`/api/v1/qr-code/*`, 0 requisições) foram **removidas** do BFF. Os números abaixo
+> são os do levantamento (156 rotas); hoje o manifesto tem 154 e a lista de rotas obsoletas, 134.
+
 Levantado em 2026-10-17 no Kibana (`https://kibana.sebratel.net.br`), data view `filebeat-*`, container `bff-java-service`.
 A lista completa, do menos para o mais usado, está em [`uso-endpoints-elk.csv`](uso-endpoints-elk.csv).
 
