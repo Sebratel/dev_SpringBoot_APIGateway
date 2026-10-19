@@ -41,6 +41,8 @@ public class SecurityConfig {
                     corsConfiguration.setAllowedOrigins(List.of("*"));
                     corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
                     corsConfiguration.setAllowedHeaders(List.of("*"));
+                    // Sem isto o navegador nao deixa o front ler os avisos de rota obsoleta.
+                    corsConfiguration.setExposedHeaders(List.of("Deprecation", "Sunset", "Link"));
                     return corsConfiguration;
                 }))
                 .csrf(AbstractHttpConfigurer::disable)
