@@ -56,7 +56,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// n8n 2.x: Code node isolado (task runner) - JS puro, sem env vars nem require. Date/JSON ok.\n// Reconciliacao BIDIRECIONAL por protocolo entre Splitters (massiva_history) e Voalle (Elleven).\n// Regra: quem teve a ULTIMA ACAO e a fonte da verdade. Só propagamos FECHAMENTO; nunca reabrimos.\n// Se o lado ABERTO teve acao mais recente que o fechamento do outro -> acao='revisar_manual'.\n\nfunction unwrap(resp) {\n  if (Array.isArray(resp)) return resp;\n  if (resp && Array.isArray(resp.data)) return resp.data;\n  return [];\n}\nfunction ts(v) {\n  if (!v) return null;\n  const d = new Date(v);\n  return isNaN(d.getTime()) ? null : d.getTime();\n}\n\nconst elleven = unwrap($('GET Elleven').first().json);\nconst hist = unwrap($('GET History (Splitters)').first().json);\nconst limit = Number($('Config').item.json.limit) || 0;\n\nconst ellevenByProto = new Map();\nfor (const e of elleven) {\n  if (e && e.protocolo != null) ellevenByProto.set(String(e.protocolo), e);\n}\n\nconst itens = [];\nfor (const h of hist) {\n  if (!h || h.protocolo == null) continue;\n  const proto = String(h.protocolo);\n  const e = ellevenByProto.get(proto);\n  if (!e) continue; // so reconcilia o que existe nos dois lados\n\n  const splittersClosed = h.status === 'encerrada';\n  const voalleClosed = !!e.finalizado;\n  if (splittersClosed === voalleClosed) continue; // em sincronia\n\n  const tSplitters = ts(h.ultimaAcaoEm);\n  const tVoalle = voalleClosed ? ts(e.finalizado) : ts(e.criacao);\n\n  let acao;\n  let motivoRevisao = null;\n  if (splittersClosed && !voalleClosed) {\n    // Splitters fechou; Voalle aberto.\n    if (tSplitters != null && tVoalle != null && tVoalle > tSplitters) {\n      acao = 'revisar_manual';\n      motivoRevisao = 'Voalle (aberto) teve acao mais recente (' + e.criacao + ') que o fechamento no Splitters (' + h.ultimaAcaoEm + ').';\n    } else {\n      acao = 'fechar_voalle';\n    }\n  } else {\n    // Voalle fechou; Splitters aberto.\n    if (tSplitters != null && tVoalle != null && tSplitters > tVoalle) {\n      acao = 'revisar_manual';\n      motivoRevisao = 'Splitters (aberto) teve acao mais recente (' + h.ultimaAcaoEm + ') que o fechamento na Voalle (' + e.finalizado + ').';\n    } else {\n      acao = 'fechar_splitters';\n    }\n  }\n\n  const assignmentId = h.assignmentId != null ? String(h.assignmentId) : '';\n  itens.push({\n    json: {\n      protocolo: proto,\n      assignmentId: assignmentId,\n      acao: acao,\n      motivoRevisao: motivoRevisao,\n      statusSplitters: h.status,\n      ultimaAcaoSplitters: h.ultimaAcaoEm,\n      finalizadoVoalle: e.finalizado || null,\n      bodyVoalle: {\n        assignmentId: assignmentId,\n        incidentStatusId: '8',\n        description: 'Encerramento automatico via reconciliacao n8n. Protocolo ' + proto + ' encerrado no Splitters em ' + (h.ultimaAcaoEm || 'N/D') + ' e ainda aberto no Voalle.',\n        progress: '0',\n        priority: '35',\n        notificationTarget: '0',\n        privateReport: 'true'\n      },\n      bodySplitters: {\n        closedBy: 'reconciliacao-n8n',\n        closeDescription: 'Encerrado via reconciliacao automatica. Voalle ja estava fechado em ' + (e.finalizado || 'N/D') + '.'\n      }\n    }\n  });\n}\n\nreturn limit > 0 ? itens.slice(0, limit) : itens;"
+        "jsCode": "// n8n 2.x: Code node isolado (task runner) - JS puro, sem env vars nem require. Date/JSON ok.\n// Reconciliacao BIDIRECIONAL por protocolo entre Splitters (massiva_history) e Voalle (Elleven).\n// Regra: quem teve a ULTIMA ACAO e a fonte da verdade. Só propagamos FECHAMENTO/CANCELAMENTO; nunca reabrimos.\n// Se o lado ABERTO teve acao mais recente que o fechamento do outro -> acao='revisar_manual'.\n//\n// Direcao 1 (Splitters -> Voalle): Splitters ja encerrou (status='encerrada') e Voalle ainda aberto\n//   -> fecha o chamado no Voalle (Elleven).\n// Direcao 2 (Voalle -> Splitters, NOVO): Splitters ainda esta 'aberta' mas o Elleven ja mostra\n//   'Encerrado' ou 'Cancelado' para o mesmo protocolo -> espelha esse status no Splitters\n//   (massiva_history), chamando /encerrar ou /cancelar conforme o status real do Elleven.\n\nfunction unwrap(resp) {\n  if (Array.isArray(resp)) return resp;\n  if (resp && Array.isArray(resp.data)) return resp.data;\n  return [];\n}\nfunction ts(v) {\n  if (!v) return null;\n  const d = new Date(v);\n  return isNaN(d.getTime()) ? null : d.getTime();\n}\n\nconst elleven = unwrap($('GET Elleven').first().json);\nconst hist = unwrap($('GET History (Splitters)').first().json);\nconst limit = Number($('Config').item.json.limit) || 0;\n\nconst ellevenByProto = new Map();\nfor (const e of elleven) {\n  if (e && e.protocolo != null) ellevenByProto.set(String(e.protocolo), e);\n}\n\nconst itens = [];\nfor (const h of hist) {\n  if (!h || h.protocolo == null) continue;\n  const proto = String(h.protocolo);\n  const e = ellevenByProto.get(proto);\n  if (!e) continue; // so reconcilia o que existe nos dois lados\n\n  const splittersAberta = h.status === 'aberta';\n  const splittersEncerrada = h.status === 'encerrada';\n  // status string do Elleven (t2.title no gateway): 'Encerrado' | 'Cancelado' | outros (aberto/em andamento)\n  const ellevenEncerrado = e.status === 'Encerrado';\n  const ellevenCancelado = e.status === 'Cancelado';\n  const voalleClosed = !!e.finalizado;\n\n  const assignmentId = h.assignmentId != null ? String(h.assignmentId) : '';\n  let acao = null;\n  let motivoRevisao = null;\n\n  if (splittersEncerrada && !voalleClosed) {\n    // Direcao 1: Splitters fechou; Voalle aberto.\n    const tSplitters = ts(h.ultimaAcaoEm);\n    const tVoalle = ts(e.criacao);\n    if (tSplitters != null && tVoalle != null && tVoalle > tSplitters) {\n      acao = 'revisar_manual';\n      motivoRevisao = 'Voalle (aberto) teve acao mais recente (' + e.criacao + ') que o fechamento no Splitters (' + h.ultimaAcaoEm + ').';\n    } else {\n      acao = 'fechar_voalle';\n    }\n  } else if (splittersAberta && (ellevenEncerrado || ellevenCancelado)) {\n    // Direcao 2 (nova): Splitters ainda aberta; Elleven ja encerrado/cancelado.\n    // Nao ha necessidade de checar recencia aqui: so estamos espelhando o status final\n    // do Elleven (fonte da verdade), nunca reabrindo nada.\n    acao = ellevenEncerrado ? 'encerrar_splitters' : 'cancelar_splitters';\n  } else {\n    continue; // em sincronia ou nenhuma das duas direcoes se aplica\n  }\n\n  itens.push({\n    json: {\n      protocolo: proto,\n      assignmentId: assignmentId,\n      acao: acao,\n      motivoRevisao: motivoRevisao,\n      statusSplitters: h.status,\n      statusElleven: e.status,\n      ultimaAcaoSplitters: h.ultimaAcaoEm,\n      finalizadoVoalle: e.finalizado || null,\n      bodyVoalle: {\n        assignmentId: assignmentId,\n        incidentStatusId: '8',\n        description: 'Encerramento automatico via reconciliacao n8n. Protocolo ' + proto + ' encerrado no Splitters em ' + (h.ultimaAcaoEm || 'N/D') + ' e ainda aberto no Voalle.',\n        progress: '0',\n        priority: '35',\n        notificationTarget: '0',\n        privateReport: 'true'\n      },\n      bodySplittersEncerrar: {\n        closedBy: 'reconciliacao-n8n',\n        closeDescription: 'Encerrado via reconciliacao automatica. Elleven ja estava com status \\'Encerrado\\' para o protocolo ' + proto + '.'\n      },\n      bodySplittersCancelar: {\n        cancelledBy: 'reconciliacao-n8n',\n        cancelDescription: 'Cancelado via reconciliacao automatica. Elleven ja estava com status \\'Cancelado\\' para o protocolo ' + proto + '.'\n      }\n    }\n  });\n}\n\nreturn limit > 0 ? itens.slice(0, limit) : itens;"
       },
       "id": "reconciliar",
       "name": "Reconciliar (diff)",
@@ -105,11 +105,20 @@
             {
               "conditions": {
                 "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
-                "conditions": [ { "leftValue": "={{ $json.acao }}", "rightValue": "fechar_splitters", "operator": { "type": "string", "operation": "equals" } } ],
+                "conditions": [ { "leftValue": "={{ $json.acao }}", "rightValue": "encerrar_splitters", "operator": { "type": "string", "operation": "equals" } } ],
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "fechar_splitters"
+              "outputKey": "encerrar_splitters"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+                "conditions": [ { "leftValue": "={{ $json.acao }}", "rightValue": "cancelar_splitters", "operator": { "type": "string", "operation": "equals" } } ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cancelar_splitters"
             },
             {
               "conditions": {
@@ -157,11 +166,11 @@
         "genericAuthType": "httpBasicAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json.bodySplitters) }}",
+        "jsonBody": "={{ JSON.stringify($json.bodySplittersEncerrar) }}",
         "options": { "response": { "response": { "fullResponse": true, "neverError": true } } }
       },
-      "id": "fechar-splitters",
-      "name": "Fechar no Splitters (massiva_history)",
+      "id": "encerrar-splitters",
+      "name": "Encerrar no Splitters (massiva_history)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [1380, 470],
@@ -170,8 +179,27 @@
     },
     {
       "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Config').item.json.baseUrl }}/api/v1/massivas-history/{{ $json.protocolo }}/cancelar",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.bodySplittersCancelar) }}",
+        "options": { "response": { "response": { "fullResponse": true, "neverError": true } } }
+      },
+      "id": "cancelar-splitters",
+      "name": "Cancelar no Splitters (massiva_history)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1380, 600],
+      "onError": "continueRegularOutput",
+      "credentials": { "httpBasicAuth": { "id": "REPLACE_ME", "name": "Gateway Basic Auth" } }
+    },
+    {
+      "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Roda 1x por item. Usa pairedItem para recuperar o item de origem (Reconciliar),\n// independentemente do caminho (DELETE, PATCH ou revisar_manual direto).\nconst src = $('Reconciliar (diff)').item.json;\nconst proto = src.protocolo;\nconst acao = src.acao;\n\nlet categoria;\nlet motivo = '';\n\nif (acao === 'revisar_manual') {\n  categoria = 'revisar';\n  motivo = src.motivoRevisao || 'Divergencia que requer revisao manual (nunca reabrir automaticamente).';\n} else {\n  const j = $json;\n  if (j && j.error) {\n    categoria = 'falha';\n    const msg = typeof j.error === 'string' ? j.error : (j.error.message || JSON.stringify(j.error));\n    motivo = 'Erro de transporte: ' + msg;\n  } else {\n    const status = j ? j.statusCode : undefined;\n    const body = (j && j.body !== undefined) ? j.body : j;\n    const httpOk = (status === undefined) || (status >= 200 && status < 300);\n    const logicOk = body && body.success === true;\n    if (httpOk && logicOk) {\n      categoria = 'ok';\n      motivo = acao === 'fechar_voalle' ? 'Fechado na Voalle (Elleven)' : 'Fechado no Splitters (massiva_history)';\n    } else {\n      categoria = 'falha';\n      motivo = 'HTTP ' + (status !== undefined ? status : '?');\n      if (body && Array.isArray(body.messages) && body.messages.length) motivo += ' - ' + body.messages.map(m => m.message).join('; ');\n      else if (body && body.message) motivo += ' - ' + body.message;\n    }\n  }\n}\n\nreturn { json: { protocolo: proto, acao: acao, categoria: categoria, motivo: motivo } };"
+        "jsCode": "// Roda 1x por item. Usa pairedItem para recuperar o item de origem (Reconciliar),\n// independentemente do caminho (DELETE, PATCH ou revisar_manual direto).\nconst src = $('Reconciliar (diff)').item.json;\nconst proto = src.protocolo;\nconst acao = src.acao;\n\nlet categoria;\nlet motivo = '';\n\nif (acao === 'revisar_manual') {\n  categoria = 'revisar';\n  motivo = src.motivoRevisao || 'Divergencia que requer revisao manual (nunca reabrir automaticamente).';\n} else {\n  const j = $json;\n  if (j && j.error) {\n    categoria = 'falha';\n    const msg = typeof j.error === 'string' ? j.error : (j.error.message || JSON.stringify(j.error));\n    motivo = 'Erro de transporte: ' + msg;\n  } else {\n    const status = j ? j.statusCode : undefined;\n    const body = (j && j.body !== undefined) ? j.body : j;\n    const httpOk = (status === undefined) || (status >= 200 && status < 300);\n    const logicOk = body && body.success === true;\n    if (httpOk && logicOk) {\n      categoria = 'ok';\n      motivo = acao === 'fechar_voalle'\n        ? 'Fechado na Voalle (Elleven)'\n        : (acao === 'encerrar_splitters' ? 'Encerrado no Splitters (massiva_history)' : 'Cancelado no Splitters (massiva_history)');\n    } else {\n      categoria = 'falha';\n      motivo = 'HTTP ' + (status !== undefined ? status : '?');\n      if (body && Array.isArray(body.messages) && body.messages.length) motivo += ' - ' + body.messages.map(m => m.message).join('; ');\n      else if (body && body.message) motivo += ' - ' + body.message;\n    }\n  }\n}\n\nreturn { json: { protocolo: proto, acao: acao, categoria: categoria, motivo: motivo } };"
       },
       "id": "avaliar",
       "name": "Avaliar resultado",
@@ -270,12 +298,14 @@
     "Rotear ação": {
       "main": [
         [{ "node": "Fechar na Voalle (Elleven)", "type": "main", "index": 0 }],
-        [{ "node": "Fechar no Splitters (massiva_history)", "type": "main", "index": 0 }],
+        [{ "node": "Encerrar no Splitters (massiva_history)", "type": "main", "index": 0 }],
+        [{ "node": "Cancelar no Splitters (massiva_history)", "type": "main", "index": 0 }],
         [{ "node": "Avaliar resultado", "type": "main", "index": 0 }]
       ]
     },
     "Fechar na Voalle (Elleven)": { "main": [[{ "node": "Avaliar resultado", "type": "main", "index": 0 }]] },
-    "Fechar no Splitters (massiva_history)": { "main": [[{ "node": "Avaliar resultado", "type": "main", "index": 0 }]] },
+    "Encerrar no Splitters (massiva_history)": { "main": [[{ "node": "Avaliar resultado", "type": "main", "index": 0 }]] },
+    "Cancelar no Splitters (massiva_history)": { "main": [[{ "node": "Avaliar resultado", "type": "main", "index": 0 }]] },
     "Avaliar resultado": { "main": [[{ "node": "Resumo", "type": "main", "index": 0 }]] },
     "Resumo": { "main": [[{ "node": "Notificar?", "type": "main", "index": 0 }]] },
     "Notificar?": {
