@@ -1,0 +1,360 @@
+{
+  "name": "Reconciliação Massivas (Splitters x Voalle/Elleven)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "c431588e-0203-4146-8f74-4828626de33e",
+      "name": "Erro de execução",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [-1792, 1296]
+    },
+    {
+      "parameters": {
+        "sendTo": "israel.barcelos@sebratel.com.br",
+        "subject": "=[Reconciliação Massivas] FALHA na execução do workflow \"{{ $json.workflow.name }}\"",
+        "message": "=<p>A execução do workflow de reconciliação de massivas <b>falhou</b>.</p><p><b>Workflow:</b> {{ $json.workflow.name }}<br><b>Último node:</b> {{ $json.execution.lastNodeExecuted }}<br><b>Erro:</b> {{ $json.execution.error.message }}</p><p><a href=\"{{ $json.execution.url }}\">Abrir execução no n8n</a></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [-1568, 1296],
+      "id": "a590b487-2e8a-4fef-869d-2638af2039dc",
+      "name": "Send a message1",
+      "webhookId": "38dbe6d5-93f7-45fa-a38d-75b3452f039a",
+      "credentials": {
+        "gmailOAuth2": { "id": "scm9ZfTVVsqU2nR9", "name": "gmail israel" }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "baseUrl", "value": "http://api-gateway-bff-staging.sebratel.net.br", "type": "string" },
+            { "id": "a2", "name": "dryRun", "value": false, "type": "boolean" },
+            { "id": "a3", "name": "limit", "value": 0, "type": "number" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d43912ff-13de-4aec-94a2-6b936966e686",
+      "name": "Config2",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1984, 880]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Config2').item.json.baseUrl }}/api/v1/massivas/recuperar-pelo-banco",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "id": "4b2f53d9-6523-487f-aba8-b3934aafe7cf",
+      "name": "GET Elleven2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-1664, 880],
+      "credentials": {
+        "httpBasicAuth": { "id": "vnYygxOO4vspaTby", "name": "Gateway default basic password" }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Config2').item.json.baseUrl }}/api/v1/massivas-history/recuperar-pelo-banco",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "id": "6755bd74-a8da-4504-a72c-4175ec4d2680",
+      "name": "GET History (Splitters)2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-1440, 880],
+      "credentials": {
+        "httpBasicAuth": { "id": "vnYygxOO4vspaTby", "name": "Gateway default basic password" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n 2.x: Code node isolado (task runner) - JS puro, sem env vars nem require.\n// Reconciliacao BIDIRECIONAL por protocolo entre Splitters (massiva_history) e Voalle (Elleven).\n// So propagamos FECHAMENTO/CANCELAMENTO; nunca reabrimos.\n//\n// Direcao 1 (Splitters -> Voalle): Splitters ja encerrou (status='encerrada') e Voalle ainda aberto\n//   -> fecha o chamado no Voalle (Elleven). Se o Voalle teve acao MAIS RECENTE que o fechamento no\n//   Splitters, marcamos 'revisar_manual' em vez de fechar (nao reabrimos, mas tambem nao fechamos\n//   as cegas por cima de uma acao recente do lado aberto).\n//\n// Direcao 2 (Voalle -> Splitters, NOVO): Splitters ainda esta 'aberta' mas o Elleven ja mostra\n//   'Encerrado' ou 'Cancelado' para o mesmo protocolo -> espelha esse status no Splitters\n//   (massiva_history), chamando /encerrar ou /cancelar conforme o status real do Elleven.\n\nfunction unwrap(resp) {\n  if (Array.isArray(resp)) return resp;\n  if (resp && Array.isArray(resp.data)) return resp.data;\n  return [];\n}\nfunction ts(v) {\n  if (!v) return null;\n  const d = new Date(v);\n  return isNaN(d.getTime()) ? null : d.getTime();\n}\n\nconst elleven = unwrap($('GET Elleven2').first().json);\nconst hist = unwrap($('GET History (Splitters)2').first().json);\nconst limit = Number($('Config2').item.json.limit) || 0;\n\nconst ellevenByProto = new Map();\nfor (const e of elleven) {\n  if (e && e.protocolo != null) ellevenByProto.set(String(e.protocolo), e);\n}\n\nconst itens = [];\nfor (const h of hist) {\n  if (!h || h.protocolo == null) continue;\n  const proto = String(h.protocolo);\n  const e = ellevenByProto.get(proto);\n  if (!e) continue; // so reconcilia o que existe nos dois lados\n\n  const splittersAberta = h.status === 'aberta';\n  const splittersEncerrada = h.status === 'encerrada';\n  // status string do Elleven (t2.title no gateway): 'Encerrado' | 'Cancelado' | outros (aberto/em andamento)\n  const ellevenEncerrado = e.status === 'Encerrado';\n  const ellevenCancelado = e.status === 'Cancelado';\n  const voalleClosed = !!e.finalizado;\n\n  const assignmentId = h.assignmentId != null ? String(h.assignmentId) : '';\n  let acao = null;\n  let motivoRevisao = null;\n\n  if (splittersEncerrada && !voalleClosed) {\n    // Direcao 1: Splitters fechou; Voalle aberto.\n    if (!h.assignmentId) continue;\n    const tSplitters = ts(h.ultimaAcaoEm);\n    const tVoalle = ts(e.criacao);\n    if (tSplitters != null && tVoalle != null && tVoalle > tSplitters) {\n      acao = 'revisar_manual';\n      motivoRevisao = 'Voalle (aberto) teve acao mais recente (' + e.criacao + ') que o fechamento no Splitters (' + h.ultimaAcaoEm + ').';\n    } else {\n      acao = 'fechar_voalle';\n    }\n  } else if (splittersAberta && (ellevenEncerrado || ellevenCancelado)) {\n    // Direcao 2 (nova): Splitters ainda aberta; Elleven ja encerrado/cancelado.\n    // So estamos espelhando o status final do Elleven (fonte da verdade); nunca reabrimos.\n    acao = ellevenEncerrado ? 'encerrar_splitters' : 'cancelar_splitters';\n  } else {\n    continue; // em sincronia ou nenhuma das duas direcoes se aplica\n  }\n\n  itens.push({\n    json: {\n      protocolo: proto,\n      assignmentId: assignmentId,\n      acao: acao,\n      motivoRevisao: motivoRevisao,\n      statusSplitters: h.status,\n      statusElleven: e.status,\n      ultimaAcaoSplitters: h.ultimaAcaoEm,\n      finalizadoVoalle: e.finalizado || null,\n      body: {\n        assignmentId: assignmentId,\n        incidentStatusId: '4',\n        description: 'Encerramento automatico via reconciliacao n8n (Splitters x Voalle). Protocolo ' + proto + ' encerrado no Splitters em ' + (h.ultimaAcaoEm || 'N/D') + ' e ainda aberto no Voalle. Fonte da verdade: ultima acao = Splitters.',\n        progress: '0',\n        priority: '35',\n        notificationTarget: '0',\n        privateReport: 'true'\n      },\n      bodySplittersEncerrar: {\n        closedBy: 'reconciliacao-n8n',\n        closeDescription: 'Encerrado via reconciliacao automatica. Elleven ja estava com status \\'Encerrado\\' para o protocolo ' + proto + '.'\n      },\n      bodySplittersCancelar: {\n        cancelledBy: 'reconciliacao-n8n',\n        cancelDescription: 'Cancelado via reconciliacao automatica. Elleven ja estava com status \\'Cancelado\\' para o protocolo ' + proto + '.'\n      }\n    }\n  });\n}\n\nreturn limit > 0 ? itens.slice(0, limit) : itens;"
+      },
+      "id": "8c4af0cc-7bf4-4f03-aedc-613d3d3ea477",
+      "name": "Reconciliar (diff)2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1152, 880]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            { "id": "c1", "leftValue": "={{ $('Config2').item.json.dryRun }}", "rightValue": "", "operator": { "type": "boolean", "operation": "true", "singleValue": true } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f55411b9-2cef-46df-a308-9bd8d700effc",
+      "name": "É dry-run?2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-832, 880]
+    },
+    {
+      "parameters": {},
+      "id": "911c854a-845c-498c-941f-f10e0d4c7bd7",
+      "name": "Somente inspecionar (dry-run)2",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [-624, 688]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+                "conditions": [ { "leftValue": "={{ $json.acao }}", "rightValue": "fechar_voalle", "operator": { "type": "string", "operation": "equals" } } ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "fechar_voalle"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+                "conditions": [ { "leftValue": "={{ $json.acao }}", "rightValue": "encerrar_splitters", "operator": { "type": "string", "operation": "equals" } } ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "encerrar_splitters"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+                "conditions": [ { "leftValue": "={{ $json.acao }}", "rightValue": "cancelar_splitters", "operator": { "type": "string", "operation": "equals" } } ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cancelar_splitters"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+                "conditions": [ { "leftValue": "={{ $json.acao }}", "rightValue": "revisar_manual", "operator": { "type": "string", "operation": "equals" } } ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "revisar_manual"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-4e5f-9a6b-123456789abc",
+      "name": "Rotear ação2",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [-624, 896]
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "={{ $('Config2').item.json.baseUrl }}/api/v1/massivas/finalizar-chamado-via-api",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": { "response": { "response": { "fullResponse": true, "neverError": true } } }
+      },
+      "id": "f7615a91-2f26-462a-a9c5-4e4b6f4f3d84",
+      "name": "Fechar no Elleven (Voalle)2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-432, 760],
+      "credentials": {
+        "httpBasicAuth": { "id": "vnYygxOO4vspaTby", "name": "Gateway default basic password" }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Config2').item.json.baseUrl }}/api/v1/massivas-history/{{ $json.protocolo }}/encerrar",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.bodySplittersEncerrar) }}",
+        "options": { "response": { "response": { "fullResponse": true, "neverError": true } } }
+      },
+      "id": "b2c3d4e5-0002-4f6a-8b7c-23456789abcd",
+      "name": "Encerrar no Splitters2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-432, 896],
+      "credentials": {
+        "httpBasicAuth": { "id": "vnYygxOO4vspaTby", "name": "Gateway default basic password" }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Config2').item.json.baseUrl }}/api/v1/massivas-history/{{ $json.protocolo }}/cancelar",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.bodySplittersCancelar) }}",
+        "options": { "response": { "response": { "fullResponse": true, "neverError": true } } }
+      },
+      "id": "c3d4e5f6-0003-4a7b-9c8d-3456789abcde",
+      "name": "Cancelar no Splitters2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-432, 1032],
+      "credentials": {
+        "httpBasicAuth": { "id": "vnYygxOO4vspaTby", "name": "Gateway default basic password" }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Roda 1x por item. Usa pairedItem (via $('Reconciliar (diff)2')) para recuperar o item de origem,\n// independentemente do caminho (DELETE/PATCH ou revisar_manual direto).\nconst src = $('Reconciliar (diff)2').item.json;\nconst proto = src.protocolo;\nconst assignmentId = src.assignmentId;\nconst acao = src.acao;\n\nlet categoria;\nlet motivo = '';\n\nif (acao === 'revisar_manual') {\n  categoria = 'revisar';\n  motivo = src.motivoRevisao || 'Divergencia que requer revisao manual (nunca reabrir automaticamente).';\n} else {\n  const j = $json;\n  if (j && j.error) {\n    categoria = 'falha';\n    const msg = typeof j.error === 'string' ? j.error : (j.error.message || JSON.stringify(j.error));\n    motivo = 'Erro de transporte: ' + msg;\n  } else {\n    const status = j ? j.statusCode : undefined;\n    const body = (j && j.body !== undefined) ? j.body : j;\n    const httpOk = (status === undefined) || (status >= 200 && status < 300);\n    const logicOk = body && body.success === true;\n    if (httpOk && logicOk) {\n      categoria = 'ok';\n      motivo = acao === 'fechar_voalle'\n        ? 'Fechado na Voalle (Elleven)'\n        : (acao === 'encerrar_splitters' ? 'Encerrado no Splitters (massiva_history)' : 'Cancelado no Splitters (massiva_history)');\n    } else {\n      categoria = 'falha';\n      motivo = 'HTTP ' + (status !== undefined ? status : '?');\n      if (body && Array.isArray(body.messages) && body.messages.length) motivo += ' - ' + body.messages.map(m => m.message).join('; ');\n      else if (body && body.message) motivo += ' - ' + body.message;\n    }\n  }\n}\n\nreturn { json: { protocolo: proto, assignmentId: assignmentId, acao: acao, categoria: categoria, motivo: motivo } };"
+      },
+      "id": "ec134bfc-cb45-4c9c-a073-7b0aabb14337",
+      "name": "Avaliar resultado1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-256, 896]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Agrega os resultados normalizados (1 por protocolo) e monta o e-mail.\nconst rows = $input.all().map(i => i.json);\nconst sucessos = rows.filter(r => r.categoria === 'ok');\nconst falhas = rows.filter(r => r.categoria === 'falha');\nconst revisar = rows.filter(r => r.categoria === 'revisar');\nconst temFalhas = falhas.length > 0 || revisar.length > 0;\n\nfunction li(r) { return '<li>Protocolo <b>' + r.protocolo + '</b> [' + r.acao + ']: ' + r.motivo + '</li>'; }\n\nconst assunto = '[Reconciliacao Massivas] ' + sucessos.length + ' ok, ' + falhas.length + ' falha(s), ' + revisar.length + ' p/ revisao';\nlet corpoHtml = '<p>Reconciliacao bidirecional Splitters x Voalle (Elleven) concluida.</p>'\n  + '<p><b>Sucessos:</b> ' + sucessos.length + ' &nbsp; <b>Falhas:</b> ' + falhas.length + ' &nbsp; <b>Revisao manual:</b> ' + revisar.length + '</p>';\nif (falhas.length) corpoHtml += '<p><b>Falhas ao propagar fechamento/cancelamento:</b></p><ul>' + falhas.map(li).join('') + '</ul>';\nif (revisar.length) corpoHtml += '<p><b>Requerem revisao manual (lado aberto com acao mais recente - nao reaberto automaticamente):</b></p><ul>' + revisar.map(li).join('') + '</ul>';\nif (sucessos.length) corpoHtml += '<p>Sucessos: ' + sucessos.map(r => r.protocolo + ' (' + r.acao + ')').join(', ') + '</p>';\n\nreturn [{ json: { temFalhas, total: rows.length, okCount: sucessos.length, falhaCount: falhas.length, revisarCount: revisar.length, sucessos, falhas, revisar, assunto, corpoHtml } }];"
+      },
+      "id": "d4e5f6a7-0004-4b8c-ad9e-456789abcdef",
+      "name": "Resumo1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-64, 896]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "c2", "leftValue": "={{ $json.temFalhas }}", "rightValue": "", "operator": { "type": "boolean", "operation": "true", "singleValue": true } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "62fd8efc-d40b-453f-b8ee-d2e9246c22a2",
+      "name": "Notificar falhas?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [160, 896]
+    },
+    {
+      "parameters": {},
+      "id": "e1941923-e3e7-40c1-945c-43df58e35a7f",
+      "name": "Tudo reconciliado (sem falhas)1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [384, 760]
+    },
+    {
+      "parameters": {
+        "sendTo": "israel.barcelos@sebratel.com.br",
+        "subject": "={{ $json.assunto }}",
+        "message": "={{ $json.corpoHtml }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [384, 1032],
+      "id": "29637881-e5e0-417d-99ae-54dff5a960d6",
+      "name": "Send a message2",
+      "webhookId": "84f51986-ff25-43b2-89e2-fb35b5ee397b",
+      "credentials": {
+        "gmailOAuth2": { "id": "scm9ZfTVVsqU2nR9", "name": "gmail israel" }
+      }
+    },
+    {
+      "parameters": { "rule": { "interval": [ { "field": "hours" } ] } },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [-2432, 880],
+      "id": "a285df25-4438-4698-90f9-6a1788a3c846",
+      "name": "Schedule Trigger1"
+    },
+    { "parameters": { "content": "Chamadas no gateway para agregar dados", "height": 400, "width": 384, "color": 4 }, "type": "n8n-nodes-base.stickyNote", "position": [-1696, 640], "typeVersion": 1, "id": "3b6f106d-c28a-492a-b349-27a7ebbff2c2", "name": "Sticky Note1" },
+    { "parameters": { "content": "Configurações", "height": 400, "width": 384, "color": 3 }, "type": "n8n-nodes-base.stickyNote", "position": [-2112, 640], "typeVersion": 1, "id": "f9d1ea20-ed51-439d-a8ea-1b609e5f6cb7", "name": "Sticky Note" },
+    { "parameters": { "content": "verifica diferenças e atua no lado desatualizado (bidirecional)", "height": 400, "width": 384 }, "type": "n8n-nodes-base.stickyNote", "position": [-1280, 640], "typeVersion": 1, "id": "2d671cf0-019b-48ee-a8ea-3886d1f2e4a2", "name": "Sticky Note2" },
+    { "parameters": { "content": "entrar em modo teste?", "height": 400, "width": 384, "color": 5 }, "type": "n8n-nodes-base.stickyNote", "position": [-864, 640], "typeVersion": 1, "id": "b1255f3e-769c-4d14-8040-45a21f23ca35", "name": "Sticky Note3" },
+    { "parameters": { "content": "Roteia por ação: fecha no Voalle (Splitters já encerrou), encerra/cancela no Splitters (Voalle já encerrou/cancelou), ou envia pra revisão manual", "height": 400, "width": 400 }, "type": "n8n-nodes-base.stickyNote", "position": [-448, 640], "typeVersion": 1, "id": "7b085cb2-d31a-4923-8cb2-60adca300e17", "name": "Sticky Note4" },
+    { "parameters": { "content": "Finalização", "height": 400, "width": 384, "color": 3 }, "type": "n8n-nodes-base.stickyNote", "position": [0, 640], "typeVersion": 1, "id": "3fbea567-c6a9-4600-b064-d50c4e1c5183", "name": "Sticky Note5" },
+    {
+      "parameters": {
+        "content": "Este fluxo do n8n executa a reconciliação automática BIDIRECIONAL de chamados massivos entre o Splitters e o Voalle (Elleven), garantindo a sincronização de status entre os sistemas.\n\nGatilho: Executado automaticamente a cada hora por um agendamento (Schedule Trigger).\n\nColeta de Dados: Consulta endpoints HTTP para obter os registros do Elleven e o histórico do Splitters.\n\nIdentificação de Divergências:\n- Splitters encerrou, Voalle ainda aberto -> fecha no Voalle.\n- Splitters ainda aberta, Voalle já Encerrado/Cancelado -> encerra/cancela no Splitters (nunca reabre).\n- Se o lado aberto teve ação mais recente que o fechamento do outro -> revisão manual.\n\nNotificação e Alertas: Avalia as respostas da API e envia um e-mail via Gmail com o relatório final (sucessos/falhas/revisões) ou alertas de erro geral da execução.",
+        "height": 672,
+        "width": 432
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-2576, 368],
+      "typeVersion": 1,
+      "id": "5c0b4569-038e-481e-be1c-90759202f13e",
+      "name": "Sticky Note6"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Erro de execução": { "main": [[{ "node": "Send a message1", "type": "main", "index": 0 }]] },
+    "Config2": { "main": [[{ "node": "GET Elleven2", "type": "main", "index": 0 }]] },
+    "GET Elleven2": { "main": [[{ "node": "GET History (Splitters)2", "type": "main", "index": 0 }]] },
+    "GET History (Splitters)2": { "main": [[{ "node": "Reconciliar (diff)2", "type": "main", "index": 0 }]] },
+    "Reconciliar (diff)2": { "main": [[{ "node": "É dry-run?2", "type": "main", "index": 0 }]] },
+    "É dry-run?2": {
+      "main": [
+        [{ "node": "Somente inspecionar (dry-run)2", "type": "main", "index": 0 }],
+        [{ "node": "Rotear ação2", "type": "main", "index": 0 }]
+      ]
+    },
+    "Rotear ação2": {
+      "main": [
+        [{ "node": "Fechar no Elleven (Voalle)2", "type": "main", "index": 0 }],
+        [{ "node": "Encerrar no Splitters2", "type": "main", "index": 0 }],
+        [{ "node": "Cancelar no Splitters2", "type": "main", "index": 0 }],
+        [{ "node": "Avaliar resultado1", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fechar no Elleven (Voalle)2": { "main": [[{ "node": "Avaliar resultado1", "type": "main", "index": 0 }]] },
+    "Encerrar no Splitters2": { "main": [[{ "node": "Avaliar resultado1", "type": "main", "index": 0 }]] },
+    "Cancelar no Splitters2": { "main": [[{ "node": "Avaliar resultado1", "type": "main", "index": 0 }]] },
+    "Avaliar resultado1": { "main": [[{ "node": "Resumo1", "type": "main", "index": 0 }]] },
+    "Resumo1": { "main": [[{ "node": "Notificar falhas?1", "type": "main", "index": 0 }]] },
+    "Notificar falhas?1": {
+      "main": [
+        [{ "node": "Send a message2", "type": "main", "index": 0 }],
+        [{ "node": "Tudo reconciliado (sem falhas)1", "type": "main", "index": 0 }]
+      ]
+    },
+    "Schedule Trigger1": { "main": [[{ "node": "Config2", "type": "main", "index": 0 }]] },
+    "Send a message2": { "main": [[]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "binaryMode": "separate" },
+  "meta": { "templateCredsSetupCompleted": true, "instanceId": "c7bbbd1b1112e1079a14da35ad77c2adf71cf1fc4ee45768f33f3c7d2e5a8ffb" },
+  "id": "7mHxepi7ze7I52ol",
+  "tags": [
+    { "updatedAt": "2026-03-03T18:26:44.786Z", "createdAt": "2026-03-03T18:26:44.786Z", "id": "LF3yQr8u67IpSyE3", "name": "Israel Barcelos" },
+    { "updatedAt": "2026-07-22T14:28:32.797Z", "createdAt": "2026-07-22T14:28:32.797Z", "id": "fy07J8n5RmuizjKN", "name": "Desenvolvimento" },
+    { "updatedAt": "2026-07-22T14:28:44.193Z", "createdAt": "2026-07-22T14:28:44.193Z", "id": "j1QU7cS30hrpEICg", "name": "Massivas" }
+  ]
+}

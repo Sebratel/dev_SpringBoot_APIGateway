@@ -2,7 +2,7 @@
 -- pela aplicação de Splitters (source = 'nexaview-local'). O APIGateway apenas LÊ delas.
 -- Este arquivo é apenas REFERÊNCIA do schema real (não executar para (re)criar).
 
--- massiva_history: 1 linha por protocolo/massiva. status: 'aberta' | 'encerrada'.
+-- massiva_history: 1 linha por protocolo/massiva. status: 'aberta' | 'encerrada' | 'cancelada'.
 -- Reconciliação: `protocol`/`assignment_id` fazem o join com o lado Elleven;
 -- `updated_at` (ON UPDATE CURRENT_TIMESTAMP) é o timestamp da última ação no lado Splitters.
 CREATE TABLE massiva_history (
