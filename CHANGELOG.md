@@ -41,6 +41,15 @@ formato dos seus payloads de requisição e resposta. Portanto:
   **MAJOR** pelo contrato acima. A chave privada continua no histórico do Git (finding F-01): rotacionar.
 
 ### Adicionado
+- `POST /api/v1/matrix/telefone` (corpo `{"telefone": "..."}`): a partir do telefone de quem ligou, localiza o cliente
+  e os contratos no ERP (`erp.people`, normalizando +55, máscara e nono dígito) e consulta a massiva de cada contrato
+  pelo mesmo `AffectedUserService` de `/api/v1/afetados/contract/{id}`. Responde `em_massiva`, `sem_massiva` ou
+  `cliente_nao_encontrado`, com motivo, previsão e os contratos em massiva. Exige autenticação (diferente de
+  `GET /api/v1/matrix`), não devolve nome nem endereço, mascara o telefone no log e na resposta, e recebe o telefone
+  no corpo para não cair no log de acesso. As colunas de telefone são `matrix.telefone.colunas`
+  (padrão `phone,cell_phone_1,cell_phone_2,whatsapp_phone`, as quatro colunas de `erp.people`). Telefone em mais de
+  `matrix.telefone.max-clientes` (padrão 5) clientes responde `telefone_compartilhado` sem consultar massiva: o da
+  própria empresa está em milhares de CPFs. Mudança **MINOR**; manifesto agora com **155 rotas**.
 - Especificação da transformação do BFF em API Gateway: `specs/API_GATEWAY.md`
   (arquitetura, decisões, estrutura de pastas, riscos), `specs/API_GATEWAY_PASSOS.md`
   (fases, ordem de extração, checklist) e `specs/API_GATEWAY_ENDPOINTS.md` (inventário

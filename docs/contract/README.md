@@ -1,6 +1,6 @@
 # Contrato HTTP do BFF
 
-`manifest.json` lista as **154 rotas** que o BFF expõe (método, path com todos os aliases, serviço de destino na migração,
+`manifest.json` lista as **155 rotas** que o BFF expõe (método, path com todos os aliases, serviço de destino na migração,
 autenticação, parâmetros e corpo). É o contrato que o gateway precisa preservar (`specs/API_GATEWAY.md`).
 
 - **Gerado do código**, por reflexão nos controllers, por `RouteManifestTest` (sem banco, sem subir o Spring).

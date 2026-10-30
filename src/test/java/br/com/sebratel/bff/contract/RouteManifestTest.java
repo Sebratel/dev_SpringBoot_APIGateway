@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RouteManifestTest {
 
     private static final Path MANIFEST = Path.of("docs", "contract", "manifest.json");
-    private static final int EXPECTED_ROUTES = 154;
+    private static final int EXPECTED_ROUTES = 155;
 
     /** Rotas liberadas em SecurityConfig (permitAll), todas GET. */
     private static final List<String> PUBLIC_GET_PATTERNS = List.of("/api/v1/afetados/contract/**", "/api/v1/matrix");

@@ -6,6 +6,7 @@ import br.com.sebratel.bff.controller.MatrixController;
 import br.com.sebratel.bff.dto.MatrixMassiveOutputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
 import br.com.sebratel.bff.service.AffectedUserService;
+import br.com.sebratel.bff.service.ClienteMassivaPorTelefoneService;
 import br.com.sebratel.bff.service.MatrixService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -72,6 +73,9 @@ class SecurityIntegrationTest {
     @MockitoBean
     private AffectedUserService affectedUserService;
 
+    @MockitoBean
+    private ClienteMassivaPorTelefoneService clienteMassivaPorTelefoneService;
+
     private static ImpactedUsersOutputDTO vazio() {
         return ImpactedUsersOutputDTO.builder().impactedUsers(List.of()).build();
     }
@@ -100,6 +104,15 @@ class SecurityIntegrationTest {
         mockMvc.perform(post("/api/v1/afetados")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Consulta por telefone (dado de cliente) exige credencial, ao contrario do GET /matrix por CPF")
+    void consultaPorTelefoneSemCredencialDeveRetornar401() throws Exception {
+        mockMvc.perform(post("/api/v1/matrix/telefone")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"telefone\":\"51995664811\"}"))
                 .andExpect(status().isUnauthorized());
     }
 
