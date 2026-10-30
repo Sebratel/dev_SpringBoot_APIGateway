@@ -16,9 +16,8 @@ services:
       - bff-logs:/logs
 
   gateway-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/sebratel/bff:staging
+    pull_policy: always
     container_name: bff-java-service-stage
     restart: unless-stopped
     depends_on:
