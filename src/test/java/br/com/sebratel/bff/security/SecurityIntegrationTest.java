@@ -6,6 +6,7 @@ import br.com.sebratel.bff.controller.MatrixController;
 import br.com.sebratel.bff.dto.MatrixMassiveOutputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
 import br.com.sebratel.bff.service.AffectedUserService;
+import br.com.sebratel.bff.service.ClienteMassivaPorTelefoneService;
 import br.com.sebratel.bff.service.MatrixService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -72,6 +73,9 @@ class SecurityIntegrationTest {
     @MockitoBean
     private AffectedUserService affectedUserService;
 
+    @MockitoBean
+    private ClienteMassivaPorTelefoneService clienteMassivaPorTelefoneService;
+
     private static ImpactedUsersOutputDTO vazio() {
         return ImpactedUsersOutputDTO.builder().impactedUsers(List.of()).build();
     }
@@ -101,6 +105,29 @@ class SecurityIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Consulta por telefone (dado de cliente) exige credencial, ao contrario do GET /matrix por CPF")
+    void consultaPorTelefoneSemCredencialDeveRetornar401() throws Exception {
+        mockMvc.perform(post("/api/v1/matrix/telefone")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"telefone\":\"51995664811\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Consulta por telefone aceita o mesmo Basic usado pelas URAs da Native nos demais endpoints")
+    void consultaPorTelefoneAceitaBasicDoBff() throws Exception {
+        when(clienteMassivaPorTelefoneService.consultar("51995664811")).thenReturn(
+                br.com.sebratel.bff.dto.ClienteMassivaPorTelefoneOutputDTO.builder()
+                        .status(br.com.sebratel.bff.dto.ClienteMassivaPorTelefoneOutputDTO.SEM_MASSIVA).build());
+
+        mockMvc.perform(post("/api/v1/matrix/telefone")
+                        .with(httpBasic(BASIC_USER, BASIC_PASS))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"telefone\":\"51995664811\"}"))
+                .andExpect(status().isOk());
     }
 
     @Test
