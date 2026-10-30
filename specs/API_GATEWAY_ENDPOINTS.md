@@ -6,7 +6,7 @@ mesmo método, mesmo path, mesmos parâmetros, mesmo status e mesmo formato de c
 
 Como o Spring combina o `@RequestMapping` da classe com o do método, cada linha com várias
 bases e vários sufixos gera o **produto cartesiano** (ex.: 3 bases × 2 sufixos = 6 rotas).
-Total: **154 rotas HTTP**, em 23 controllers e 6 serviços de destino.
+Total: **155 rotas HTTP**, em 23 controllers e 6 serviços de destino.
 
 Legenda de autenticação: 🔒 JWT Google (`@sebratel.com.br`) ou Basic · 🌐 `permitAll`.
 Legenda de destino: `MAS` massivas-service (74) · `SPL` splitters-service (8) · `COM` comercial-service (45) ·
@@ -60,6 +60,7 @@ Bases (2): `/api/v1/massivas-history`, `/api/v1/massivas-splitters`
 | Método | Path | Entrada | Auth |
 |---|---|---|---|
 | GET | `/api/v1/matrix` | **body** `MatrixMassiveInputDTO` (GET com corpo) | 🌐 |
+| POST | `/api/v1/matrix/telefone` | body `MatrixTelefoneInputDTO` (`telefone`) | 🔒 |
 
 ## 5. Splitters / OLTs (Elleven) — destino `SPL`
 Base: `/api/v1/splitters`
