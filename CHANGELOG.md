@@ -47,7 +47,7 @@ formato dos seus payloads de requisição e resposta. Portanto:
   `cliente_nao_encontrado`, com motivo, previsão e os contratos em massiva. Exige autenticação (diferente de
   `GET /api/v1/matrix`), não devolve nome nem endereço, mascara o telefone no log e na resposta, e recebe o telefone
   no corpo para não cair no log de acesso. As colunas de telefone são `matrix.telefone.colunas`
-  (padrão `phone,cell_phone_1,cell_phone_2,whatsapp_phone`, as quatro colunas de `erp.people`). Telefone em mais de
+  (padrão `phone,cell_phone_1,cell_phone_2`, colunas de `erp.people` com dados; `whatsapp_phone` está vazia no ERP). Telefone em mais de
   `matrix.telefone.max-clientes` (padrão 5) clientes responde `telefone_compartilhado` sem consultar massiva: o da
   própria empresa está em milhares de CPFs. Mudança **MINOR**; manifesto agora com **155 rotas**.
 - Especificação da transformação do BFF em API Gateway: `specs/API_GATEWAY.md`

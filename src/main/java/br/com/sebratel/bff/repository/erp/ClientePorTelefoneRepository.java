@@ -28,7 +28,7 @@ public class ClientePorTelefoneRepository {
     private final List<String> colunas;
 
     public ClientePorTelefoneRepository(
-            @Value("${matrix.telefone.colunas:phone,cell_phone_1,cell_phone_2,whatsapp_phone}") List<String> colunas) {
+            @Value("${matrix.telefone.colunas:phone,cell_phone_1,cell_phone_2}") List<String> colunas) {
         List<String> validas = colunas.stream().map(String::trim).filter(c -> !c.isEmpty()).toList();
         if (validas.isEmpty()) {
             throw new IllegalStateException("matrix.telefone.colunas nao pode ser vazio");

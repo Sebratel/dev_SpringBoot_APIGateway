@@ -117,6 +117,20 @@ class SecurityIntegrationTest {
     }
 
     @Test
+    @DisplayName("Consulta por telefone aceita o mesmo Basic usado pelas URAs da Native nos demais endpoints")
+    void consultaPorTelefoneAceitaBasicDoBff() throws Exception {
+        when(clienteMassivaPorTelefoneService.consultar("51995664811")).thenReturn(
+                br.com.sebratel.bff.dto.ClienteMassivaPorTelefoneOutputDTO.builder()
+                        .status(br.com.sebratel.bff.dto.ClienteMassivaPorTelefoneOutputDTO.SEM_MASSIVA).build());
+
+        mockMvc.perform(post("/api/v1/matrix/telefone")
+                        .with(httpBasic(BASIC_USER, BASIC_PASS))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"telefone\":\"51995664811\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @DisplayName("Basic com senha errada deve retornar 401")
     void basicComSenhaErradaDeveRetornar401() throws Exception {
         mockMvc.perform(get("/api/v1/afetados").with(httpBasic(BASIC_USER, "senha-errada")))
