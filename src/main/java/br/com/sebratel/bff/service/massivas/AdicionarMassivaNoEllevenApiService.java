@@ -11,14 +11,19 @@ import br.com.sebratel.bff.utils.JwtInformation;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -35,11 +40,27 @@ public class AdicionarMassivaNoEllevenApiService {
     private final WebClient webClient;
     private final EmployeeService employeeService;
 
+    /** URL pública da plataforma Splitters (mesma usada pelo navegador) — ex.: https://splitters-monitoring-staging.sebratel.net.br */
+    private final String splittersBffUrl;
+    /** Segredo compartilhado com MASSIVA_GATEWAY_INTERNAL_SECRET no backend da plataforma. */
+    private final String splittersBffInternalSecret;
+    /** Cliente dedicado (bean `internalWebClient`): sem os headers "fingerprint de browser" do `webClient` (esse é só para o Elleven). */
+    private final WebClient internalWebClient;
+
     @Autowired
-    public AdicionarMassivaNoEllevenApiService(RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService, WebClient webClient, EmployeeService employeeService) {
+    public AdicionarMassivaNoEllevenApiService(
+            RecuperarTokenDoUsuarioIntegradorEllevenService recuperarTokenDoUsuarioIntegradorEllevenService,
+            WebClient webClient,
+            EmployeeService employeeService,
+            @Qualifier("internalWebClient") WebClient internalWebClient,
+            @Value("${splitters.bff.url:}") String splittersBffUrl,
+            @Value("${splitters.bff.internal-secret:}") String splittersBffInternalSecret) {
         this.recuperarTokenDoUsuarioIntegradorEllevenService = recuperarTokenDoUsuarioIntegradorEllevenService;
         this.webClient = webClient;
         this.employeeService = employeeService;
+        this.internalWebClient = internalWebClient;
+        this.splittersBffUrl = splittersBffUrl;
+        this.splittersBffInternalSecret = splittersBffInternalSecret;
     }
 
     public AberturaRegistroMassivoOutputDTO executar(@Valid AberturaRegistroMassivoInputDTO input) {
@@ -91,6 +112,9 @@ public class AdicionarMassivaNoEllevenApiService {
             long duration = System.currentTimeMillis() - startTime;
 
             log.info("[MASSIVA] Sucesso! Registro criado no Elleven em {}ms. Resposta: {}", duration, response);
+
+            registrarHistoricoAntecipadoNaPlataforma(input, response, email);
+
             return response;
 
         } catch (WebClientResponseException.Unauthorized e) {
@@ -131,6 +155,66 @@ public class AdicionarMassivaNoEllevenApiService {
 
     private static boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    /**
+     * Grava o histórico local da plataforma Splitters assim que o Elleven confirma a abertura —
+     * ANTES de devolver a resposta ao navegador, independente do que aconteça com ele depois
+     * (aba fechada, timeout no caminho de volta). Best-effort e assíncrono (fire-and-forget,
+     * timeout curto): uma falha aqui NUNCA deve impedir a resposta normal ao operador, já que a
+     * própria plataforma tenta de novo (gravação antecipada + final) assim que o navegador recebe
+     * a resposta. Sempre "complete:false" — a gravação final do front completa a mesma linha
+     * (upsert por protocolo/assignmentId em registerOpenBatch).
+     */
+    private void registrarHistoricoAntecipadoNaPlataforma(
+            AberturaRegistroMassivoInputDTO input, AberturaRegistroMassivoOutputDTO response, String operatorEmail) {
+        if (isBlank(splittersBffUrl) || isBlank(splittersBffInternalSecret)) {
+            log.debug("[MASSIVA] Gravação antecipada na plataforma pulada: splitters.bff.url/internal-secret não configurados.");
+            return;
+        }
+        if (response == null || response.getResponse() == null) {
+            log.warn("[MASSIVA] Gravação antecipada na plataforma pulada: resposta do Elleven sem bloco 'response'.");
+            return;
+        }
+
+        Long protocol = response.getResponse().getProtocol();
+        Long assignmentId = response.getResponse().getAssignmentId();
+        if (protocol == null && assignmentId == null) {
+            log.warn("[MASSIVA] Gravação antecipada na plataforma pulada: resposta do Elleven sem protocol nem assignmentId.");
+            return;
+        }
+
+        // Map.of não aceita valor null (protocol/assignmentId podem vir null individualmente,
+        // só não os dois juntos — já checado acima) — por isso HashMap mutável aqui.
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("protocol", protocol);
+        result.put("assignmentId", assignmentId);
+        result.put("accessPointCode", input.getAuthenticationAccessPointCode() == null ? "" : input.getAuthenticationAccessPointCode());
+        result.put("title", input.getAssignment().getTitle() == null ? "" : input.getAssignment().getTitle());
+
+        Map<String, Object> body = Map.of(
+                "operatorEmail", operatorEmail == null ? "" : operatorEmail,
+                "title", input.getAssignment().getTitle() == null ? "" : input.getAssignment().getTitle(),
+                "results", List.of(result),
+                "complete", false
+        );
+
+        internalWebClient
+                .post()
+                .uri(splittersBffUrl + "/api/internal/massiva/history/open")
+                .header("x-internal-secret", splittersBffInternalSecret)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(body)
+                .retrieve()
+                .toBodilessEntity()
+                .timeout(Duration.ofSeconds(5))
+                .doOnSuccess(r -> log.info("[MASSIVA] Gravação antecipada na plataforma OK (protocol={}).", protocol))
+                .onErrorResume(error -> {
+                    log.warn("[MASSIVA] Falha na gravação antecipada na plataforma (protocol={}); a própria plataforma tenta de novo. Causa: {}",
+                            protocol, error.getMessage());
+                    return Mono.empty();
+                })
+                .subscribe();
     }
 
     /**

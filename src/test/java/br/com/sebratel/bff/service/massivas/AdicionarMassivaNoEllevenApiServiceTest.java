@@ -3,6 +3,7 @@ package br.com.sebratel.bff.service.massivas;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoAssignmentDTO;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoInputDTO;
 import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoOutputDTO;
+import br.com.sebratel.bff.dto.massivas.api.AberturaRegistroMassivoResponseDTO;
 import br.com.sebratel.bff.dto.splitters.RecuperarTokenEllevenOutputDTO;
 import br.com.sebratel.bff.exceptions.InvalidMassiveRequestException;
 import br.com.sebratel.bff.model.entity.AffectedUsersEntity;
@@ -14,7 +15,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -24,6 +24,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
@@ -48,9 +49,13 @@ class AdicionarMassivaNoEllevenApiServiceTest {
     private WebClient webClient;
 
     @Mock
+    private WebClient internalWebClient;
+
+    @Mock
     private EmployeeService employeeService;
 
-    @InjectMocks
+    // Construção manual (não @InjectMocks): com DOIS mocks de WebClient, a injeção por
+    // construtor do Mockito não tem como saber qual vai em qual parâmetro de forma confiável.
     private AdicionarMassivaNoEllevenApiService service;
 
     private SecurityContext securityContext;
@@ -59,6 +64,9 @@ class AdicionarMassivaNoEllevenApiServiceTest {
 
     @BeforeEach
     void setUp() {
+        service = new AdicionarMassivaNoEllevenApiService(
+                recuperarTokenService, webClient, employeeService, internalWebClient, null, null);
+
         securityContext = mock(SecurityContext.class);
         authentication = mock(Authentication.class);
         jwt = mock(Jwt.class);
@@ -433,6 +441,125 @@ class AdicionarMassivaNoEllevenApiServiceTest {
 
     private static List<AffectedUsersEntity> umAfetado() {
         return new ArrayList<>(List.of(new AffectedUsersEntity()));
+    }
+
+    private AberturaRegistroMassivoOutputDTO outputComProtocolo() {
+        AberturaRegistroMassivoResponseDTO responseBlock = new AberturaRegistroMassivoResponseDTO();
+        responseBlock.setProtocol(583210L);
+        responseBlock.setAssignmentId(440000L);
+        AberturaRegistroMassivoOutputDTO output = new AberturaRegistroMassivoOutputDTO();
+        output.setResponse(responseBlock);
+        return output;
+    }
+
+    private void mockElleven(AberturaRegistroMassivoOutputDTO output) {
+        WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+        WebClient.RequestBodySpec requestBodySpec = mock(WebClient.RequestBodySpec.class);
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+        when(webClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.header(eq(HttpHeaders.AUTHORIZATION), anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
+        when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(AberturaRegistroMassivoOutputDTO.class)).thenReturn(Mono.just(output));
+    }
+
+    @Test
+    void naoChamaGravacaoAntecipadaQuandoUrlOuSegredoNaoConfigurados() {
+        // splitters.bff.url / splitters.bff.internal-secret ficam null por padrão no @InjectMocks
+        // (não há @Mock de String para o Mockito injetar) — comportamento padrão "desligado".
+        AberturaRegistroMassivoInputDTO input = inputBase();
+        input.setAffectedUsers(umAfetado());
+        input.setAffectedUsersQuantity(1);
+        when(recuperarTokenService.executar()).thenReturn(new RecuperarTokenEllevenOutputDTO("fake-token", 3600, "Bearer", "all"));
+        when(employeeService.hasB2BinInput(any())).thenReturn(false);
+        mockElleven(outputComProtocolo());
+
+        service.executar(input);
+
+        verifyNoInteractions(internalWebClient);
+    }
+
+    @Test
+    void chamaGravacaoAntecipadaQuandoConfiguradoEComProtocolo() {
+        ReflectionTestUtils.setField(service, "splittersBffUrl", "http://splitters-bff-test");
+        ReflectionTestUtils.setField(service, "splittersBffInternalSecret", "segredo-teste");
+
+        AberturaRegistroMassivoInputDTO input = inputBase();
+        input.setAuthenticationAccessPointCode("AP-1");
+        input.setAffectedUsers(umAfetado());
+        input.setAffectedUsersQuantity(1);
+        when(recuperarTokenService.executar()).thenReturn(new RecuperarTokenEllevenOutputDTO("fake-token", 3600, "Bearer", "all"));
+        when(employeeService.hasB2BinInput(any())).thenReturn(false);
+        mockElleven(outputComProtocolo());
+
+        WebClient.RequestBodyUriSpec internalUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+        WebClient.RequestBodySpec internalBodySpec = mock(WebClient.RequestBodySpec.class);
+        WebClient.RequestHeadersSpec internalHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec internalResponseSpec = mock(WebClient.ResponseSpec.class);
+        when(internalWebClient.post()).thenReturn(internalUriSpec);
+        when(internalUriSpec.uri("http://splitters-bff-test/api/internal/massiva/history/open")).thenReturn(internalBodySpec);
+        when(internalBodySpec.header(eq("x-internal-secret"), eq("segredo-teste"))).thenReturn(internalBodySpec);
+        when(internalBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(internalBodySpec);
+        when(internalBodySpec.bodyValue(any())).thenReturn(internalHeadersSpec);
+        when(internalHeadersSpec.retrieve()).thenReturn(internalResponseSpec);
+        when(internalResponseSpec.toBodilessEntity()).thenReturn(Mono.empty());
+
+        service.executar(input);
+
+        verify(internalWebClient).post();
+        verify(internalUriSpec).uri("http://splitters-bff-test/api/internal/massiva/history/open");
+        verify(internalBodySpec).header("x-internal-secret", "segredo-teste");
+    }
+
+    @Test
+    void naoFalhaQuandoGravacaoAntecipadaDaErro() {
+        ReflectionTestUtils.setField(service, "splittersBffUrl", "http://splitters-bff-test");
+        ReflectionTestUtils.setField(service, "splittersBffInternalSecret", "segredo-teste");
+
+        AberturaRegistroMassivoInputDTO input = inputBase();
+        input.setAffectedUsers(umAfetado());
+        input.setAffectedUsersQuantity(1);
+        when(recuperarTokenService.executar()).thenReturn(new RecuperarTokenEllevenOutputDTO("fake-token", 3600, "Bearer", "all"));
+        when(employeeService.hasB2BinInput(any())).thenReturn(false);
+        AberturaRegistroMassivoOutputDTO output = outputComProtocolo();
+        mockElleven(output);
+
+        WebClient.RequestBodyUriSpec internalUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+        WebClient.RequestBodySpec internalBodySpec = mock(WebClient.RequestBodySpec.class);
+        WebClient.RequestHeadersSpec internalHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec internalResponseSpec = mock(WebClient.ResponseSpec.class);
+        when(internalWebClient.post()).thenReturn(internalUriSpec);
+        when(internalUriSpec.uri(anyString())).thenReturn(internalBodySpec);
+        when(internalBodySpec.header(anyString(), anyString())).thenReturn(internalBodySpec);
+        when(internalBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(internalBodySpec);
+        when(internalBodySpec.bodyValue(any())).thenReturn(internalHeadersSpec);
+        when(internalHeadersSpec.retrieve()).thenReturn(internalResponseSpec);
+        when(internalResponseSpec.toBodilessEntity()).thenReturn(Mono.error(new RuntimeException("BFF fora do ar")));
+
+        // Não deve lançar nem impedir o retorno normal da abertura — best-effort.
+        AberturaRegistroMassivoOutputDTO result = service.executar(input);
+
+        assertEquals(output, result);
+    }
+
+    @Test
+    void naoChamaGravacaoAntecipadaQuandoRespostaSemBlocoResponse() {
+        ReflectionTestUtils.setField(service, "splittersBffUrl", "http://splitters-bff-test");
+        ReflectionTestUtils.setField(service, "splittersBffInternalSecret", "segredo-teste");
+
+        AberturaRegistroMassivoInputDTO input = inputBase();
+        input.setAffectedUsers(umAfetado());
+        input.setAffectedUsersQuantity(1);
+        when(recuperarTokenService.executar()).thenReturn(new RecuperarTokenEllevenOutputDTO("fake-token", 3600, "Bearer", "all"));
+        when(employeeService.hasB2BinInput(any())).thenReturn(false);
+        mockElleven(new AberturaRegistroMassivoOutputDTO()); // sem setResponse(...)
+
+        service.executar(input);
+
+        verifyNoInteractions(internalWebClient);
     }
 
 }
