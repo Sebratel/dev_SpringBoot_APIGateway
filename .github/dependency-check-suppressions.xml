@@ -165,4 +165,45 @@
     </suppress>
     -->
 
+
+    <suppress>
+        <notes><![CDATA[
+          CVE:        CVE-2026-93879
+          Motivo:     nao explorevel neste projeto. A CVE (injecao de EL por parametro
+                      de mensagem {duplicates} sem escape, DoS) so ocorre no
+                      UniqueElementsValidator, a unica classe do hibernate-validator
+                      8.0.3.Final que referencia o parametro "duplicates" (conferido
+                      no jar). O projeto nao usa @UniqueElements (grep em src/ sem
+                      ocorrencias), entao esse caminho nunca e executado. Nao ha versao
+                      corrigida upstream (Red Hat Bugzilla 2540892 em NEW, "Fixed In
+                      Version" vazio), por isso nao da para corrigir subindo a versao.
+                      Reabrir se algum DTO passar a usar @UniqueElements, ou assim que
+                      sair uma versao corrigida (ai, subir o hibernate-validator e
+                      remover esta supressao).
+          Revisar em: 2026-12-17
+          Autor:      israel.barcelos (proposta do Claude Code no PR 92; confirmar na revisao)
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.hibernate\.validator/hibernate-validator@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-93879</vulnerabilityName>
+    </suppress>
+
+    <suppress>
+        <notes><![CDATA[
+          CVE:        CVE-2026-116803
+          Motivo:     nao explorevel neste projeto. A CVE afeta o DOMPurify anterior a
+                      3.4.17 e exige a opcao IN_PLACE com um hook que remove no pai ou
+                      irmao durante sanitize(). O DOMPurify chega embutido no
+                      swagger-ui (springdoc-openapi-starter-webmvc-ui:2.8.17 ->
+                      swagger-ui 5.32.2, DOMPurify 3.3.2) e o swagger-ui nao ativa
+                      IN_PLACE (o bundle so le a opcao, sem definir) nem registra esse
+                      hook. Alem disso /swagger-ui.html e /v3/api-docs exigem
+                      autenticacao (SecurityConfig). Nao ha correcao por atualizacao: o
+                      swagger-ui mais recente (5.34.0) embute DOMPurify 3.4.16, ainda
+                      anterior a 3.4.17. Conferido em 30/10/2026 no bundle publicado.
+          Revisar em: 2026-11-30 (ou assim que o swagger-ui embutir DOMPurify >= 3.4.17)
+          Autor:      israel.barcelos
+        ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-116803</vulnerabilityName>
+    </suppress>
 </suppressions>

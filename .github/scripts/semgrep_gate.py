@@ -26,19 +26,7 @@ from collections import Counter
 # REGRA: nenhuma entrada aqui sem finding rastreado, justificativa e data de
 # revisao. Isto nao e um mecanismo para silenciar achado inconveniente.
 # ---------------------------------------------------------------------------
-PASSIVOS_CONHECIDOS = [
-    {
-        "path": "src/main/resources/id_rsa_private.pem",
-        "finding": "F-01",
-        "motivo": (
-            "Chave privada RSA versionada. Corrigir exige rotacao do par de "
-            "chaves e definicao de janela de transicao para os QR Codes ja "
-            "emitidos -- decisao de negocio, nao de codigo. Ate la o achado e "
-            "reportado a cada execucao."
-        ),
-        "revisar_em": "2026-09-30",
-    },
-]
+PASSIVOS_CONHECIDOS = []
 
 
 def eh_passivo_conhecido(caminho: str):

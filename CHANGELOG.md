@@ -18,6 +18,61 @@ formato dos seus payloads de requisição e resposta. Portanto:
 
 ## [Não lançado]
 
+### Obsoleto
+- **134 das 154 rotas** passam a responder com o header `Deprecation: true` (RFC 9745), mais
+  `Link: <rota-sucessora>; rel="successor-version"` quando o mesmo handler tem um alias em uso (36
+  rotas), e aparecem como `deprecated` no Swagger/OpenAPI. São as rotas **sem nenhuma requisição** em
+  staging no Kibana (2026-08-19 a 2026-10-17: os logs do BFF só existem desde 19/08, cerca de 2 meses, e
+  não 3). Nenhuma rota foi removida e nenhum status ou corpo mudou. A lista está em
+  `src/main/resources/deprecated-routes.txt` e um teste garante que ela é exatamente o conjunto de rotas
+  com 0 requisições em `docs/uso-endpoints-elk.csv`.
+- Cada chamada a uma rota obsoleta gera uma linha no log `DEPRECATED_ROUTE` (método, rota, sucessora),
+  para localizar consumidores esquecidos antes de qualquer remoção.
+- `Deprecation`, `Sunset` e `Link` passam a ser expostos no CORS, para o front poder lê-los.
+- Propriedades opcionais: `deprecation.since` (data ISO; vira `Deprecation: @epoch`) e `deprecation.sunset`
+  (data ISO; emite o header `Sunset`). Padrão: **`deprecation.since=2026-10-17`** e **`deprecation.sunset=2027-01-17`**
+  (3 meses depois), ajustáveis por `DEPRECATION_SINCE` / `DEPRECATION_SUNSET` nos `docker-compose*.yml`. A rota só pode ser
+  removida depois do `Sunset`, e uma remoção é MAJOR.
+
+### Removido
+- **Endpoint de QR Code** (`GET /api/v1/qr-code/gerar` e `POST /api/v1/qr-code/recuperar`), o serviço, os DTOs, a
+  dependência `zxing` e o par de chaves RSA (`id_rsa_private.pem` e `id_rsa_public.pem`) de `src/main/resources`.
+  Eram 2 das 156 rotas, ambas sem nenhuma requisição no período levantado (Kibana, 2026-08-19 a 2026-10-17). Mudança
+  **MAJOR** pelo contrato acima. A chave privada continua no histórico do Git (finding F-01): rotacionar.
+
+### Adicionado
+- `POST /api/v1/matrix/telefone` (corpo `{"telefone": "..."}`): a partir do telefone de quem ligou, localiza o cliente
+  e os contratos no ERP (`erp.people`, normalizando +55, máscara e nono dígito) e consulta a massiva de cada contrato
+  pelo mesmo `AffectedUserService` de `/api/v1/afetados/contract/{id}`. Responde `em_massiva`, `sem_massiva` ou
+  `cliente_nao_encontrado`, com motivo, previsão e os contratos em massiva. Exige autenticação (diferente de
+  `GET /api/v1/matrix`), não devolve nome nem endereço, mascara o telefone no log e na resposta, e recebe o telefone
+  no corpo para não cair no log de acesso. As colunas de telefone são `matrix.telefone.colunas`
+  (padrão `phone,cell_phone_1,cell_phone_2`, colunas de `erp.people` com dados; `whatsapp_phone` está vazia no ERP). Telefone em mais de
+  `matrix.telefone.max-clientes` (padrão 5) clientes responde `telefone_compartilhado` sem consultar massiva: o da
+  própria empresa está em milhares de CPFs. Mudança **MINOR**; manifesto agora com **155 rotas**.
+- Especificação da transformação do BFF em API Gateway: `specs/API_GATEWAY.md`
+  (arquitetura, decisões, estrutura de pastas, riscos), `specs/API_GATEWAY_PASSOS.md`
+  (fases, ordem de extração, checklist) e `specs/API_GATEWAY_ENDPOINTS.md` (inventário
+  das 156 rotas que devem permanecer idênticas). Somente documentação; nenhum
+  comportamento mudou.
+- Fase 0 da migração: `RouteManifestTest` no monólito gera por reflexão o manifesto das 156 rotas
+  (`docs/contract/manifest.json`) e falha se uma rota mudar sem o manifesto ser atualizado. O manifesto é o
+  contrato que o gateway precisa preservar (ver `docs/contract/README.md`).
+- O gateway e cada serviço de domínio vivem em **repositórios próprios** (lista em `specs/API_GATEWAY.md`, seção 6);
+  este repositório continua sendo o monólito. Nenhum comportamento do monólito mudou.
+
+- `apigateway` incorpora `origin/staging` (GMUD: `/api/v1/gmud/*`, 6 rotas, em uso e fora do inventário
+  inicial); o manifesto passa a ter **156 rotas** (`massivas` 74), com o `GmudEllevenController` no
+  `massivas-service`.
+- `docs/USO-ENDPOINTS-ELK.md` e `docs/uso-endpoints-elk.csv`: uso dos endpoints no Kibana (ago a out/2026).
+
+### Planejado (ver `specs/API_GATEWAY_PASSOS.md`)
+- `3.4.3` — reestruturação multi-módulo, sem mudança de comportamento.
+- `3.5.0` — gateway à frente do monólito (circuit breaker, rate limit, request-id).
+- `3.5.x`/`3.6.0` — extração de `comercial`, `estoque`, `pessoas`, `radius`,
+  `splitters` e `massivas` para serviços próprios, mantendo as mesmas URLs e payloads.
+- `3.7.0` — remoção do `legacy-bff` e endurecimento de segurança (F-03).
+
 ## [3.4.2] - 2026-07-30
 
 ### Modificado

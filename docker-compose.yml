@@ -44,6 +44,10 @@ services:
       - ELASTIC_APM_ENABLED=${ELASTIC_APM_ENABLED:-true}
       - ELASTIC_APM_TRANSACTION_SAMPLE_RATE=${ELASTIC_APM_TRANSACTION_SAMPLE_RATE:-1.0}
 
+      # Deprecação de rotas sem uso (headers Deprecation e Sunset)
+      - DEPRECATION_SINCE=${DEPRECATION_SINCE:-2026-10-17}
+      - DEPRECATION_SUNSET=${DEPRECATION_SUNSET:-2027-01-17}
+
       # Auditoria de autenticação (temporária, ver findings F-02 e F-04)
       - AUTH_AUDIT_ENABLED=${AUTH_AUDIT_ENABLED:-true}
 
@@ -80,6 +84,12 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_CLIENT_SCOPE=${GOOGLE_CLIENT_SCOPE}
+
+      # Gravação antecipada do histórico de massiva na plataforma Splitters, feita por
+      # este gateway logo após o Elleven confirmar a abertura (sem depender do navegador).
+      # Vazio = desligado (comportamento de hoje, gravação só pelo navegador).
+      - SPLITTERS_BFF_URL=${SPLITTERS_BFF_URL:-}
+      - SPLITTERS_BFF_INTERNAL_SECRET=${SPLITTERS_BFF_INTERNAL_SECRET:-}
 
     volumes:
       - bff-logs:/app/logs
