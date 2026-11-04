@@ -33,4 +33,13 @@ public class WebClientConfig {
                 .defaultHeader("sec-ch-ua-platform", "\"Windows\"")
                 .build();
     }
+
+    /**
+     * Cliente "limpo", sem os headers que imitam o navegador contra o ERP — usado para chamadas
+     * internas (ex.: gravação antecipada do histórico de massiva na plataforma Splitters).
+     */
+    @Bean
+    public WebClient internalWebClient() {
+        return WebClient.builder().build();
+    }
 }

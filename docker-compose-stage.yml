@@ -62,6 +62,13 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_CLIENT_SCOPE=${GOOGLE_CLIENT_SCOPE}
+
+      # Gravação antecipada do histórico de massiva na plataforma Splitters, feita por
+      # este gateway logo após o Elleven confirmar a abertura (sem depender do navegador).
+      # Ex.: SPLITTERS_BFF_URL=https://splitters-monitoring-staging.sebratel.net.br
+      # Vazio = desligado (comportamento de hoje, gravação só pelo navegador).
+      - SPLITTERS_BFF_URL=${SPLITTERS_BFF_URL:-}
+      - SPLITTERS_BFF_INTERNAL_SECRET=${SPLITTERS_BFF_INTERNAL_SECRET:-}
     volumes:
       - bff-logs:/app/logs
 
