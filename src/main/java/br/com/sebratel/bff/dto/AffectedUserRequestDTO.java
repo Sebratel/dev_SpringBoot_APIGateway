@@ -1,5 +1,6 @@
 package br.com.sebratel.bff.dto;
 
+import br.com.sebratel.bff.enums.ClientOrigin;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -25,4 +26,6 @@ public class AffectedUserRequestDTO {
     private LocalDateTime finishDate;
     private LocalDateTime created;
     private String createdBy;
+    /** Opcional: ausente = MASSIVA. */
+    private ClientOrigin origin;
 }

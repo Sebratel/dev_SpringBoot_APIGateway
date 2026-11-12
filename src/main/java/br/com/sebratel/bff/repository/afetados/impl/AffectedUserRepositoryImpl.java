@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,7 +27,7 @@ public class AffectedUserRepositoryImpl implements AffectedUserRepository {
 
     @Override
     public Optional<AffectedUsersEntity> findByPppoe(String pppoe) {
-        return jpaRepository.findByPppoe(pppoe);
+        return jpaRepository.findFirstByPppoeOrderByOriginDescFinishDateAsc(pppoe);
     }
 
     @Override
@@ -51,6 +52,14 @@ public class AffectedUserRepositoryImpl implements AffectedUserRepository {
 
     @Override
     public Optional<AffectedUsersEntity> findFirstByContractId(Long contractId) {
-        return jpaRepository.findFirstByContractId(contractId);
+        return jpaRepository.findFirstByContractIdOrderByOriginDescFinishDateAsc(contractId);
+    }
+
+    @Override
+    public List<Long> findContractIdsInOtherOpenEvents(Collection<Long> contractIds, Long protocol) {
+        if (contractIds == null || contractIds.isEmpty()) return List.of();
+        return jpaRepository.findContractIdsInOtherOpenEvents(contractIds, protocol).stream()
+                .map(Number::longValue)
+                .toList();
     }
 }

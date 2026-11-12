@@ -14,4 +14,6 @@ public class ImpactDetailsOutputDTO {
     Long estimateTimeOfRestoration;
     @NotNull(message = "Hora prevista")
     Long estimatedTimeHour;
+    /** Origem do evento que sinaliza o cliente: MASSIVA ou GMUD. */
+    String origin;
 }

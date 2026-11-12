@@ -1,9 +1,11 @@
 package br.com.sebratel.bff.service;
 
+import br.com.sebratel.bff.dto.AffectedUserRequestDTO;
 import br.com.sebratel.bff.dto.CreateImpactedUsersInputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactDetailsOutputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
 import br.com.sebratel.bff.dto.massivas.api.FinalizaRegistroMassivoInputDTO;
+import br.com.sebratel.bff.enums.ClientOrigin;
 import br.com.sebratel.bff.enums.ClientType;
 import br.com.sebratel.bff.exceptions.DomainException;
 import br.com.sebratel.bff.exceptions.ResourceNotFoundException;
@@ -18,13 +20,20 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Service
 public class AffectedUserService {
+    /** Quantos contratos vao em cada consulta de "ja esta em outro evento" (IN do SQL). */
+    private static final int CONFLICT_QUERY_CHUNK = 1000;
+
     private final AffectedUserRepository affectedUserRepository;
     private final FinalizarMassivaNoEllevenApiService finalizarMassivaNoEllevenApiService;
     private final EmployeeService employeeService;
@@ -39,8 +48,21 @@ public class AffectedUserService {
     @Transactional(transactionManager = "afetadosTransactionManager")
     public ImpactedUsersOutputDTO createImpactedUsersDTO(CreateImpactedUsersInputDTO input) {
         log.info("Salvando lista de {} usuários afetados", input.getUsuarioAfetadoEntities().size());
+        // Um cliente nao entra em dois eventos: quem ja esta em outro evento aberto fica de fora deste
+        // (a menos que o operador tenha pedido para incluir mesmo assim). Nao derruba o protocolo.
+        List<AffectedUserRequestDTO> requested = input.getUsuarioAfetadoEntities();
+        final List<Long> skippedContracts = input.isIncludeConflicting() ? List.of() : findContractsInOtherOpenEvents(requested);
+        if (!skippedContracts.isEmpty()) {
+            log.info("{} cliente(s) já fazem parte de outro evento aberto e ficam de fora deste protocolo: {}",
+                    skippedContracts.size(), skippedContracts);
+            requested = requested.stream().filter(dto -> !skippedContracts.contains(dto.getContractId())).toList();
+            if (requested.isEmpty()) {
+                log.info("Todos os clientes já estão em outro evento aberto; nada a gravar (o protocolo segue aberto).");
+                return ImpactedUsersOutputDTO.builder().impactedUsers(List.of()).skippedContractIds(skippedContracts).build();
+            }
+        }
         List<AffectedUsersEntity> usuarioAfetadoEntities;
-        List<AffectedUsersEntity> affectedUsersContractList = input.getUsuarioAfetadoEntities().stream().map(dto -> {
+        List<AffectedUsersEntity> affectedUsersContractList = requested.stream().map(dto -> {
             AffectedUsersEntity entity = new AffectedUsersEntity();
             entity.setPppoe(dto.getPppoe());
             entity.setProtocol(dto.getProtocol());
@@ -49,6 +71,7 @@ public class AffectedUserService {
             entity.setFinishDate(dto.getFinishDate());
             entity.setCreated(dto.getCreated());
             entity.setCreatedBy(dto.getCreatedBy());
+            entity.setOrigin(dto.getOrigin() != null ? dto.getOrigin() : ClientOrigin.MASSIVA);
 
             List<Long> affectedUserContractList = List.of(dto.getContractId());
             entity.setClientType(employeeService.hasB2BinInput(affectedUserContractList) ? ClientType.CORPORATE : ClientType.NORMAL);
@@ -77,7 +100,34 @@ public class AffectedUserService {
             throw e;
         }
         log.info("Usuários afetados para o protocolo criados com sucesso.");
-        return getImpactedUsersDTO(usuarioAfetadoEntities);
+        ImpactedUsersOutputDTO created = getImpactedUsersDTO(usuarioAfetadoEntities);
+        created.setSkippedContractIds(skippedContracts);
+        return created;
+    }
+
+    /**
+     * Contratos desta lista que ja estao em OUTRO evento aberto (massiva aberta ou GMUD ativa). Falha na
+     * consulta nunca bloqueia a gravacao: sem a checagem, segue como antes (o front tambem filtra).
+     */
+    private List<Long> findContractsInOtherOpenEvents(List<AffectedUserRequestDTO> requested) {
+        try {
+            Map<Long, List<Long>> contractsByProtocol = new LinkedHashMap<>();
+            for (AffectedUserRequestDTO dto : requested) {
+                contractsByProtocol.computeIfAbsent(dto.getProtocol(), k -> new ArrayList<>()).add(dto.getContractId());
+            }
+            Set<Long> conflicts = new LinkedHashSet<>();
+            for (Map.Entry<Long, List<Long>> entry : contractsByProtocol.entrySet()) {
+                List<Long> contracts = entry.getValue();
+                for (int i = 0; i < contracts.size(); i += CONFLICT_QUERY_CHUNK) {
+                    List<Long> chunk = contracts.subList(i, Math.min(i + CONFLICT_QUERY_CHUNK, contracts.size()));
+                    conflicts.addAll(affectedUserRepository.findContractIdsInOtherOpenEvents(chunk, entry.getKey()));
+                }
+            }
+            return List.copyOf(conflicts);
+        } catch (Exception e) {
+            log.warn("Não foi possível conferir clientes em outro evento; gravando sem a checagem.", e);
+            return List.of();
+        }
     }
 
     private ImpactedUsersOutputDTO getImpactedUsersDTO(List<AffectedUsersEntity> affectedUsers) {
@@ -97,6 +147,7 @@ public class AffectedUserService {
                     .reason(affectedUser.getReason())
                     .estimateTimeOfRestoration(estimateTimeOfRestoration)
                     .estimatedTimeHour(timeHour)
+                    .origin(affectedUser.getOrigin() != null ? affectedUser.getOrigin().name() : ClientOrigin.MASSIVA.name())
                     .build();
             Map<Long, ImpactDetailsOutputDTO> impactedUsers = new HashMap<>();
             impactedUsers.put(affectedUser.getContractId(), impactDetailsDTO);

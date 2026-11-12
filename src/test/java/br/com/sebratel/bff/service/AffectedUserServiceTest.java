@@ -4,6 +4,7 @@ import br.com.sebratel.bff.dto.AffectedUserRequestDTO;
 import br.com.sebratel.bff.dto.CreateImpactedUsersInputDTO;
 import br.com.sebratel.bff.dto.massivas.ImpactedUsersOutputDTO;
 import br.com.sebratel.bff.dto.massivas.api.FinalizaRegistroMassivoInputDTO;
+import br.com.sebratel.bff.enums.ClientOrigin;
 import br.com.sebratel.bff.enums.ClientType;
 import br.com.sebratel.bff.exceptions.DomainException;
 import br.com.sebratel.bff.exceptions.ResourceNotFoundException;
@@ -301,5 +302,92 @@ class AffectedUserServiceTest {
 
         // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> service.changeEstimationTime(protocol, LocalDateTime.now()));
+    }
+
+    // ---- Cliente que ja esta em outro evento aberto nao entra de novo ---------------------------------
+
+    private static AffectedUserRequestDTO afetado(long contractId, long protocol) {
+        return AffectedUserRequestDTO.builder()
+                .contractId(contractId)
+                .protocol(protocol)
+                .finishDate(LocalDateTime.now().plusHours(4))
+                .build();
+    }
+
+    private static CreateImpactedUsersInputDTO pedido(boolean includeConflicting, AffectedUserRequestDTO... clientes) {
+        CreateImpactedUsersInputDTO input = new CreateImpactedUsersInputDTO();
+        input.setUsuarioAfetadoEntities(List.of(clientes));
+        input.setAssignmentId(150L);
+        input.setIncludeConflicting(includeConflicting);
+        return input;
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void createImpactedUsersDTO_ShouldSkipContractsAlreadyInOtherOpenEvent() {
+        when(repository.findContractIdsInOtherOpenEvents(anyCollection(), eq(500L))).thenReturn(List.of(2L));
+        when(repository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+        when(employeeService.hasB2BinInput(anyList())).thenReturn(false);
+
+        ImpactedUsersOutputDTO result = service.createImpactedUsersDTO(pedido(false, afetado(1L, 500L), afetado(2L, 500L)));
+
+        ArgumentCaptor<List<AffectedUsersEntity>> captor = ArgumentCaptor.forClass(List.class);
+        verify(repository).saveAll(captor.capture());
+        assertEquals(1, captor.getValue().size());
+        assertEquals(1L, captor.getValue().get(0).getContractId());
+        assertEquals(List.of(2L), result.getSkippedContractIds());
+        assertEquals(1, result.getImpactedUsers().size());
+    }
+
+    @Test
+    void createImpactedUsersDTO_ShouldNotSaveNorCancelProtocol_WhenAllClientsAreInOtherOpenEvent() {
+        when(repository.findContractIdsInOtherOpenEvents(anyCollection(), eq(500L))).thenReturn(List.of(1L, 2L));
+
+        ImpactedUsersOutputDTO result = service.createImpactedUsersDTO(pedido(false, afetado(1L, 500L), afetado(2L, 500L)));
+
+        verify(repository, never()).saveAll(anyList());
+        verifyNoInteractions(finalizarMassivaNoEllevenApiService);
+        assertTrue(result.getImpactedUsers().isEmpty());
+        assertEquals(List.of(1L, 2L), result.getSkippedContractIds());
+    }
+
+    @Test
+    void createImpactedUsersDTO_ShouldSaveEveryone_WhenIncludeConflictingIsTrue() {
+        when(repository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+        when(employeeService.hasB2BinInput(anyList())).thenReturn(false);
+
+        ImpactedUsersOutputDTO result = service.createImpactedUsersDTO(pedido(true, afetado(1L, 500L), afetado(2L, 500L)));
+
+        verify(repository, never()).findContractIdsInOtherOpenEvents(anyCollection(), anyLong());
+        verify(repository).saveAll(argThat(list -> list.size() == 2));
+        assertTrue(result.getSkippedContractIds().isEmpty());
+    }
+
+    @Test
+    void createImpactedUsersDTO_ShouldStillSave_WhenConflictCheckFails() {
+        when(repository.findContractIdsInOtherOpenEvents(anyCollection(), anyLong())).thenThrow(new RuntimeException("banco fora"));
+        when(repository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+        when(employeeService.hasB2BinInput(anyList())).thenReturn(false);
+
+        ImpactedUsersOutputDTO result = service.createImpactedUsersDTO(pedido(false, afetado(1L, 500L)));
+
+        verify(repository).saveAll(argThat(list -> list.size() == 1));
+        assertTrue(result.getSkippedContractIds().isEmpty());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void createImpactedUsersDTO_ShouldDefaultOriginToMassivaAndKeepGmud() {
+        AffectedUserRequestDTO gmud = afetado(2L, 501L);
+        gmud.setOrigin(ClientOrigin.GMUD);
+        when(repository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+        when(employeeService.hasB2BinInput(anyList())).thenReturn(false);
+
+        service.createImpactedUsersDTO(pedido(true, afetado(1L, 500L), gmud));
+
+        ArgumentCaptor<List<AffectedUsersEntity>> captor = ArgumentCaptor.forClass(List.class);
+        verify(repository).saveAll(captor.capture());
+        assertEquals(ClientOrigin.MASSIVA, captor.getValue().get(0).getOrigin());
+        assertEquals(ClientOrigin.GMUD, captor.getValue().get(1).getOrigin());
     }
 }
