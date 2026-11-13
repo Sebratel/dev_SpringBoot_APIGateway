@@ -16,4 +16,9 @@ public class ImpactedUsersOutputDTO {
     @NotEmpty(message = "A lista não pode ser vazia")
     @JsonProperty("impactedUsers")
     private List<Map<Long, ImpactDetailsOutputDTO>> impactedUsers;
+
+    /** Contratos deixados de fora por ja estarem em outro evento aberto (vazio nas consultas). */
+    @JsonProperty("skippedContractIds")
+    @Builder.Default
+    private List<Long> skippedContractIds = List.of();
 }

@@ -1,5 +1,6 @@
 package br.com.sebratel.bff.model.entity;
 
+import br.com.sebratel.bff.enums.ClientOrigin;
 import br.com.sebratel.bff.enums.ClientType;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
@@ -33,6 +34,10 @@ public class AffectedUsersEntity {
     @Column(name="corporate_client")
     @NotNull(message = "O cliente deve ter um tipo")
     ClientType clientType;
+    /** Origem do evento (MASSIVA por padrao; GMUD a partir da fase da GMUD). Coluna `origin` (DEFAULT 'MASSIVA'). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "origin", nullable = false)
+    ClientOrigin origin = ClientOrigin.MASSIVA;
     @NotNull(message = "O ID do contrato é obrigatório (contractId)")
     @Column(name = "contract_id", nullable = false)
     Long contractId;

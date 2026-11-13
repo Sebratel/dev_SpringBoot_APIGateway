@@ -16,9 +16,8 @@ services:
       - bff-logs:/logs
 
   gateway-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/sebratel/bff:staging
+    pull_policy: always
     container_name: bff-java-service-stage
     restart: unless-stopped
     depends_on:
@@ -40,6 +39,8 @@ services:
       - ELASTIC_APM_ENABLED=${ELASTIC_APM_ENABLED:-false}
       - ELASTIC_APM_ENVIRONMENT=${ELASTIC_APM_ENVIRONMENT:-staging}
       - AUTH_AUDIT_ENABLED=${AUTH_AUDIT_ENABLED:-true}
+      - DEPRECATION_SINCE=${DEPRECATION_SINCE:-2026-10-17}
+      - DEPRECATION_SUNSET=${DEPRECATION_SUNSET:-2027-01-17}
       - SECURITY_USER=${SECURITY_USER}
       - SECURITY_PASS=${SECURITY_PASS}
       - ERP_DB_URL=${ERP_DB_URL}
@@ -61,6 +62,13 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_CLIENT_SCOPE=${GOOGLE_CLIENT_SCOPE}
+
+      # Gravação antecipada do histórico de massiva na plataforma Splitters, feita por
+      # este gateway logo após o Elleven confirmar a abertura (sem depender do navegador).
+      # Ex.: SPLITTERS_BFF_URL=https://splitters-monitoring-staging.sebratel.net.br
+      # Vazio = desligado (comportamento de hoje, gravação só pelo navegador).
+      - SPLITTERS_BFF_URL=${SPLITTERS_BFF_URL:-}
+      - SPLITTERS_BFF_INTERNAL_SECRET=${SPLITTERS_BFF_INTERNAL_SECRET:-}
     volumes:
       - bff-logs:/app/logs
 

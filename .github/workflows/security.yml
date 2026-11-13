@@ -91,7 +91,7 @@ jobs:
             if [ "${{ steps.full-history.outcome }}" = "failure" ]; then
               echo ":warning: **Secrets detectados no historico do repositorio.**"
               echo ""
-              echo "Passivo conhecido: \`src/main/resources/id_rsa_private.pem\` (finding F-01)."
+              echo "Passivo conhecido: a chave \`id_rsa_private.pem\` (finding F-01) saiu da arvore em 2026-10-17 (o endpoint de QR Code foi removido), mas continua no historico."
               echo "Exige rotacao da chave e limpeza de historico. Valores nao sao exibidos (--redact)."
             else
               echo ":white_check_mark: Nenhum secret detectado no historico."
