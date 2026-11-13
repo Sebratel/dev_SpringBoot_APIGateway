@@ -41,6 +41,14 @@ formato dos seus payloads de requisição e resposta. Portanto:
   **MAJOR** pelo contrato acima. A chave privada continua no histórico do Git (finding F-01): rotacionar.
 
 ### Adicionado
+- **Cliente em mais de um evento (`/api/v1/afetados`).** O `POST` deixa de fora os contratos que já estão em outro
+  evento aberto (massiva `aberta` em `massiva_history` ou linha de GMUD) e devolve a lista em `skippedContractIds`
+  (vazia nas consultas). Se TODOS já estão em outro evento, nada é gravado e o protocolo **não** é cancelado.
+  Opcional `includeConflicting: true` no corpo grava mesmo assim. Falha na checagem nunca bloqueia a gravação.
+- **Coluna `origin` (`MASSIVA` | `GMUD`) em `assignment_clients`**, opcional no corpo (`usuarioAfetadoEntities[].origin`,
+  padrão `MASSIVA`) e devolvida em `impactedUsers[].origin`. Quando um cliente tem mais de uma linha, as consultas por
+  contrato/PPPoE devolvem a de massiva primeiro e, empatando, a de previsão mais próxima (antes `findByPppoe` quebrava
+  com mais de uma linha). **Requer o SQL de `docs/sql/assignment_clients_origin.sql` aplicado antes do deploy.**
 - `POST /api/v1/matrix/telefone` (corpo `{"telefone": "..."}`): a partir do telefone de quem ligou, localiza o cliente
   e os contratos no ERP (`erp.people`, normalizando +55, máscara e nono dígito) e consulta a massiva de cada contrato
   pelo mesmo `AffectedUserService` de `/api/v1/afetados/contract/{id}`. Responde `em_massiva`, `sem_massiva` ou

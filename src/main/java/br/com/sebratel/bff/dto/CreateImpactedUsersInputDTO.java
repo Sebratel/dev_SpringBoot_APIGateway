@@ -19,4 +19,9 @@ public class CreateImpactedUsersInputDTO {
     List<AffectedUserRequestDTO> usuarioAfetadoEntities;
     @NotNull(message = "O ID do assignment (assignmentId) é obrigatório")
     Long assignmentId;
+    /**
+     * Quando true, grava tambem os clientes que ja estao em OUTRO evento aberto (por padrao ficam de fora:
+     * o cliente ja esta sinalizado e nao pode entrar duas vezes).
+     */
+    boolean includeConflicting;
 }
